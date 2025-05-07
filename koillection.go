@@ -1,4 +1,5 @@
-package koillection
+// package koillection
+package main
 
 import (
 	"context"

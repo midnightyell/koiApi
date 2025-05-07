@@ -7,13 +7,17 @@ import (
 	"time"
 )
 
-func main() {
+var user = "user"
+var pass = "Passw0rd"
+var target = "http://192.168.30.129"
+
+func main1() {
 	// Create a new client.
-	client := NewHTTPClient("http://koillection.local", 30*time.Second)
+	client := NewHTTPClient(target, 30*time.Second)
 
 	// Authenticate.
 	ctx := context.Background()
-	_, err := client.CheckLogin(ctx, "username", "password")
+	_, err := client.CheckLogin(ctx, user, pass)
 	if err != nil {
 		fmt.Printf("Login failed: %v\n", err)
 		return
@@ -30,22 +34,14 @@ func main() {
 	DisplayMetricsTable(os.Stdout, metrics)
 }
 
-
-package main
-
-import (
-	"context"
-	"fmt"
-	"time"
-)
-
-func main() {
+func main2() {
 	// Create a new client with a 30-second timeout.
-	client := NewHTTPClient("https://collect.bluebridgesync.com", 30*time.Second)
+	client := NewHTTPClient(target, 30*time.Second)
 
 	// Authenticate.
 	ctx := context.Background()
-	token, err := client.CheckLogin(ctx, "username", "password")
+	token, err := client.CheckLogin(ctx, user, pass)
+	fmt.Printf("token: %s\n", token)
 	if err != nil {
 		fmt.Printf("Login failed: %v\n", err)
 		return
@@ -62,22 +58,30 @@ func main() {
 		fmt.Printf("Collection: %s (ID: %s)\n", c.Title, c.ID)
 	}
 
-	// Create an item.
-	item := &Item{
-		Name:       "New Item",
-		Collection: ptr("collection_id"), // Replace with valid collection IRI.
-		Quantity:   1,
-		Visibility: "public",
-	}
-	createdItem, err := client.CreateItem(ctx, item)
-	if err != nil {
-		fmt.Printf("Failed to create item: %v\n", err)
-		return
-	}
-	fmt.Printf("Created item: %s (ID: %s)\n", createdItem.Name, createdItem.ID)
+	/*
+		// Create an item.
+		item := &Item{
+			Name:       "New Item",
+			Collection: IRI("collection_id"), // Replace with valid collection IRI.
+			Quantity:   1,
+			Visibility: "public",
+		}
+
+		createdItem, err := client.CreateItem(ctx, item)
+		if err != nil {
+			fmt.Printf("Failed to create item: %v\n", err)
+			return
+		}
+		fmt.Printf("Created item: %s (ID: %s)\n", createdItem.Name, createdItem.ID)
+	*/
 }
 
 // ptr returns a pointer to a string.
 func ptr(s string) *string {
 	return &s
+}
+
+func main() {
+	//main1()
+	main2()
 }
