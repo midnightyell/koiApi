@@ -40,13 +40,14 @@ func main2() {
 
 	// Authenticate.
 	ctx := context.Background()
-	token, err := client.CheckLogin(ctx, user, pass)
-	fmt.Printf("token: %s\n", token)
+	_, err := client.CheckLogin(ctx, user, pass)
 	if err != nil {
 		fmt.Printf("Login failed: %v\n", err)
 		return
 	}
-	fmt.Printf("Authenticated with token: %s\n", token)
+
+	//fmt.Printf("Authenticated with token: %s\n", token)
+	fmt.Printf("Authenticated\n")
 
 	// List collections.
 	collections, err := client.ListCollections(ctx, 1)
@@ -58,22 +59,27 @@ func main2() {
 		fmt.Printf("Collection: %s (ID: %s)\n", c.Title, c.ID)
 	}
 
-	/*
-		// Create an item.
-		item := &Item{
-			Name:       "New Item",
-			Collection: IRI("collection_id"), // Replace with valid collection IRI.
-			Quantity:   1,
-			Visibility: "public",
-		}
+	iri, err := GetIRI(collections[0])
+	if err != nil {
+		fmt.Printf("Failed to get IRI: %v\n", err)
+		return
+	}
+	fmt.Printf("IRI: %s\n", iri)
 
-		createdItem, err := client.CreateItem(ctx, item)
-		if err != nil {
-			fmt.Printf("Failed to create item: %v\n", err)
-			return
-		}
-		fmt.Printf("Created item: %s (ID: %s)\n", createdItem.Name, createdItem.ID)
-	*/
+	// Create an item.
+	item := &Item{
+		Name:       "New Item",
+		Collection: &iri,
+		Quantity:   1,
+		Visibility: "public",
+	}
+
+	createdItem, err := client.CreateItem(ctx, item)
+	if err != nil {
+		fmt.Printf("Failed to create item: %v\n", err)
+		return
+	}
+	fmt.Printf("Created item: %s (ID: %s)\n", createdItem.Name, createdItem.ID)
 }
 
 // ptr returns a pointer to a string.
@@ -82,6 +88,6 @@ func ptr(s string) *string {
 }
 
 func main() {
-	//main1()
-	main2()
+	main1()
+	//main2()
 }

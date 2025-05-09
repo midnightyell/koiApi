@@ -68,10 +68,11 @@ func (c *httpClient) doRequest(ctx context.Context, method, path string, body io
 	} else if isMultipart {
 		req.Header.Set("Content-Type", "multipart/form-data")
 	}
+	//req.Header.Set("Accept", "application/ld+json")
 	req.Header.Set("Accept", "application/json")
 
-	fmt.Printf("Request: %s %s\n", method, req.URL.String())
-	fmt.Printf("Request Headers: %s\n", req.Header)
+	//fmt.Printf("Request: %s %s\n", method, req.URL.String())
+	//fmt.Printf("Request Headers: %s\n", req.Header)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -130,14 +131,21 @@ func (c *httpClient) listResources(ctx context.Context, path string, page int, o
 	defer resp.Body.Close()
 
 	// Handle JSON-LD response with "member" array.
-	var wrapper struct {
-		Member json.RawMessage `json:"member"`
+	if resp.Header.Get("Content-Type") == "application/ld+json" {
+		var wrapper struct {
+			Member json.RawMessage `json:"member"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&wrapper); err != nil {
+			return fmt.Errorf("decoding response: %w", err)
+		}
+		return json.Unmarshal(wrapper.Member, out)
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&wrapper); err != nil {
-		return fmt.Errorf("decoding response: %w", err)
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
 	}
+	return json.Unmarshal(bodyBytes, out)
 
-	return json.Unmarshal(wrapper.Member, out)
 }
 
 // postResource creates a resource and decodes the response into the provided struct.
@@ -235,8 +243,6 @@ func (c *httpClient) CheckLogin(ctx context.Context, username, password string) 
 	if err != nil {
 		return "", fmt.Errorf("encoding request body: %w", err)
 	}
-
-	fmt.Printf("Request body: ----------------------\n%s\n-------------------\n", string(body))
 
 	resp, err := c.doRequest(ctx, http.MethodPost, "/api/authentication_token", bytes.NewReader(body), false)
 	if err != nil {

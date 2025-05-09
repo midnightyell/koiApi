@@ -16,252 +16,252 @@ type Metrics map[string]string
 
 // Album represents an album in Koillection.
 type Album struct {
-	ID               ID         `json:"id"`
-	Title            string     `json:"title"`
-	Color            string     `json:"color"`
-	Image            *string    `json:"image"`
-	Owner            *IRI       `json:"owner"`
-	Parent           *IRI       `json:"parent"`
-	SeenCounter      int        `json:"seenCounter"`
-	Visibility       string     `json:"visibility"`
-	ParentVisibility *string    `json:"parentVisibility"`
-	FinalVisibility  string     `json:"finalVisibility"`
-	CreatedAt        time.Time  `json:"createdAt"`
-	UpdatedAt        *time.Time `json:"updatedAt"`
+	ID               ID         `json:"id,omitempty,omitempty"`
+	Title            string     `json:"title,omitempty"`
+	Color            string     `json:"color,omitempty"`
+	Image            *string    `json:"image,omitempty"`
+	Owner            *IRI       `json:"owner,omitempty"`
+	Parent           *IRI       `json:"parent,omitempty"`
+	SeenCounter      int        `json:"seenCounter,omitempty"`
+	Visibility       string     `json:"visibility,omitempty"`
+	ParentVisibility *string    `json:"parentVisibility,omitempty"`
+	FinalVisibility  string     `json:"finalVisibility,omitempty"`
+	CreatedAt        time.Time  `json:"createdAt,omitempty"`
+	UpdatedAt        *time.Time `json:"updatedAt,omitempty"`
 }
 
 // ChoiceList represents a predefined list of options in Koillection.
 type ChoiceList struct {
-	ID        ID         `json:"id"`
-	Name      string     `json:"name"`
-	Choices   []string   `json:"choices"`
-	Owner     *IRI       `json:"owner"`
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt *time.Time `json:"updatedAt"`
+	ID        ID         `json:"id,omitempty"`
+	Name      string     `json:"name,omitempty"`
+	Choices   []string   `json:"choices,omitempty"`
+	Owner     *IRI       `json:"owner,omitempty"`
+	CreatedAt time.Time  `json:"createdAt,omitempty"`
+	UpdatedAt *time.Time `json:"updatedAt,omitempty"`
 }
 
 // Collection represents a collection in Koillection.
 type Collection struct {
-	ID                   ID         `json:"id"`
-	Title                string     `json:"title"`
-	Parent               *IRI       `json:"parent"`
-	Owner                *IRI       `json:"owner"`
-	Color                string     `json:"color"`
-	Image                *string    `json:"image"`
-	SeenCounter          int        `json:"seenCounter"`
-	ItemsDefaultTemplate *IRI       `json:"itemsDefaultTemplate"`
-	Visibility           string     `json:"visibility"`
-	ParentVisibility     *string    `json:"parentVisibility"`
-	FinalVisibility      string     `json:"finalVisibility"`
-	ScrapedFromURL       *string    `json:"scrapedFromUrl"`
-	CreatedAt            time.Time  `json:"createdAt"`
-	UpdatedAt            *time.Time `json:"updatedAt"`
+	ID                   ID         `json:"id,omitempty"`
+	Title                string     `json:"title,omitempty"`
+	Parent               *IRI       `json:"parent,omitempty"`
+	Owner                *IRI       `json:"owner,omitempty"`
+	Color                string     `json:"color,omitempty"`
+	Image                *string    `json:"image,omitempty"`
+	SeenCounter          int        `json:"seenCounter,omitempty"`
+	ItemsDefaultTemplate *IRI       `json:"itemsDefaultTemplate,omitempty"`
+	Visibility           string     `json:"visibility,omitempty"`
+	ParentVisibility     *string    `json:"parentVisibility,omitempty"`
+	FinalVisibility      string     `json:"finalVisibility,omitempty"`
+	ScrapedFromURL       *string    `json:"scrapedFromUrl,omitempty"`
+	CreatedAt            time.Time  `json:"createdAt,omitempty"`
+	UpdatedAt            *time.Time `json:"updatedAt,omitempty"`
 }
 
 // Datum represents a custom data field in Koillection.
 type Datum struct {
-	ID                  ID         `json:"id"`
-	Item                *IRI       `json:"item"`
-	Collection          *IRI       `json:"collection"`
-	Type                string     `json:"type"`
-	Label               string     `json:"label"`
-	Value               *string    `json:"value"`
-	Position            *int       `json:"position"`
-	Currency            *string    `json:"currency"`
-	Image               *string    `json:"image"`
-	ImageSmallThumbnail *string    `json:"imageSmallThumbnail"`
-	ImageLargeThumbnail *string    `json:"imageLargeThumbnail"`
-	File                *string    `json:"file"`
-	Video               *string    `json:"video"`
-	OriginalFilename    *string    `json:"originalFilename"`
-	ChoiceList          *IRI       `json:"choiceList"`
-	Owner               *IRI       `json:"owner"`
-	Visibility          string     `json:"visibility"`
-	ParentVisibility    *string    `json:"parentVisibility"`
-	FinalVisibility     string     `json:"finalVisibility"`
-	CreatedAt           time.Time  `json:"createdAt"`
-	UpdatedAt           *time.Time `json:"updatedAt"`
+	ID                  ID         `json:"id,omitempty"`
+	Item                *IRI       `json:"item,omitempty"`
+	Collection          *IRI       `json:"collection,omitempty"`
+	Type                string     `json:"type,omitempty"`
+	Label               string     `json:"label,omitempty"`
+	Value               *string    `json:"value,omitempty"`
+	Position            *int       `json:"position,omitempty"`
+	Currency            *string    `json:"currency,omitempty"`
+	Image               *string    `json:"image,omitempty"`
+	ImageSmallThumbnail *string    `json:"imageSmallThumbnail,omitempty"`
+	ImageLargeThumbnail *string    `json:"imageLargeThumbnail,omitempty"`
+	File                *string    `json:"file,omitempty"`
+	Video               *string    `json:"video,omitempty"`
+	OriginalFilename    *string    `json:"originalFilename,omitempty"`
+	ChoiceList          *IRI       `json:"choiceList,omitempty"`
+	Owner               *IRI       `json:"owner,omitempty"`
+	Visibility          string     `json:"visibility,omitempty"`
+	ParentVisibility    *string    `json:"parentVisibility,omitempty"`
+	FinalVisibility     string     `json:"finalVisibility,omitempty"`
+	CreatedAt           time.Time  `json:"createdAt,omitempty"`
+	UpdatedAt           *time.Time `json:"updatedAt,omitempty"`
 }
 
 // Field represents a template field in Koillection.
 type Field struct {
-	ID         ID     `json:"id"`
-	Name       string `json:"name"`
-	Position   int    `json:"position"`
-	Type       string `json:"type"`
-	ChoiceList *IRI   `json:"choiceList"`
-	Template   *IRI   `json:"template"`
-	Visibility string `json:"visibility"`
-	Owner      *IRI   `json:"owner"`
+	ID         ID     `json:"id,omitempty"`
+	Name       string `json:"name,omitempty"`
+	Position   int    `json:"position,omitempty"`
+	Type       string `json:"type,omitempty"`
+	ChoiceList *IRI   `json:"choiceList,omitempty"`
+	Template   *IRI   `json:"template,omitempty"`
+	Visibility string `json:"visibility,omitempty"`
+	Owner      *IRI   `json:"owner,omitempty"`
 }
 
 // Inventory represents an inventory record in Koillection.
 type Inventory struct {
-	ID        ID         `json:"id"`
-	Name      string     `json:"name"`
-	Content   []string   `json:"content"`
-	Owner     *IRI       `json:"owner"`
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt *time.Time `json:"updatedAt"`
+	ID        ID         `json:"id,omitempty"`
+	Name      string     `json:"name,omitempty"`
+	Content   []string   `json:"content,omitempty"`
+	Owner     *IRI       `json:"owner,omitempty"`
+	CreatedAt time.Time  `json:"createdAt,omitempty"`
+	UpdatedAt *time.Time `json:"updatedAt,omitempty"`
 }
 
 // Item represents an item within a collection.
 type Item struct {
-	ID                  ID         `json:"id"`
-	Name                string     `json:"name"`
-	Quantity            int        `json:"quantity"`
-	Collection          *IRI       `json:"collection"`
-	Owner               *IRI       `json:"owner"`
-	Image               *string    `json:"image"`
-	ImageSmallThumbnail *string    `json:"imageSmallThumbnail"`
-	ImageLargeThumbnail *string    `json:"imageLargeThumbnail"`
-	SeenCounter         int        `json:"seenCounter"`
-	Visibility          string     `json:"visibility"`
-	ParentVisibility    *string    `json:"parentVisibility"`
-	FinalVisibility     string     `json:"finalVisibility"`
-	ScrapedFromURL      *string    `json:"scrapedFromUrl"`
-	CreatedAt           time.Time  `json:"createdAt"`
-	UpdatedAt           *time.Time `json:"updatedAt"`
+	ID                  ID         `json:"id,omitempty"`
+	Name                string     `json:"name,omitempty"`
+	Quantity            int        `json:"quantity,omitempty"`
+	Collection          *IRI       `json:"collection,omitempty"`
+	Owner               *IRI       `json:"owner,omitempty"`
+	Image               *string    `json:"image,omitempty"`
+	ImageSmallThumbnail *string    `json:"imageSmallThumbnail,omitempty"`
+	ImageLargeThumbnail *string    `json:"imageLargeThumbnail,omitempty"`
+	SeenCounter         int        `json:"seenCounter,omitempty"`
+	Visibility          string     `json:"visibility,omitempty"`
+	ParentVisibility    *string    `json:"parentVisibility,omitempty"`
+	FinalVisibility     string     `json:"finalVisibility,omitempty"`
+	ScrapedFromURL      *string    `json:"scrapedFromUrl,omitempty"`
+	CreatedAt           time.Time  `json:"createdAt,omitempty"`
+	UpdatedAt           *time.Time `json:"updatedAt,omitempty"`
 }
 
 // Loan represents a loan record in Koillection.
 type Loan struct {
-	ID         ID         `json:"id"`
-	Item       *IRI       `json:"item"`
-	LentTo     string     `json:"lentTo"`
-	LentAt     time.Time  `json:"lentAt"`
-	ReturnedAt *time.Time `json:"returnedAt"`
-	Owner      *IRI       `json:"owner"`
+	ID         ID         `json:"id,omitempty"`
+	Item       *IRI       `json:"item,omitempty"`
+	LentTo     string     `json:"lentTo,omitempty"`
+	LentAt     time.Time  `json:"lentAt,omitempty"`
+	ReturnedAt *time.Time `json:"returnedAt,omitempty"`
+	Owner      *IRI       `json:"owner,omitempty"`
 }
 
 // Log represents an action or event in Koillection.
 type Log struct {
-	ID            ID        `json:"id"`
-	Type          *string   `json:"type"`
-	LoggedAt      time.Time `json:"loggedAt"`
-	ObjectID      string    `json:"objectId"`
-	ObjectLabel   string    `json:"objectLabel"`
-	ObjectClass   string    `json:"objectClass"`
-	ObjectDeleted bool      `json:"objectDeleted"`
-	Owner         *IRI      `json:"owner"`
+	ID            ID        `json:"id,omitempty"`
+	Type          *string   `json:"type,omitempty"`
+	LoggedAt      time.Time `json:"loggedAt,omitempty"`
+	ObjectID      string    `json:"objectId,omitempty"`
+	ObjectLabel   string    `json:"objectLabel,omitempty"`
+	ObjectClass   string    `json:"objectClass,omitempty"`
+	ObjectDeleted bool      `json:"objectDeleted,omitempty"`
+	Owner         *IRI      `json:"owner,omitempty"`
 }
 
 // Photo represents a photo in Koillection.
 type Photo struct {
-	ID                  ID         `json:"id"`
-	Title               string     `json:"title"`
-	Comment             *string    `json:"comment"`
-	Place               *string    `json:"place"`
-	Album               *IRI       `json:"album"`
-	Owner               *IRI       `json:"owner"`
-	Image               *string    `json:"image"`
-	ImageSmallThumbnail *string    `json:"imageSmallThumbnail"`
-	TakenAt             *time.Time `json:"takenAt"`
-	Visibility          string     `json:"visibility"`
-	ParentVisibility    *string    `json:"parentVisibility"`
-	FinalVisibility     string     `json:"finalVisibility"`
-	CreatedAt           time.Time  `json:"createdAt"`
-	UpdatedAt           *time.Time `json:"updatedAt"`
+	ID                  ID         `json:"id,omitempty"`
+	Title               string     `json:"title,omitempty"`
+	Comment             *string    `json:"comment,omitempty"`
+	Place               *string    `json:"place,omitempty"`
+	Album               *IRI       `json:"album,omitempty"`
+	Owner               *IRI       `json:"owner,omitempty"`
+	Image               *string    `json:"image,omitempty"`
+	ImageSmallThumbnail *string    `json:"imageSmallThumbnail,omitempty"`
+	TakenAt             *time.Time `json:"takenAt,omitempty"`
+	Visibility          string     `json:"visibility,omitempty"`
+	ParentVisibility    *string    `json:"parentVisibility,omitempty"`
+	FinalVisibility     string     `json:"finalVisibility,omitempty"`
+	CreatedAt           time.Time  `json:"createdAt,omitempty"`
+	UpdatedAt           *time.Time `json:"updatedAt,omitempty"`
 }
 
 // Tag represents a tag in Koillection.
 type Tag struct {
-	ID                  ID         `json:"id"`
-	Label               string     `json:"label"`
-	Description         *string    `json:"description"`
-	Image               *string    `json:"image"`
-	ImageSmallThumbnail *string    `json:"imageSmallThumbnail"`
-	Owner               *IRI       `json:"owner"`
-	Category            *IRI       `json:"category"`
-	SeenCounter         int        `json:"seenCounter"`
-	Visibility          string     `json:"visibility"`
-	CreatedAt           time.Time  `json:"createdAt"`
-	UpdatedAt           *time.Time `json:"updatedAt"`
+	ID                  ID         `json:"id,omitempty"`
+	Label               string     `json:"label,omitempty"`
+	Description         *string    `json:"description,omitempty"`
+	Image               *string    `json:"image,omitempty"`
+	ImageSmallThumbnail *string    `json:"imageSmallThumbnail,omitempty"`
+	Owner               *IRI       `json:"owner,omitempty"`
+	Category            *IRI       `json:"category,omitempty"`
+	SeenCounter         int        `json:"seenCounter,omitempty"`
+	Visibility          string     `json:"visibility,omitempty"`
+	CreatedAt           time.Time  `json:"createdAt,omitempty"`
+	UpdatedAt           *time.Time `json:"updatedAt,omitempty"`
 }
 
 // TagCategory represents a tag category in Koillection.
 type TagCategory struct {
-	ID          ID         `json:"id"`
-	Label       string     `json:"label"`
-	Description *string    `json:"description"`
-	Color       string     `json:"color"`
-	Owner       *IRI       `json:"owner"`
-	CreatedAt   time.Time  `json:"createdAt"`
-	UpdatedAt   *time.Time `json:"updatedAt"`
+	ID          ID         `json:"id,omitempty"`
+	Label       string     `json:"label,omitempty"`
+	Description *string    `json:"description,omitempty"`
+	Color       string     `json:"color,omitempty"`
+	Owner       *IRI       `json:"owner,omitempty"`
+	CreatedAt   time.Time  `json:"createdAt,omitempty"`
+	UpdatedAt   *time.Time `json:"updatedAt,omitempty"`
 }
 
 // Template represents a template in Koillection.
 type Template struct {
-	ID        ID         `json:"id"`
-	Name      string     `json:"name"`
-	Owner     *IRI       `json:"owner"`
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt *time.Time `json:"updatedAt"`
+	ID        ID         `json:"id,omitempty"`
+	Name      string     `json:"name,omitempty"`
+	Owner     *IRI       `json:"owner,omitempty"`
+	CreatedAt time.Time  `json:"createdAt,omitempty"`
+	UpdatedAt *time.Time `json:"updatedAt,omitempty"`
 }
 
 // User represents a user in Koillection.
 type User struct {
-	ID                           ID         `json:"id"`
-	Username                     string     `json:"username"`
-	Email                        string     `json:"email"`
-	Avatar                       *string    `json:"avatar"`
-	Currency                     string     `json:"currency"`
-	Locale                       string     `json:"locale"`
-	Timezone                     string     `json:"timezone"`
-	DateFormat                   string     `json:"dateFormat"`
-	DiskSpaceAllowed             int        `json:"diskSpaceAllowed"`
-	Visibility                   string     `json:"visibility"`
-	LastDateOfActivity           *time.Time `json:"lastDateOfActivity"`
-	WishlistsFeatureEnabled      bool       `json:"wishlistsFeatureEnabled"`
-	TagsFeatureEnabled           bool       `json:"tagsFeatureEnabled"`
-	SignsFeatureEnabled          bool       `json:"signsFeatureEnabled"`
-	AlbumsFeatureEnabled         bool       `json:"albumsFeatureEnabled"`
-	LoansFeatureEnabled          bool       `json:"loansFeatureEnabled"`
-	TemplatesFeatureEnabled      bool       `json:"templatesFeatureEnabled"`
-	HistoryFeatureEnabled        bool       `json:"historyFeatureEnabled"`
-	StatisticsFeatureEnabled     bool       `json:"statisticsFeatureEnabled"`
-	ScrapingFeatureEnabled       bool       `json:"scrapingFeatureEnabled"`
-	SearchInDataByDefaultEnabled bool       `json:"searchInDataByDefaultEnabled"`
-	DisplayItemsNameInGridView   bool       `json:"displayItemsNameInGridView"`
-	SearchResultsDisplayMode     string     `json:"searchResultsDisplayMode"`
-	CreatedAt                    time.Time  `json:"createdAt"`
-	UpdatedAt                    *time.Time `json:"updatedAt"`
+	ID                           ID         `json:"id,omitempty"`
+	Username                     string     `json:"username,omitempty"`
+	Email                        string     `json:"email,omitempty"`
+	Avatar                       *string    `json:"avatar,omitempty"`
+	Currency                     string     `json:"currency,omitempty"`
+	Locale                       string     `json:"locale,omitempty"`
+	Timezone                     string     `json:"timezone,omitempty"`
+	DateFormat                   string     `json:"dateFormat,omitempty"`
+	DiskSpaceAllowed             int        `json:"diskSpaceAllowed,omitempty"`
+	Visibility                   string     `json:"visibility,omitempty"`
+	LastDateOfActivity           *time.Time `json:"lastDateOfActivity,omitempty"`
+	WishlistsFeatureEnabled      bool       `json:"wishlistsFeatureEnabled,omitempty"`
+	TagsFeatureEnabled           bool       `json:"tagsFeatureEnabled,omitempty"`
+	SignsFeatureEnabled          bool       `json:"signsFeatureEnabled,omitempty"`
+	AlbumsFeatureEnabled         bool       `json:"albumsFeatureEnabled,omitempty"`
+	LoansFeatureEnabled          bool       `json:"loansFeatureEnabled,omitempty"`
+	TemplatesFeatureEnabled      bool       `json:"templatesFeatureEnabled,omitempty"`
+	HistoryFeatureEnabled        bool       `json:"historyFeatureEnabled,omitempty"`
+	StatisticsFeatureEnabled     bool       `json:"statisticsFeatureEnabled,omitempty"`
+	ScrapingFeatureEnabled       bool       `json:"scrapingFeatureEnabled,omitempty"`
+	SearchInDataByDefaultEnabled bool       `json:"searchInDataByDefaultEnabled,omitempty"`
+	DisplayItemsNameInGridView   bool       `json:"displayItemsNameInGridView,omitempty"`
+	SearchResultsDisplayMode     string     `json:"searchResultsDisplayMode,omitempty"`
+	CreatedAt                    time.Time  `json:"createdAt,omitempty"`
+	UpdatedAt                    *time.Time `json:"updatedAt,omitempty"`
 }
 
 // Wish represents a wish in Koillection.
 type Wish struct {
-	ID                  ID         `json:"id"`
-	Name                string     `json:"name"`
-	URL                 *string    `json:"url"`
-	Price               *string    `json:"price"`
-	Currency            *string    `json:"currency"`
-	Wishlist            *IRI       `json:"wishlist"`
-	Owner               *IRI       `json:"owner"`
-	Comment             *string    `json:"comment"`
-	Image               *string    `json:"image"`
-	ImageSmallThumbnail *string    `json:"imageSmallThumbnail"`
-	Visibility          string     `json:"visibility"`
-	ParentVisibility    *string    `json:"parentVisibility"`
-	FinalVisibility     string     `json:"finalVisibility"`
-	ScrapedFromURL      *string    `json:"scrapedFromUrl"`
-	CreatedAt           time.Time  `json:"createdAt"`
-	UpdatedAt           *time.Time `json:"updatedAt"`
+	ID                  ID         `json:"id,omitempty"`
+	Name                string     `json:"name,omitempty"`
+	URL                 *string    `json:"url,omitempty"`
+	Price               *string    `json:"price,omitempty"`
+	Currency            *string    `json:"currency,omitempty"`
+	Wishlist            *IRI       `json:"wishlist,omitempty"`
+	Owner               *IRI       `json:"owner,omitempty"`
+	Comment             *string    `json:"comment,omitempty"`
+	Image               *string    `json:"image,omitempty"`
+	ImageSmallThumbnail *string    `json:"imageSmallThumbnail,omitempty"`
+	Visibility          string     `json:"visibility,omitempty"`
+	ParentVisibility    *string    `json:"parentVisibility,omitempty"`
+	FinalVisibility     string     `json:"finalVisibility,omitempty"`
+	ScrapedFromURL      *string    `json:"scrapedFromUrl,omitempty"`
+	CreatedAt           time.Time  `json:"createdAt,omitempty"`
+	UpdatedAt           *time.Time `json:"updatedAt,omitempty"`
 }
 
 // Wishlist represents a wishlist in Koillection.
 type Wishlist struct {
-	ID               ID         `json:"id"`
-	Name             string     `json:"name"`
-	Owner            *IRI       `json:"owner"`
-	Color            string     `json:"color"`
-	Parent           *IRI       `json:"parent"`
-	Image            *string    `json:"image"`
-	SeenCounter      int        `json:"seenCounter"`
-	Visibility       string     `json:"visibility"`
-	ParentVisibility *string    `json:"parentVisibility"`
-	FinalVisibility  string     `json:"finalVisibility"`
-	CreatedAt        time.Time  `json:"createdAt"`
-	UpdatedAt        *time.Time `json:"updatedAt"`
+	ID               ID         `json:"id,omitempty"`
+	Name             string     `json:"name,omitempty"`
+	Owner            *IRI       `json:"owner,omitempty"`
+	Color            string     `json:"color,omitempty"`
+	Parent           *IRI       `json:"parent,omitempty"`
+	Image            *string    `json:"image,omitempty"`
+	SeenCounter      int        `json:"seenCounter,omitempty"`
+	Visibility       string     `json:"visibility,omitempty"`
+	ParentVisibility *string    `json:"parentVisibility,omitempty"`
+	FinalVisibility  string     `json:"finalVisibility,omitempty"`
+	CreatedAt        time.Time  `json:"createdAt,omitempty"`
+	UpdatedAt        *time.Time `json:"updatedAt,omitempty"`
 }
 
 // Client defines the interface for interacting with the Koillection REST API.
@@ -393,22 +393,23 @@ type Client interface {
 
 // iriTable maps object types to their IRI path templates.
 var iriTable = map[reflect.Type]string{
-	reflect.TypeOf(&Album{}):       "/api/albums/%s",
-	reflect.TypeOf(&ChoiceList{}):  "/api/choice_lists/%s",
-	reflect.TypeOf(&Collection{}):  "/api/collections/%s",
-	reflect.TypeOf(&Datum{}):       "/api/data/%s",
-	reflect.TypeOf(&Field{}):       "/api/fields/%s",
-	reflect.TypeOf(&Inventory{}):   "/api/inventories/%s",
-	reflect.TypeOf(&Item{}):        "/api/items/%s",
-	reflect.TypeOf(&Loan{}):        "/api/loans/%s",
-	reflect.TypeOf(&Log{}):         "/api/logs/%s",
-	reflect.TypeOf(&Photo{}):       "/api/photos/%s",
-	reflect.TypeOf(&Tag{}):         "/api/tags/%s",
-	reflect.TypeOf(&TagCategory{}): "/api/tag_categories/%s",
-	reflect.TypeOf(&Template{}):    "/api/templates/%s",
-	reflect.TypeOf(&User{}):        "/api/users/%s",
-	reflect.TypeOf(&Wish{}):        "/api/wishes/%s",
-	reflect.TypeOf(&Wishlist{}):    "/api/wishlists/%s",
+	reflect.TypeOf(Album{}):       "/api/albums/%s",
+	reflect.TypeOf(ChoiceList{}):  "/api/choice_lists/%s",
+	reflect.TypeOf(Collection{}):  "/api/collections/%s",
+	reflect.TypeOf(Collection{}):  "/api/collections/%s",
+	reflect.TypeOf(Datum{}):       "/api/data/%s",
+	reflect.TypeOf(Field{}):       "/api/fields/%s",
+	reflect.TypeOf(Inventory{}):   "/api/inventories/%s",
+	reflect.TypeOf(Item{}):        "/api/items/%s",
+	reflect.TypeOf(Loan{}):        "/api/loans/%s",
+	reflect.TypeOf(Log{}):         "/api/logs/%s",
+	reflect.TypeOf(Photo{}):       "/api/photos/%s",
+	reflect.TypeOf(Tag{}):         "/api/tags/%s",
+	reflect.TypeOf(TagCategory{}): "/api/tag_categories/%s",
+	reflect.TypeOf(Template{}):    "/api/templates/%s",
+	reflect.TypeOf(User{}):        "/api/users/%s",
+	reflect.TypeOf(Wish{}):        "/api/wishes/%s",
+	reflect.TypeOf(Wishlist{}):    "/api/wishlists/%s",
 }
 
 // GetIRI returns the IRI reference for a given API object using a table-based approach.
