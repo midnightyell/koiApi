@@ -1,8 +1,9 @@
-package main
+package koiApi
 
 import (
 	"context"
 	"fmt"
+	koi "koiApi/koillection-api"
 	"os"
 	"time"
 )
@@ -13,7 +14,7 @@ var target = "http://192.168.30.129"
 
 func main1() {
 	// Create a new client.
-	client := NewHTTPClient(target, 30*time.Second)
+	client := koi.NewHTTPClient(target, 30*time.Second)
 
 	// Authenticate.
 	ctx := context.Background()
@@ -31,12 +32,12 @@ func main1() {
 	}
 
 	// Display metrics as a table.
-	DisplayMetricsTable(os.Stdout, metrics)
+	koi.DisplayMetricsTable(os.Stdout, metrics)
 }
 
 func main2() {
 	// Create a new client with a 30-second timeout.
-	client := NewHTTPClient(target, 30*time.Second)
+	client := koi.NewHTTPClient(target, 30*time.Second)
 
 	// Authenticate.
 	ctx := context.Background()
@@ -59,7 +60,7 @@ func main2() {
 		fmt.Printf("Collection: %s (ID: %s)\n", c.Title, c.ID)
 	}
 
-	iri, err := GetIRI(collections[0])
+	iri, err := koi.GetIRI(collections[0])
 	if err != nil {
 		fmt.Printf("Failed to get IRI: %v\n", err)
 		return
@@ -67,7 +68,7 @@ func main2() {
 	fmt.Printf("IRI: %s\n", iri)
 
 	// Create an item.
-	item := &Item{
+	item := &koi.Item{
 		Name:       "New Item",
 		Collection: &iri,
 		Quantity:   1,

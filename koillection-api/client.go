@@ -1,5 +1,4 @@
-// package koillection
-package main
+package koiApi
 
 import (
 	"bytes"
