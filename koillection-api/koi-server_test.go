@@ -2,27 +2,29 @@ package koiApi
 
 import (
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v3"
 )
 
 // Credentials holds the username and password from creds.yaml.
 type Credentials struct {
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
+	URL      string `json:"url"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 // loadCredentials reads username and password from creds.yaml.
 func loadCredentials(t *testing.T) (Credentials, error) {
-	data, err := ioutil.ReadFile("creds.yaml")
+	data, err := ioutil.ReadFile("creds.json")
 	if err != nil {
 		return Credentials{}, err
 	}
 	var creds Credentials
-	if err := yaml.Unmarshal(data, &creds); err != nil {
+	if err := json.Unmarshal(data, &creds); err != nil {
 		return Credentials{}, err
 	}
 	return creds, nil
@@ -32,12 +34,12 @@ func TestCollectionAndItemLifecycleWithRealServer(t *testing.T) {
 	// Load credentials
 	creds, err := loadCredentials(t)
 	assert.NoError(t, err, "Failed to load creds.yaml")
+	assert.NotEmpty(t, creds.URL, "Username is empty")
 	assert.NotEmpty(t, creds.Username, "Username is empty")
 	assert.NotEmpty(t, creds.Password, "Password is empty")
 
 	// Initialize client (assumes a real client implementation)
-	// Replace with your actual client constructor, e.g., NewClient("http://localhost:80")
-	client := &YourRealClientImplementation{BaseURL: "http://localhost:80"} // TODO: Replace with actual client
+	client := NewHTTPClient(creds.URL, 30*time.Second)
 
 	ctx := context.Background()
 
@@ -57,8 +59,10 @@ func TestCollectionAndItemLifecycleWithRealServer(t *testing.T) {
 	assert.NotEmpty(t, resultCollection.ID, "Collection ID is empty")
 	assert.Equal(t, "TEST", resultCollection.Title, "Collection title mismatch")
 
+	// Create IRI from collection ID
+	collectionIRI := IRI(resultCollection.ID)
+
 	// Create item
-	collectionIRI := IRI("/api/collections/" + string(resultCollection.ID))
 	item := &Item{
 		Name:       "Test Item",
 		Quantity:   1,
@@ -77,7 +81,7 @@ func TestCollectionAndItemLifecycleWithRealServer(t *testing.T) {
 		DatumTypeList, DatumTypeChoiceList, DatumTypeCheckbox, DatumTypeImage,
 		DatumTypeFile, DatumTypeSign, DatumTypeVideo, DatumTypeBlankLine, DatumTypeSection,
 	}
-	itemIRI := IRI("/api/items/" + string(resultItem.ID))
+	itemIRI := IRI(resultItem.ID)
 	for _, dt := range datumTypes {
 		value := "test-value"
 		if dt == DatumTypeCheckbox {

@@ -3,7 +3,7 @@ package koiApi
 import (
 	"context"
 	"fmt"
-	koi "koiApi/koillection-api"
+	koi "koiApi"
 	"os"
 	"time"
 )

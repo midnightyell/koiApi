@@ -19,10 +19,13 @@ type ID string // Read-only (maps to @id or id)
 type Metrics map[string]string // Read-only
 
 // Context represents the JSON-LD @context field.
-type Context struct {
+/* type Context struct {
 	Vocab string `json:"@vocab,omitempty"` // JSON-LD only
 	Hydra string `json:"hydra,omitempty"`  // JSON-LD only
 }
+*/
+
+type Context string // JSON-LD only
 
 // Visibility represents the visibility level of a resource.
 type Visibility string // Read and write
