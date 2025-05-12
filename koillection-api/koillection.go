@@ -113,7 +113,8 @@ func (df DateFormat) String() string {
 // Album represents an album in Koillection, combining read and write fields (aligned with Album.jsonld-album.read and Album.jsonld-album.write).
 type Album struct {
 	Context          *Context   `json:"@context,omitempty"`         // JSON-LD only
-	ID               ID         `json:"@id,omitempty"`              // JSON-LD only (maps to "id" in JSON, read-only)
+	ID_              ID         `json:"@id,omitempty"`              // JSON-LD only (maps to "@id" in JSON, read-only)
+	ID               ID         `json:"id,omitempty"`               // JSON-LD only (maps to "id" in JSON, read-only)
 	Type             string     `json:"@type,omitempty"`            // JSON-LD only
 	Title            string     `json:"title"`                      // Read and write
 	Color            string     `json:"color,omitempty"`            // Read-only
@@ -133,7 +134,8 @@ type Album struct {
 // ChoiceList represents a predefined list of options in Koillection, combining read and write fields (aligned with ChoiceList.jsonld-choiceList.read and ChoiceList.jsonld-choiceList.write).
 type ChoiceList struct {
 	Context   *Context   `json:"@context,omitempty"`  // JSON-LD only
-	ID        ID         `json:"@id,omitempty"`       // JSON-LD only (maps to "id" in JSON, read-only)
+	ID_       ID         `json:"@id,omitempty"`       // JSON-LD only (maps to "@id" in JSON, read-only)
+	ID        ID         `json:"id,omitempty"`        // JSON-LD only (maps to "id" in JSON, read-only)
 	Type      string     `json:"@type,omitempty"`     // JSON-LD only
 	Name      string     `json:"name"`                // Read and write
 	Choices   []string   `json:"choices"`             // Read and write
@@ -145,7 +147,8 @@ type ChoiceList struct {
 // Collection represents a collection in Koillection, combining read and write fields (aligned with Collection.jsonld-collection.read and Collection.jsonld-collection.write).
 type Collection struct {
 	Context              *Context   `json:"@context,omitempty"`             // JSON-LD only
-	ID                   ID         `json:"@id,omitempty"`                  // JSON-LD only (maps to "id" in JSON, read-only)
+	ID_                  ID         `json:"@id,omitempty"`                  // JSON-LD only (maps to "@id" in JSON, read-only)
+	ID                   ID         `json:"id,omitempty"`                   // JSON-LD only (maps to "id" in JSON, read-only)
 	Type                 string     `json:"@type,omitempty"`                // JSON-LD only
 	Title                string     `json:"title"`                          // Read and write
 	Parent               *IRI       `json:"parent,omitempty"`               // Read and write
@@ -167,7 +170,8 @@ type Collection struct {
 // Datum represents a custom data field in Koillection, combining read and write fields (aligned with Datum.jsonld-datum.read and Datum.jsonld-datum.write).
 type Datum struct {
 	Context             *Context   `json:"@context,omitempty"`            // JSON-LD only
-	ID                  ID         `json:"@id,omitempty"`                 // JSON-LD only (maps to "id" in JSON, read-only)
+	ID_                 ID         `json:"@id,omitempty"`                 // JSON-LD only (maps to "@id" in JSON, read-only)
+	ID                  ID         `json:"id,omitempty"`                  // JSON-LD only (maps to "id" in JSON, read-only)
 	Type                string     `json:"@type,omitempty"`               // JSON-LD only
 	Item                *IRI       `json:"item,omitempty"`                // Read and write
 	Collection          *IRI       `json:"collection,omitempty"`          // Read and write
@@ -197,7 +201,8 @@ type Datum struct {
 // Field represents a template field in Koillection, combining read and write fields (aligned with Field.jsonld-field.read and Field.jsonld-field.write).
 type Field struct {
 	Context    *Context   `json:"@context,omitempty"`   // JSON-LD only
-	ID         ID         `json:"@id,omitempty"`        // JSON-LD only (maps to "id" in JSON, read-only)
+	ID_        ID         `json:"@id,omitempty"`        // JSON-LD only (maps to "@id" in JSON, read-only)
+	ID         ID         `json:"id,omitempty"`         // JSON-LD only (maps to "id" in JSON, read-only)
 	Type       string     `json:"@type,omitempty"`      // JSON-LD only
 	Name       string     `json:"name"`                 // Read and write
 	Position   int        `json:"position"`             // Read and write
@@ -211,7 +216,8 @@ type Field struct {
 // Inventory represents an inventory record in Koillection, combining read and write fields (aligned with Inventory.jsonld-inventory.read, minimal write assumed).
 type Inventory struct {
 	Context   *Context   `json:"@context,omitempty"`  // JSON-LD only
-	ID        ID         `json:"@id,omitempty"`       // JSON-LD only (maps to "id" in JSON, read-only)
+	ID_       ID         `json:"@id,omitempty"`       // JSON-LD only (maps to "@id" in JSON, read-only)
+	ID        ID         `json:"id,omitempty"`        // JSON-LD only (maps to "id" in JSON, read-only)
 	Type      string     `json:"@type,omitempty"`     // JSON-LD only
 	Name      string     `json:"name"`                // Read and write (assumed)
 	Content   []string   `json:"content"`             // Read and write (assumed)
@@ -223,7 +229,8 @@ type Inventory struct {
 // Item represents an item within a collection, combining read and write fields (aligned with Item.jsonld-item.read and Item.jsonld-item.write).
 type Item struct {
 	Context             *Context   `json:"@context,omitempty"`            // JSON-LD only
-	ID                  ID         `json:"@id,omitempty"`                 // JSON-LD only (maps to "id" in JSON, read-only)
+	ID_                 ID         `json:"@id,omitempty"`                 // JSON-LD only (maps to "@id" in JSON, read-only)
+	ID                  ID         `json:"id,omitempty"`                  // JSON-LD only (maps to "id" in JSON, read-only)
 	Type                string     `json:"@type,omitempty"`               // JSON-LD only
 	Name                string     `json:"name"`                          // Read and write
 	Quantity            int        `json:"quantity"`                      // Read and write, must be >= 1
@@ -247,7 +254,8 @@ type Item struct {
 // Loan represents a loan record in Koillection, combining read and write fields (aligned with Loan.jsonld-loan.read and Loan.jsonld-loan.write).
 type Loan struct {
 	Context    *Context   `json:"@context,omitempty"`   // JSON-LD only
-	ID         ID         `json:"@id,omitempty"`        // JSON-LD only (maps to "id" in JSON, read-only)
+	ID_        ID         `json:"@id,omitempty"`        // JSON-LD only (maps to "@id" in JSON, read-only)
+	ID         ID         `json:"id,omitempty"`         // JSON-LD only (maps to "id" in JSON, read-only)
 	Type       string     `json:"@type,omitempty"`      // JSON-LD only
 	Item       *IRI       `json:"item"`                 // Read and write
 	LentTo     string     `json:"lentTo"`               // Read and write
@@ -259,7 +267,8 @@ type Loan struct {
 // Log represents an action or event in Koillection, combining read and write fields (aligned with Log.jsonld-log.read, minimal write assumed).
 type Log struct {
 	Context       *Context  `json:"@context,omitempty"` // JSON-LD only
-	ID            ID        `json:"@id,omitempty"`      // JSON-LD only (maps to "id" in JSON, read-only)
+	ID_           ID        `json:"@id,omitempty"`      // JSON-LD only (maps to "@id" in JSON, read-only)
+	ID            ID        `json:"id,omitempty"`       // JSON-LD only (maps to "id" in JSON, read-only)
 	Type          string    `json:"@type,omitempty"`    // JSON-LD only
 	LogType       *string   `json:"type,omitempty"`     // Read and write (assumed)
 	LoggedAt      time.Time `json:"loggedAt"`           // Read and write (assumed)
@@ -273,7 +282,8 @@ type Log struct {
 // Photo represents a photo in Koillection, combining read and write fields (aligned with Photo.jsonld-photo.read and Photo.jsonld-photo.write).
 type Photo struct {
 	Context             *Context   `json:"@context,omitempty"`            // JSON-LD only
-	ID                  ID         `json:"@id,omitempty"`                 // JSON-LD only (maps to "id" in JSON, read-only)
+	ID_                 ID         `json:"@id,omitempty"`                 // JSON-LD only (maps to "@id" in JSON, read-only)
+	ID                  ID         `json:"id,omitempty"`                  // JSON-LD only (maps to "id" in JSON, read-only)
 	Type                string     `json:"@type,omitempty"`               // JSON-LD only
 	Title               string     `json:"title"`                         // Read and write
 	Comment             *string    `json:"comment,omitempty"`             // Read and write
@@ -294,7 +304,8 @@ type Photo struct {
 // Tag represents a tag in Koillection, combining read and write fields (aligned with Tag.jsonld-tag.read and Tag.jsonld-tag.write).
 type Tag struct {
 	Context             *Context   `json:"@context,omitempty"`            // JSON-LD only
-	ID                  ID         `json:"@id,omitempty"`                 // JSON-LD only (maps to "id" in JSON, read-only)
+	ID_                 ID         `json:"@id,omitempty"`                 // JSON-LD only (maps to "@id" in JSON, read-only)
+	ID                  ID         `json:"id,omitempty"`                  // JSON-LD only (maps to "id" in JSON, read-only)
 	Type                string     `json:"@type,omitempty"`               // JSON-LD only
 	Label               string     `json:"label"`                         // Read and write
 	Description         *string    `json:"description,omitempty"`         // Read and write
@@ -312,7 +323,8 @@ type Tag struct {
 // TagCategory represents a tag category in Koillection, combining read and write fields (aligned with TagCategory.jsonld-tagCategory.read and TagCategory.jsonld-tagCategory.write).
 type TagCategory struct {
 	Context     *Context   `json:"@context,omitempty"`    // JSON-LD only
-	ID          ID         `json:"@id,omitempty"`         // JSON-LD only (maps to "id" in JSON, read-only)
+	ID_         ID         `json:"@id,omitempty"`         // JSON-LD only (maps to "@id" in JSON, read-only)
+	ID          ID         `json:"id,omitempty"`          // JSON-LD only (maps to "id" in JSON, read-only)
 	Type        string     `json:"@type,omitempty"`       // JSON-LD only
 	Label       string     `json:"label"`                 // Read and write
 	Description *string    `json:"description,omitempty"` // Read and write
@@ -325,7 +337,8 @@ type TagCategory struct {
 // Template represents a template in Koillection, combining read and write fields (aligned with Template.jsonld-template.read and Template.jsonld-template.write).
 type Template struct {
 	Context   *Context   `json:"@context,omitempty"`  // JSON-LD only
-	ID        ID         `json:"@id,omitempty"`       // JSON-LD only (maps to "id" in JSON, read-only)
+	ID_       ID         `json:"@id,omitempty"`       // JSON-LD only (maps to "@id" in JSON, read-only)
+	ID        ID         `json:"id,omitempty"`        // JSON-LD only (maps to "id" in JSON, read-only)
 	Type      string     `json:"@type,omitempty"`     // JSON-LD only
 	Name      string     `json:"name"`                // Read and write
 	Owner     *IRI       `json:"owner,omitempty"`     // Read-only
@@ -336,7 +349,8 @@ type Template struct {
 // User represents a user in Koillection, combining read and write fields (aligned with User.jsonld-user.read, minimal write assumed).
 type User struct {
 	Context                      *Context   `json:"@context,omitempty"`           // JSON-LD only
-	ID                           ID         `json:"@id,omitempty"`                // JSON-LD only (maps to "id" in JSON, read-only)
+	ID_                          ID         `json:"@id,omitempty"`                // JSON-LD only (maps to "@id" in JSON, read-only)
+	ID                           ID         `json:"id,omitempty"`                 // JSON-LD only (maps to "id" in JSON, read-only)
 	Type                         string     `json:"@type,omitempty"`              // JSON-LD only
 	Username                     string     `json:"username"`                     // Read and write (assumed)
 	Email                        string     `json:"email"`                        // Read and write (assumed)
@@ -368,7 +382,8 @@ type User struct {
 // Wish represents a wish in Koillection, combining read and write fields (aligned with Wish.jsonld-wish.read and Wish.jsonld-wish.write).
 type Wish struct {
 	Context             *Context   `json:"@context,omitempty"`            // JSON-LD only
-	ID                  ID         `json:"@id,omitempty"`                 // JSON-LD only (maps to "id" in JSON, read-only)
+	ID_                 ID         `json:"@id,omitempty"`                 // JSON-LD only (maps to "@id" in JSON, read-only)
+	ID                  ID         `json:"id,omitempty"`                  // JSON-LD only (maps to "id" in JSON, read-only)
 	Type                string     `json:"@type,omitempty"`               // JSON-LD only
 	Name                string     `json:"name"`                          // Read and write
 	URL                 *string    `json:"url,omitempty"`                 // Read and write
@@ -391,7 +406,8 @@ type Wish struct {
 // Wishlist represents a wishlist in Koillection, combining read and write fields (aligned with Wishlist.jsonld-wishlist.read and Wishlist.jsonld-wishlist.write).
 type Wishlist struct {
 	Context          *Context   `json:"@context,omitempty"`         // JSON-LD only
-	ID               ID         `json:"@id,omitempty"`              // JSON-LD only (maps to "id" in JSON, read-only)
+	ID_              ID         `json:"@id,omitempty"`              // JSON-LD only (maps to "@id" in JSON, read-only)
+	ID               ID         `json:"id,omitempty"`               // JSON-LD only (maps to "id" in JSON, read-only)
 	Type             string     `json:"@type,omitempty"`            // JSON-LD only
 	Name             string     `json:"name"`                       // Read and write
 	Owner            *IRI       `json:"owner,omitempty"`            // Read-only

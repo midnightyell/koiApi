@@ -65,7 +65,12 @@ func TestCollectionAndItemLifecycleWithRealServer(t *testing.T) {
 	assert.Equal(t, "TEST", resultCollection.Title, "Collection title mismatch")
 
 	// Create IRI from collection ID
-	collectionIRI := IRI(resultCollection.ID)
+	collectionIRI, err := GetIRI(resultCollection)
+	if err != nil {
+		t.Fatalf("Failed to get IRI: %v", err)
+	}
+	assert.NotEmpty(t, collectionIRI, "Collection IRI is empty")
+	assert.Equal(t, fmt.Sprintf("/api/collections/%s", resultCollection.ID), collectionIRI, "Collection IRI mismatch")
 
 	// Create item
 	item := &Item{
