@@ -1,10 +1,9 @@
-package koiApi
+package main
 
 import (
 	"context"
 	"fmt"
 	koi "koiApi"
-	"os"
 	"time"
 )
 
@@ -24,15 +23,14 @@ func main1() {
 		return
 	}
 
-	// Get metrics.
-	metrics, err := client.GetMetrics(ctx)
+	item, err := client.GetItem(ctx, koi.ID("0196c6c5-1a52-7356-b284-b4a4b0bccd70"))
+
 	if err != nil {
-		fmt.Printf("Failed to get metrics: %v\n", err)
+		fmt.Printf("Failed to get item: %v\n", err)
 		return
 	}
 
-	// Display metrics as a table.
-	koi.DisplayMetricsTable(os.Stdout, metrics)
+	item.Print("")
 }
 
 func main2() {
@@ -89,6 +87,6 @@ func ptr(s string) *string {
 }
 
 func main() {
-	//main1()
-	main2()
+	main1()
+	//main2()
 }
