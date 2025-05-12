@@ -63,18 +63,18 @@ func TestCollectionAndItemLifecycle(t *testing.T) {
 	client.On("CreateCollection", ctx, collection).Return(createdCollection, nil)
 
 	// Create item
-	collectionIRI := IRI("/api/collections/collection-1")
+	collectionID := "/api/collections/collection-1"
 	item := &Item{
 		Name:       "Test Item",
 		Quantity:   1,
-		Collection: &collectionIRI,
+		Collection: &collectionID,
 		Visibility: VisibilityPublic,
 	}
 	createdItem := &Item{
 		ID:         "item-1",
 		Name:       "Test Item",
 		Quantity:   1,
-		Collection: &collectionIRI,
+		Collection: &collectionID,
 		Visibility: VisibilityPublic,
 		CreatedAt:  time.Now(),
 	}
@@ -88,7 +88,7 @@ func TestCollectionAndItemLifecycle(t *testing.T) {
 		DatumTypeFile, DatumTypeSign, DatumTypeVideo, DatumTypeBlankLine, DatumTypeSection,
 	}
 	createdData := make([]*Datum, len(datumTypes))
-	itemIRI := IRI("/api/items/item-1")
+	itemID := "/api/items/item-1"
 	for i, dt := range datumTypes {
 		value := "test-value"
 		if dt == DatumTypeCheckbox {
@@ -103,7 +103,7 @@ func TestCollectionAndItemLifecycle(t *testing.T) {
 			value = "/path/to/file" // Placeholder, real test would upload file
 		}
 		datum := &Datum{
-			Item:       &itemIRI,
+			Item:       &itemID,
 			DatumType:  dt,
 			Label:      string(dt) + " Field",
 			Value:      &value,
@@ -111,7 +111,7 @@ func TestCollectionAndItemLifecycle(t *testing.T) {
 		}
 		createdDatum := &Datum{
 			ID:         ID("datum-" + string(dt)),
-			Item:       &itemIRI,
+			Item:       &itemID,
 			DatumType:  dt,
 			Label:      string(dt) + " Field",
 			Value:      &value,
@@ -127,7 +127,7 @@ func TestCollectionAndItemLifecycle(t *testing.T) {
 		ID:         "item-1",
 		Name:       "Test Item",
 		Quantity:   1,
-		Collection: &collectionIRI,
+		Collection: &collectionID,
 		Visibility: VisibilityPublic,
 		CreatedAt:  createdItem.CreatedAt,
 	}
@@ -155,7 +155,7 @@ func TestCollectionAndItemLifecycle(t *testing.T) {
 		for i, dt := range datumTypes {
 			value := *createdData[i].Value
 			datum := &Datum{
-				Item:       &itemIRI,
+				Item:       &itemID,
 				DatumType:  dt,
 				Label:      string(dt) + " Field",
 				Value:      &value,
