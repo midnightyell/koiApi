@@ -88,6 +88,6 @@ func ptr(s string) *string {
 }
 
 func main() {
-	main1()
-	//main2()
+	//main1()
+	main2()
 }

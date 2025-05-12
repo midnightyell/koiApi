@@ -59,20 +59,17 @@ func (c *httpClient) doRequest(ctx context.Context, method, path string, body io
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
 
-	if c.token != "" && path != "/api/authentication_token" {
-		//req.Header.Set("Authorization", "Bearer "+c.token)
-	}
+	//if c.token != "" && path != "/api/authentication_token" {
+	//   Not needed because we use cookiejar
+	//   req.Header.Set("Authorization", "Bearer "+c.token)
+	//}
 
 	if body != nil && !isMultipart {
-		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Content-Type", "application/ld+json")
 	} else if isMultipart {
 		req.Header.Set("Content-Type", "multipart/form-data")
 	}
-	//req.Header.Set("Accept", "application/ld+json")
-	req.Header.Set("Accept", "application/json")
-
-	//fmt.Printf("Request: %s %s\n", method, req.URL.String())
-	//fmt.Printf("Request Headers: %s\n", req.Header)
+	req.Header.Set("Accept", "application/ld+json")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -131,7 +128,8 @@ func (c *httpClient) listResources(ctx context.Context, path string, page int, o
 	defer resp.Body.Close()
 
 	// Handle JSON-LD response with "member" array.
-	if resp.Header.Get("Content-Type") == "application/ld+json" {
+	headerContent := resp.Header.Get("Content-Type")
+	if strings.Contains(headerContent, "application/ld+json") {
 		var wrapper struct {
 			Member json.RawMessage `json:"member"`
 		}
