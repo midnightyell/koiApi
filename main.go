@@ -31,7 +31,7 @@ func main1() {
 		log.Fatalf("Failed to get item and data: %v", err)
 	}
 
-	fieldsPrinted, err := koi.PrintItemWithData(item, data, "Item %s:\n", itemID)
+	fieldsPrinted, err := koi.PrintItemWithData(item, data, true, "Item %s:\n", itemID)
 	if err != nil {
 		log.Fatalf("Failed to print item and data: %v", err)
 	}
