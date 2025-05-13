@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	koi "koiApi"
+	"log"
 	"time"
 )
 
@@ -23,14 +24,19 @@ func main1() {
 		return
 	}
 
-	item, err := client.GetItem(ctx, koi.ID("0196c6c5-1a52-7356-b284-b4a4b0bccd70"))
+	itemID := koi.ID("0196c6c5-1a52-7356-b284-b4a4b0bccd70")
 
+	item, data, err := koi.GetItemAndData(ctx, client, itemID)
 	if err != nil {
-		fmt.Printf("Failed to get item: %v\n", err)
-		return
+		log.Fatalf("Failed to get item and data: %v", err)
 	}
 
-	item.Print("")
+	fieldsPrinted, err := koi.PrintItemWithData(item, data, "Item %s:\n", itemID)
+	if err != nil {
+		log.Fatalf("Failed to print item and data: %v", err)
+	}
+	fmt.Printf("Printed %d fields\n", fieldsPrinted)
+
 }
 
 func main2() {

@@ -1,6 +1,7 @@
 package koiApi
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"reflect"
@@ -119,9 +120,9 @@ func validateStruct(v interface{}) error {
 }
 
 // printStruct generically prints the fields of a struct using reflection, aligning values at the same left margin,
-// skipping fields tagged with omitempty if their values would be omitted in JSON marshaling. It prints a formatted
-// string (using printf-style parameters) at the beginning, and indents all field lines by 4 spaces.
-func printStruct(v interface{}, format string, args ...interface{}) (int, error) {
+// skipping fields tagged with omitempty if their values would be omitted in JSON marshaling. It uses the specified
+// indent level (in spaces) for field lines.
+func printStruct(v interface{}, indentLevel int, format string, args ...interface{}) (int, error) {
 	if v == nil {
 		fmt.Println("<nil>")
 		return 0, nil
@@ -156,7 +157,7 @@ func printStruct(v interface{}, format string, args ...interface{}) (int, error)
 	}
 
 	if numFields == 0 {
-		fmt.Printf("    %s: <empty>\n", typ.Name())
+		fmt.Printf("%s%s: <empty>\n", strings.Repeat(" ", indentLevel), typ.Name())
 		return 0, nil
 	}
 
@@ -169,7 +170,7 @@ func printStruct(v interface{}, format string, args ...interface{}) (int, error)
 		}
 	}
 
-	// Print fields with aligned values, indented by 4 spaces
+	// Print fields with aligned values, indented by indentLevel spaces
 	printedFields := 0
 	for i := 0; i < numFields; i++ {
 		field := val.Field(i)
@@ -207,19 +208,19 @@ func printStruct(v interface{}, format string, args ...interface{}) (int, error)
 		if (typ.Name() == "User" && name == "Currency") ||
 			((typ.Name() == "Datum" || typ.Name() == "Wish") && name == "Currency") {
 			if field.Kind() == reflect.String && field.String() != "" && !validateCurrency(field.String()) {
-				fmt.Printf("WARNING: Invalid currency code '%s' for %s.%s\n", field.String(), typ.Name(), name)
+				fmt.Printf("%sWARNING: Invalid currency code '%s' for %s.%s\n", strings.Repeat(" ", indentLevel), field.String(), typ.Name(), name)
 			} else if field.Kind() == reflect.Ptr && !field.IsNil() && !validateCurrency(field.Elem().String()) {
-				fmt.Printf("WARNING: Invalid currency code '%s' for %s.%s\n", field.Elem().String(), typ.Name(), name)
+				fmt.Printf("%sWARNING: Invalid currency code '%s' for %s.%s\n", strings.Repeat(" ", indentLevel), field.Elem().String(), typ.Name(), name)
 			}
 		}
 		if (typ.Name() == "Datum" && name == "Value" && val.FieldByName("DatumType").String() == "price") ||
 			(typ.Name() == "Wish" && name == "Price") {
 			if field.Kind() == reflect.Ptr && !field.IsNil() && !validateFloat(field.Elem().String()) {
-				fmt.Printf("WARNING: Invalid float value '%s' for %s.%s\n", field.Elem().String(), typ.Name(), name)
+				fmt.Printf("%sWARNING: Invalid float value '%s' for %s.%s\n", strings.Repeat(" ", indentLevel), field.Elem().String(), typ.Name(), name)
 			}
 		}
 
-		prefix := "    " + typ.Name() + "." + name
+		prefix := strings.Repeat(" ", indentLevel) + typ.Name() + "." + name
 		padding := strings.Repeat(" ", maxLen-len(name)+1)
 
 		switch field.Kind() {
@@ -274,67 +275,133 @@ func printStruct(v interface{}, format string, args ...interface{}) (int, error)
 	return printedFields, nil
 }
 
-// Print methods for each struct type
+// GetItemAndData retrieves an Item and all associated Datum objects using the Client.
+func GetItemAndData(ctx context.Context, client Client, itemID ID) (*Item, []*Datum, error) {
+	// Fetch the Item
+	item, err := client.GetItem(ctx, itemID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get item %s: %w", itemID, err)
+	}
+
+	// Fetch all Datum objects associated with the item
+	data, err := client.ListItemData(ctx, itemID, 1)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get data for item %s: %w", itemID, err)
+	}
+
+	// Handle pagination if more data exists
+	var allData []*Datum
+	allData = append(allData, data...)
+	for page := 2; len(data) > 0; page++ {
+		data, err = client.ListItemData(ctx, itemID, page)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to get data page %d for item %s: %w", page, itemID, err)
+		}
+		allData = append(allData, data...)
+	}
+
+	return item, allData, nil
+}
+
+// PrintItemWithData prints the fields of an Item and all associated Datum objects, indenting Datum fields further.
+func PrintItemWithData(item *Item, data []*Datum, format string, args ...interface{}) (int, error) {
+	totalFields := 0
+
+	// Print the formatted header
+	if format != "" {
+		fmt.Printf(format, args...)
+	} else {
+		fmt.Println("Item")
+	}
+
+	// Print Item fields with 4-space indent
+	if item == nil {
+		fmt.Println("    Item: <nil>")
+	} else {
+		itemFields, err := printStruct(item, 4, "")
+		if err != nil {
+			return 0, fmt.Errorf("failed to print item: %w", err)
+		}
+		totalFields += itemFields
+	}
+
+	// Print each Datum with 8-space indent
+	for i, datum := range data {
+		if datum == nil {
+			fmt.Printf("        Datum[%d]: <nil>\n", i)
+			continue
+		}
+		datumFields, err := printStruct(datum, 8, "        Datum[%d]\n", i)
+		if err != nil {
+			return totalFields, fmt.Errorf("failed to print datum %d: %w", i, err)
+		}
+		totalFields += datumFields
+	}
+
+	return totalFields, nil
+}
+
+// Print methods for each struct type (unchanged)
 func (a Album) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(a, format, args...)
+	return printStruct(a, 4, format, args...)
 }
 
 func (c ChoiceList) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(c, format, args...)
+	return printStruct(c, 4, format, args...)
 }
 
 func (c Collection) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(c, format, args...)
+	return printStruct(c, 4, format, args...)
 }
 
 func (d Datum) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(d, format, args...)
+	return printStruct(d, 4, format, args...)
 }
 
 func (f Field) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(f, format, args...)
+	return printStruct(f, 4, format, args...)
 }
 
 func (i Inventory) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(i, format, args...)
+	return printStruct(i, 4, format, args...)
 }
 
 func (i Item) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(i, format, args...)
+	return printStruct(i, 4, format, args...)
 }
 
 func (l Loan) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(l, format, args...)
+	return printStruct(l, 4, format, args...)
 }
 
 func (l Log) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(l, format, args...)
+	return printStruct(l, 4, format, args...)
 }
 
 func (p Photo) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(p, format, args...)
+	return printStruct(p, 4, format, args...)
 }
 
 func (t Tag) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(t, format, args...)
+	return printStruct(t, 4, format, args...)
 }
 
 func (tc TagCategory) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(tc, format, args...)
+	return printStruct(tc, 4, format, args...)
 }
 
 func (t Template) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(t, format, args...)
+	return printStruct(t, 4, format, args...)
 }
 
 func (u User) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(u, format, args...)
+	return printStruct(u, 4, format, args...)
 }
 
 func (w Wish) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(w, format, args...)
+	return printStruct(w, 4, format, args...)
 }
 
 func (w Wishlist) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(w, format, args...)
+	return printStruct(w, 4, format, args...)
 }
