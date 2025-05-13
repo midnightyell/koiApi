@@ -2,10 +2,121 @@ package koiApi
 
 import (
 	"fmt"
+	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/text/currency"
+	"golang.org/x/text/language"
 )
+
+// getDefaultCurrency returns the local currency based on the machine's locale or "USD" if undetermined.
+func getDefaultCurrency() string {
+	// Try LC_ALL or LANG environment variables
+	locale := os.Getenv("LC_ALL")
+	if locale == "" {
+		locale = os.Getenv("LANG")
+	}
+	if locale != "" {
+		// Parse locale (e.g., "en_US.UTF-8" → "en_US")
+		parts := strings.Split(locale, ".")
+		if len(parts) > 0 {
+			tag, err := language.Parse(parts[0])
+			if err == nil {
+				region, _ := tag.Region()
+				if region.IsCountry() {
+					unit, ok := currency.FromRegion(region)
+					if ok {
+						return unit.String()
+					}
+				}
+			}
+		}
+	}
+	return "USD" // Default to USD
+}
+
+// validateCurrency checks if a currency code is a valid ISO 4217 code.
+func validateCurrency(code string) bool {
+	if code == "" {
+		return false
+	}
+	_, err := currency.ParseISO(code)
+	return err == nil
+}
+
+// validateFloat checks if a string is a valid float.
+func validateFloat(value string) bool {
+	if value == "" {
+		return false
+	}
+	_, err := strconv.ParseFloat(value, 64)
+	return err == nil
+}
+
+// validateStruct validates currency and price fields in a struct, setting default currency if needed.
+func validateStruct(v interface{}) error {
+	val := reflect.ValueOf(v)
+	if val.Kind() == reflect.Ptr {
+		if val.IsNil() {
+			return nil // Skip validation for nil pointers
+		}
+		val = val.Elem()
+	}
+	if val.Kind() != reflect.Struct {
+		return fmt.Errorf("expected a struct or pointer to struct, got %v", val.Kind())
+	}
+
+	typ := val.Type()
+	defaultCurrency := getDefaultCurrency()
+
+	switch typ.Name() {
+	case "User":
+		currencyField := val.FieldByName("Currency")
+		if currencyField.IsValid() && currencyField.String() == "" {
+			currencyField.SetString(defaultCurrency)
+		}
+		if currencyField.IsValid() && !validateCurrency(currencyField.String()) {
+			return fmt.Errorf("invalid ISO 4217 currency code for User.Currency: %s", currencyField.String())
+		}
+	case "Datum":
+		datumTypeField := val.FieldByName("DatumType")
+		currencyField := val.FieldByName("Currency")
+		valueField := val.FieldByName("Value")
+		if datumTypeField.IsValid() && datumTypeField.String() == "price" {
+			if currencyField.IsValid() {
+				if currencyField.IsNil() {
+					currencyField.Set(reflect.ValueOf(&defaultCurrency))
+				} else if !validateCurrency(*currencyField.Interface().(*string)) {
+					return fmt.Errorf("invalid ISO 4217 currency code for Datum.Currency: %s", *currencyField.Interface().(*string))
+				}
+			}
+			if valueField.IsValid() && valueField.IsNil() {
+				return fmt.Errorf("Datum.Value must be set for price type")
+			}
+			if valueField.IsValid() && !validateFloat(*valueField.Interface().(*string)) {
+				return fmt.Errorf("invalid float for Datum.Value (price): %s", *valueField.Interface().(*string))
+			}
+		}
+	case "Wish":
+		currencyField := val.FieldByName("Currency")
+		priceField := val.FieldByName("Price")
+		if currencyField.IsValid() {
+			if currencyField.IsNil() && (priceField.IsValid() && !priceField.IsNil()) {
+				currencyField.Set(reflect.ValueOf(&defaultCurrency))
+			} else if !currencyField.IsNil() && !validateCurrency(*currencyField.Interface().(*string)) {
+				return fmt.Errorf("invalid ISO 4217 currency code for Wish.Currency: %s", *currencyField.Interface().(*string))
+			}
+		}
+		if priceField.IsValid() && !priceField.IsNil() && !validateFloat(*priceField.Interface().(*string)) {
+			return fmt.Errorf("invalid float in Wish.Price: %s", *priceField.Interface().(*string))
+		}
+	}
+
+	return nil
+}
 
 // printStruct generically prints the fields of a struct using reflection, aligning values at the same left margin,
 // skipping fields tagged with omitempty if their values would be omitted in JSON marshaling. It prints a formatted
@@ -14,6 +125,11 @@ func printStruct(v interface{}, format string, args ...interface{}) (int, error)
 	if v == nil {
 		fmt.Println("<nil>")
 		return 0, nil
+	}
+
+	// Validate currency and price fields before printing
+	if err := validateStruct(v); err != nil {
+		return 0, err
 	}
 
 	// Get the value and dereference if it's a pointer
@@ -85,6 +201,22 @@ func printStruct(v interface{}, format string, args ...interface{}) (int, error)
 
 		if shouldSkip {
 			continue
+		}
+
+		// Check for non-compliant currency fields from server
+		if (typ.Name() == "User" && name == "Currency") ||
+			((typ.Name() == "Datum" || typ.Name() == "Wish") && name == "Currency") {
+			if field.Kind() == reflect.String && field.String() != "" && !validateCurrency(field.String()) {
+				fmt.Printf("WARNING: Invalid currency code '%s' for %s.%s\n", field.String(), typ.Name(), name)
+			} else if field.Kind() == reflect.Ptr && !field.IsNil() && !validateCurrency(field.Elem().String()) {
+				fmt.Printf("WARNING: Invalid currency code '%s' for %s.%s\n", field.Elem().String(), typ.Name(), name)
+			}
+		}
+		if (typ.Name() == "Datum" && name == "Value" && val.FieldByName("DatumType").String() == "price") ||
+			(typ.Name() == "Wish" && name == "Price") {
+			if field.Kind() == reflect.Ptr && !field.IsNil() && !validateFloat(field.Elem().String()) {
+				fmt.Printf("WARNING: Invalid float value '%s' for %s.%s\n", field.Elem().String(), typ.Name(), name)
+			}
 		}
 
 		prefix := "    " + typ.Name() + "." + name
