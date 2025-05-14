@@ -3,125 +3,84 @@ package koiApi
 import (
 	"context"
 	"fmt"
-	"strings"
+	"os"
 	"time"
 )
 
 // AlbumInterface defines methods for interacting with Album resources.
 type AlbumInterface interface {
-	Create(ctx context.Context, client Client) (*Album, error)
-	Get(ctx context.Context, client Client, id ID) (*Album, error)
-	List(ctx context.Context, client Client) ([]*Album, error)
-	Update(ctx context.Context, client Client, id ID) (*Album, error)
-	Patch(ctx context.Context, client Client, id ID) (*Album, error)
-	Delete(ctx context.Context, client Client, id ID) error
-	ListChildren(ctx context.Context, client Client, id ID) ([]*Album, error)
-	UploadImage(ctx context.Context, client Client, id ID, file []byte) (*Album, error)
-	GetParent(ctx context.Context, client Client, id ID) (*Album, error)
-	ListPhotos(ctx context.Context, client Client, id ID) ([]*Photo, error)
-	Validate(ctx context.Context, client Client) error
+	Create(ctx context.Context, client Client) (*Album, error)                                            // HTTP POST /api/albums
+	Delete(ctx context.Context, client Client, albumID ...ID) error                                       // HTTP DELETE /api/albums/{id}
+	Get(ctx context.Context, client Client, albumID ...ID) (*Album, error)                                // HTTP GET /api/albums/{id}
+	GetParent(ctx context.Context, client Client, albumID ...ID) (*Album, error)                          // HTTP GET /api/albums/{id}/parent
+	IRI() string                                                                                          // /api/albums/{id}
+	List(ctx context.Context, client Client) ([]*Album, error)                                            // HTTP GET /api/albums
+	ListChildren(ctx context.Context, client Client, albumID ...ID) ([]*Album, error)                     // HTTP GET /api/albums/{id}/children
+	ListPhotos(ctx context.Context, client Client, albumID ...ID) ([]*Photo, error)                       // HTTP GET /api/albums/{id}/photos
+	Patch(ctx context.Context, client Client, albumID ...ID) (*Album, error)                              // HTTP PATCH /api/albums/{id}
+	Update(ctx context.Context, client Client, albumID ...ID) (*Album, error)                             // HTTP PUT /api/albums/{id}
+	UploadImage(ctx context.Context, client Client, file []byte, albumID ...ID) (*Album, error)           // HTTP POST /api/albums/{id}/image
+	UploadImageByFile(ctx context.Context, client Client, filename string, albumID ...ID) (*Album, error) // HTTP POST /api/albums/{id}/image
 }
 
-// Album represents an album in Koillection, combining read and write fields.
+// Album represents an album in Koillection, combining fields for JSON-LD and API interactions.
 type Album struct {
-	Context          *Context   `json:"@context,omitempty"`         // JSON-LD only
-	ID_              ID         `json:"@id,omitempty"`              // JSON-LD only (maps to "@id" in JSON, read-only)
-	ID               ID         `json:"id,omitempty"`               // JSON-LD only (maps to "id" in JSON, read-only)
-	Type             string     `json:"@type,omitempty"`            // JSON-LD only
-	Title            string     `json:"title"`                      // Read and write
-	Color            string     `json:"color,omitempty"`            // Read-only
-	Image            *string    `json:"image,omitempty"`            // Read-only
-	Owner            *string    `json:"owner,omitempty"`            // Read-only, IRI
-	Parent           *string    `json:"parent,omitempty"`           // Read and write, IRI
-	SeenCounter      int        `json:"seenCounter,omitempty"`      // Read-only
-	Visibility       Visibility `json:"visibility,omitempty"`       // Read and write
-	ParentVisibility *string    `json:"parentVisibility,omitempty"` // Read-only
-	FinalVisibility  Visibility `json:"finalVisibility,omitempty"`  // Read-only
-	CreatedAt        time.Time  `json:"createdAt"`                  // Read-only
-	UpdatedAt        *time.Time `json:"updatedAt,omitempty"`        // Read-only
-	File             *string    `json:"file,omitempty"`             // Write-only, binary data via multipart form
-	DeleteImage      *bool      `json:"deleteImage,omitempty"`      // Write-only
+	Context          *Context   `json:"@context,omitempty" access:"rw"`         // JSON-LD only
+	_ID              ID         `json:"@id,omitempty" access:"ro"`              // JSON-LD only
+	Type             string     `json:"@type,omitempty" access:"rw"`            // JSON-LD only
+	ID               ID         `json:"id,omitempty" access:"ro"`               // Identifier
+	Title            string     `json:"title" access:"rw"`                      // Album title
+	Color            string     `json:"color,omitempty" access:"ro"`            // Color code
+	Image            *string    `json:"image,omitempty" access:"ro"`            // Image URL
+	Owner            *string    `json:"owner,omitempty" access:"ro"`            // Owner IRI
+	Parent           *string    `json:"parent,omitempty" access:"rw"`           // Parent album IRI
+	SeenCounter      int        `json:"seenCounter,omitempty" access:"ro"`      // View count
+	Visibility       Visibility `json:"visibility,omitempty" access:"rw"`       // Visibility level
+	ParentVisibility *string    `json:"parentVisibility,omitempty" access:"ro"` // Parent visibility
+	FinalVisibility  Visibility `json:"finalVisibility,omitempty" access:"ro"`  // Effective visibility
+	CreatedAt        time.Time  `json:"createdAt" access:"ro"`                  // Creation timestamp
+	UpdatedAt        *time.Time `json:"updatedAt,omitempty" access:"ro"`        // Update timestamp
+	File             *string    `json:"file,omitempty" access:"wo"`             // Image file data
+	DeleteImage      *bool      `json:"deleteImage,omitempty" access:"wo"`      // Flag to delete image
 }
 
-// Validate checks the Album's fields for validity, using ctx for cancellation and client for optional IRI validation.
-func (a *Album) Validate(ctx context.Context, client Client) error {
-	// Check for context cancellation
-	if err := ctx.Err(); err != nil {
-		return fmt.Errorf("validation cancelled: %w", err)
+// whichID
+func (a *Album) whichID(albumID ...ID) ID {
+	if len(albumID) > 0 {
+		return albumID[0]
 	}
-
-	// Required fields
-	if a.Title == "" {
-		return fmt.Errorf("title must not be empty")
-	}
-
-	// Visibility must be a valid value
-	switch a.Visibility {
-	case VisibilityPublic, VisibilityInternal, VisibilityPrivate, "":
-		// Valid or unset (server may set default)
-	default:
-		return fmt.Errorf("invalid visibility value: %s", a.Visibility)
-	}
-
-	// Optional fields
-	if a.Parent != nil {
-		if *a.Parent == "" {
-			return fmt.Errorf("parent IRI must not be empty if set")
-		}
-		if !strings.HasPrefix(*a.Parent, "/api/albums/") {
-			return fmt.Errorf("parent IRI must start with /api/albums/: %s", *a.Parent)
-		}
-		// Optionally validate Parent exists if client is provided
-		if client != nil {
-			parts := strings.Split(*a.Parent, "/")
-			if len(parts) < 4 {
-				return fmt.Errorf("invalid parent IRI format: %s", *a.Parent)
-			}
-			parentID := ID(parts[3])
-			_, err := client.GetAlbum(ctx, parentID)
-			if err != nil {
-				return fmt.Errorf("invalid parent album %s: %w", *a.Parent, err)
-			}
-		}
-	}
-
-	if a.File != nil && *a.File == "" {
-		return fmt.Errorf("file must not be empty if set")
-	}
-
-	// Read-only fields for creation vs. update
-	if a.ID == "" && a.ID_ == "" {
-		// Creation: read-only fields should be empty
-		if a.ID_ != "" {
-			return fmt.Errorf("ID_ must be empty for creation")
-		}
-		if a.ID != "" {
-			return fmt.Errorf("ID must be empty for creation")
-		}
-		if a.Type != "" && a.Type != "Album" {
-			return fmt.Errorf("Type must be empty or 'Album' for creation: %s", a.Type)
-		}
-	} else {
-		// Update: ID should be non-empty
-		if a.ID == "" {
-			return fmt.Errorf("ID must not be empty for update")
-		}
-	}
-
-	return nil
+	return a.ID
 }
 
-// Create calls Client.CreateAlbum to create a new Album.
+// Create
 func (a *Album) Create(ctx context.Context, client Client) (*Album, error) {
 	return client.CreateAlbum(ctx, a)
 }
 
-// Get retrieves an Album by ID using Client.GetAlbum.
-func (a *Album) Get(ctx context.Context, client Client, id ID) (*Album, error) {
+// Delete
+func (a *Album) Delete(ctx context.Context, client Client, albumID ...ID) error {
+	id := a.whichID(albumID...)
+	return client.DeleteAlbum(ctx, id)
+}
+
+// Get
+func (a *Album) Get(ctx context.Context, client Client, albumID ...ID) (*Album, error) {
+	id := a.whichID(albumID...)
 	return client.GetAlbum(ctx, id)
 }
 
-// List retrieves all Albums across all pages using Client.ListAlbums.
+// GetParent
+func (a *Album) GetParent(ctx context.Context, client Client, albumID ...ID) (*Album, error) {
+	id := a.whichID(albumID...)
+	return client.GetAlbumParent(ctx, id)
+}
+
+// IRI
+func (a *Album) IRI() string {
+	return fmt.Sprintf("/api/albums/%s", a.ID)
+}
+
+// List
 func (a *Album) List(ctx context.Context, client Client) ([]*Album, error) {
 	var allAlbums []*Album
 	for page := 1; ; page++ {
@@ -137,23 +96,9 @@ func (a *Album) List(ctx context.Context, client Client) ([]*Album, error) {
 	return allAlbums, nil
 }
 
-// Update updates an Album by ID using Client.UpdateAlbum.
-func (a *Album) Update(ctx context.Context, client Client, id ID) (*Album, error) {
-	return client.UpdateAlbum(ctx, id, a)
-}
-
-// Patch partially updates an Album by ID using Client.PatchAlbum.
-func (a *Album) Patch(ctx context.Context, client Client, id ID) (*Album, error) {
-	return client.PatchAlbum(ctx, id, a)
-}
-
-// Delete removes an Album by ID using Client.DeleteAlbum.
-func (a *Album) Delete(ctx context.Context, client Client, id ID) error {
-	return client.DeleteAlbum(ctx, id)
-}
-
-// ListChildren retrieves all child Albums for the given ID across all pages using Client.ListAlbumChildren.
-func (a *Album) ListChildren(ctx context.Context, client Client, id ID) ([]*Album, error) {
+// ListChildren
+func (a *Album) ListChildren(ctx context.Context, client Client, albumID ...ID) ([]*Album, error) {
+	id := a.whichID(albumID...)
 	var allChildren []*Album
 	for page := 1; ; page++ {
 		children, err := client.ListAlbumChildren(ctx, id, page)
@@ -168,23 +113,14 @@ func (a *Album) ListChildren(ctx context.Context, client Client, id ID) ([]*Albu
 	return allChildren, nil
 }
 
-// UploadImage uploads an image for an Album using Client.UploadAlbumImage.
-func (a *Album) UploadImage(ctx context.Context, client Client, id ID, file []byte) (*Album, error) {
-	return client.UploadAlbumImage(ctx, id, file)
-}
-
-// GetParent retrieves the parent Album using Client.GetAlbumParent.
-func (a *Album) GetParent(ctx context.Context, client Client, id ID) (*Album, error) {
-	return client.GetAlbumParent(ctx, id)
-}
-
-// ListPhotos retrieves all Photos for the given ID across all pages using Client.ListAlbumPhotos.
-func (a *Album) ListPhotos(ctx context.Context, client Client, id ID) ([]*Photo, error) {
+// ListPhotos
+func (a *Album) ListPhotos(ctx context.Context, client Client, albumID ...ID) ([]*Photo, error) {
+	id := a.whichID(albumID...)
 	var allPhotos []*Photo
 	for page := 1; ; page++ {
 		photos, err := client.ListAlbumPhotos(ctx, id, page)
 		if err != nil {
-			return fmt.Errorf("failed to list photos for ID %s on page %d: %w", id, page, err)
+			return nil, fmt.Errorf("failed to list photos for ID %s on page %d: %w", id, page, err)
 		}
 		if len(photos) == 0 {
 			break
@@ -192,4 +128,32 @@ func (a *Album) ListPhotos(ctx context.Context, client Client, id ID) ([]*Photo,
 		allPhotos = append(allPhotos, photos...)
 	}
 	return allPhotos, nil
+}
+
+// Patch
+func (a *Album) Patch(ctx context.Context, client Client, albumID ...ID) (*Album, error) {
+	id := a.whichID(albumID...)
+	return client.PatchAlbum(ctx, id, a)
+}
+
+// Update
+func (a *Album) Update(ctx context.Context, client Client, albumID ...ID) (*Album, error) {
+	id := a.whichID(albumID...)
+	return client.UpdateAlbum(ctx, id, a)
+}
+
+// UploadImage
+func (a *Album) UploadImage(ctx context.Context, client Client, file []byte, albumID ...ID) (*Album, error) {
+	id := a.whichID(albumID...)
+	return client.UploadAlbumImage(ctx, id, file)
+}
+
+// UploadImageByFile
+func (a *Album) UploadImageByFile(ctx context.Context, client Client, filename string, albumID ...ID) (*Album, error) {
+	id := a.whichID(albumID...)
+	file, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
+	}
+	return client.UploadAlbumImage(ctx, id, file)
 }

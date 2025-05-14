@@ -34,6 +34,133 @@ type httpClient struct {
 	token      string
 }
 
+// Client defines the interface for interacting with the Koillection REST API.
+type Client interface {
+	CheckLogin(ctx context.Context, username, password string) (string, error)                 // HTTP POST /api/authentication_token
+	GetMetrics(ctx context.Context) (*Metrics, error)                                          // HTTP GET /api/metrics
+	CreateAlbum(ctx context.Context, album *Album) (*Album, error)                             // HTTP POST /api/albums
+	GetAlbum(ctx context.Context, id ID) (*Album, error)                                       // HTTP GET /api/albums/{id}
+	ListAlbums(ctx context.Context, page int) ([]*Album, error)                                // HTTP GET /api/albums
+	UpdateAlbum(ctx context.Context, id ID, album *Album) (*Album, error)                      // HTTP PUT /api/albums/{id}
+	PatchAlbum(ctx context.Context, id ID, album *Album) (*Album, error)                       // HTTP PATCH /api/albums/{id}
+	DeleteAlbum(ctx context.Context, id ID) error                                              // HTTP DELETE /api/albums/{id}
+	ListAlbumChildren(ctx context.Context, id ID, page int) ([]*Album, error)                  // HTTP GET /api/albums/{id}/children
+	UploadAlbumImage(ctx context.Context, id ID, file []byte) (*Album, error)                  // HTTP POST /api/albums/{id}/image
+	GetAlbumParent(ctx context.Context, id ID) (*Album, error)                                 // HTTP GET /api/albums/{id}/parent
+	ListAlbumPhotos(ctx context.Context, id ID, page int) ([]*Photo, error)                    // HTTP GET /api/albums/{id}/photos
+	CreateChoiceList(ctx context.Context, choiceList *ChoiceList) (*ChoiceList, error)         // HTTP POST /api/choice_lists
+	GetChoiceList(ctx context.Context, id ID) (*ChoiceList, error)                             // HTTP GET /api/choice_lists/{id}
+	ListChoiceLists(ctx context.Context, page int) ([]*ChoiceList, error)                      // HTTP GET /api/choice_lists
+	UpdateChoiceList(ctx context.Context, id ID, choiceList *ChoiceList) (*ChoiceList, error)  // HTTP PUT /api/choice_lists/{id}
+	PatchChoiceList(ctx context.Context, id ID, choiceList *ChoiceList) (*ChoiceList, error)   // HTTP PATCH /api/choice_lists/{id}
+	DeleteChoiceList(ctx context.Context, id ID) error                                         // HTTP DELETE /api/choice_lists/{id}
+	CreateCollection(ctx context.Context, collection *Collection) (*Collection, error)         // HTTP POST /api/collections
+	GetCollection(ctx context.Context, id ID) (*Collection, error)                             // HTTP GET /api/collections/{id}
+	ListCollections(ctx context.Context, page int) ([]*Collection, error)                      // HTTP GET /api/collections
+	UpdateCollection(ctx context.Context, id ID, collection *Collection) (*Collection, error)  // HTTP PUT /api/collections/{id}
+	PatchCollection(ctx context.Context, id ID, collection *Collection) (*Collection, error)   // HTTP PATCH /api/collections/{id}
+	DeleteCollection(ctx context.Context, id ID) error                                         // HTTP DELETE /api/collections/{id}
+	ListCollectionChildren(ctx context.Context, id ID, page int) ([]*Collection, error)        // HTTP GET /api/collections/{id}/children
+	UploadCollectionImage(ctx context.Context, id ID, file []byte) (*Collection, error)        // HTTP POST /api/collections/{id}/image
+	GetCollectionParent(ctx context.Context, id ID) (*Collection, error)                       // HTTP GET /api/collections/{id}/parent
+	ListCollectionItems(ctx context.Context, id ID, page int) ([]*Item, error)                 // HTTP GET /api/collections/{id}/items
+	ListCollectionData(ctx context.Context, id ID, page int) ([]*Datum, error)                 // HTTP GET /api/collections/{id}/data
+	GetCollectionDefaultTemplate(ctx context.Context, id ID) (*Template, error)                // HTTP GET /api/collections/{id}/items_default_template
+	CreateDatum(ctx context.Context, datum *Datum) (*Datum, error)                             // HTTP POST /api/data
+	GetDatum(ctx context.Context, id ID) (*Datum, error)                                       // HTTP GET /api/data/{id}
+	ListData(ctx context.Context, page int) ([]*Datum, error)                                  // HTTP GET /api/data
+	UpdateDatum(ctx context.Context, id ID, datum *Datum) (*Datum, error)                      // HTTP PUT /api/data/{id}
+	PatchDatum(ctx context.Context, id ID, datum *Datum) (*Datum, error)                       // HTTP PATCH /api/data/{id}
+	DeleteDatum(ctx context.Context, id ID) error                                              // HTTP DELETE /api/data/{id}
+	UploadDatumFile(ctx context.Context, id ID, file []byte) (*Datum, error)                   // HTTP POST /api/data/{id}/file
+	UploadDatumImage(ctx context.Context, id ID, image []byte) (*Datum, error)                 // HTTP POST /api/data/{id}/image
+	UploadDatumVideo(ctx context.Context, id ID, video []byte) (*Datum, error)                 // HTTP POST /api/data/{id}/video
+	GetDatumItem(ctx context.Context, id ID) (*Item, error)                                    // HTTP GET /api/data/{id}/item
+	GetDatumCollection(ctx context.Context, id ID) (*Collection, error)                        // HTTP GET /api/data/{id}/collection
+	CreateField(ctx context.Context, field *Field) (*Field, error)                             // HTTP POST /api/fields
+	GetField(ctx context.Context, id ID) (*Field, error)                                       // HTTP GET /api/fields/{id}
+	ListFields(ctx context.Context, page int) ([]*Field, error)                                // HTTP GET /api/fields
+	UpdateField(ctx context.Context, id ID, field *Field) (*Field, error)                      // HTTP PUT /api/fields/{id}
+	PatchField(ctx context.Context, id ID, field *Field) (*Field, error)                       // HTTP PATCH /api/fields/{id}
+	DeleteField(ctx context.Context, id ID) error                                              // HTTP DELETE /api/fields/{id}
+	GetFieldTemplate(ctx context.Context, id ID) (*Template, error)                            // HTTP GET /api/fields/{id}/template
+	ListTemplateFields(ctx context.Context, templateid ID, page int) ([]*Field, error)         // HTTP GET /api/templates/{id}/fields
+	ListInventories(ctx context.Context, page int) ([]*Inventory, error)                       // HTTP GET /api/inventories
+	GetInventory(ctx context.Context, id ID) (*Inventory, error)                               // HTTP GET /api/inventories/{id}
+	DeleteInventory(ctx context.Context, id ID) error                                          // HTTP DELETE /api/inventories/{id}
+	CreateItem(ctx context.Context, item *Item) (*Item, error)                                 // HTTP POST /api/items
+	GetItem(ctx context.Context, id ID) (*Item, error)                                         // HTTP GET /api/items/{id}
+	ListItems(ctx context.Context, page int) ([]*Item, error)                                  // HTTP GET /api/items
+	UpdateItem(ctx context.Context, id ID, item *Item) (*Item, error)                          // HTTP PUT /api/items/{id}
+	PatchItem(ctx context.Context, id ID, item *Item) (*Item, error)                           // HTTP PATCH /api/items/{id}
+	DeleteItem(ctx context.Context, id ID) error                                               // HTTP DELETE /api/items/{id}
+	UploadItemImage(ctx context.Context, id ID, file []byte) (*Item, error)                    // HTTP POST /api/items/{id}/image
+	ListItemRelatedItems(ctx context.Context, id ID, page int) ([]*Item, error)                // HTTP GET /api/items/{id}/related_items
+	ListItemLoans(ctx context.Context, id ID, page int) ([]*Loan, error)                       // HTTP GET /api/items/{id}/loans
+	ListItemTags(ctx context.Context, id ID, page int) ([]*Tag, error)                         // HTTP GET /api/items/{id}/tags
+	ListItemData(ctx context.Context, id ID, page int) ([]*Datum, error)                       // HTTP GET /api/items/{id}/data
+	GetItemCollection(ctx context.Context, id ID) (*Collection, error)                         // HTTP GET /api/items/{id}/collection
+	CreateLoan(ctx context.Context, loan *Loan) (*Loan, error)                                 // HTTP POST /api/loans
+	GetLoan(ctx context.Context, id ID) (*Loan, error)                                         // HTTP GET /api/loans/{id}
+	ListLoans(ctx context.Context, page int) ([]*Loan, error)                                  // HTTP GET /api/loans
+	UpdateLoan(ctx context.Context, id ID, loan *Loan) (*Loan, error)                          // HTTP PUT /api/loans/{id}
+	PatchLoan(ctx context.Context, id ID, loan *Loan) (*Loan, error)                           // HTTP PATCH /api/loans/{id}
+	DeleteLoan(ctx context.Context, id ID) error                                               // HTTP DELETE /api/loans/{id}
+	GetLoanItem(ctx context.Context, id ID) (*Item, error)                                     // HTTP GET /api/loans/{id}/item
+	GetLog(ctx context.Context, id ID) (*Log, error)                                           // HTTP GET /api/logs/{id}
+	ListLogs(ctx context.Context, page int) ([]*Log, error)                                    // HTTP GET /api/logs
+	CreatePhoto(ctx context.Context, photo *Photo) (*Photo, error)                             // HTTP POST /api/photos
+	GetPhoto(ctx context.Context, id ID) (*Photo, error)                                       // HTTP GET /api/photos/{id}
+	ListPhotos(ctx context.Context, page int) ([]*Photo, error)                                // HTTP GET /api/photos
+	UpdatePhoto(ctx context.Context, id ID, photo *Photo) (*Photo, error)                      // HTTP PUT /api/photos/{id}
+	PatchPhoto(ctx context.Context, id ID, photo *Photo) (*Photo, error)                       // HTTP PATCH /api/photos/{id}
+	DeletePhoto(ctx context.Context, id ID) error                                              // HTTP DELETE /api/photos/{id}
+	UploadPhotoImage(ctx context.Context, id ID, file []byte) (*Photo, error)                  // HTTP POST /api/photos/{id}/image
+	GetPhotoAlbum(ctx context.Context, id ID) (*Album, error)                                  // HTTP GET /api/photos/{id}/album
+	CreateTag(ctx context.Context, tag *Tag) (*Tag, error)                                     // HTTP POST /api/tags
+	GetTag(ctx context.Context, id ID) (*Tag, error)                                           // HTTP GET /api/tags/{id}
+	ListTags(ctx context.Context, page int) ([]*Tag, error)                                    // HTTP GET /api/tags
+	UpdateTag(ctx context.Context, id ID, tag *Tag) (*Tag, error)                              // HTTP PUT /api/tags/{id}
+	PatchTag(ctx context.Context, id ID, tag *Tag) (*Tag, error)                               // HTTP PATCH /api/tags/{id}
+	DeleteTag(ctx context.Context, id ID) error                                                // HTTP DELETE /api/tags/{id}
+	UploadTagImage(ctx context.Context, id ID, file []byte) (*Tag, error)                      // HTTP POST /api/tags/{id}/image
+	ListTagItems(ctx context.Context, id ID, page int) ([]*Item, error)                        // HTTP GET /api/tags/{id}/items
+	GetCategoryOfTag(ctx context.Context, id ID) (*TagCategory, error)                         // HTTP GET /api/tags/{id}/category
+	CreateTagCategory(ctx context.Context, category *TagCategory) (*TagCategory, error)        // HTTP POST /api/tag_categories
+	GetTagCategory(ctx context.Context, id ID) (*TagCategory, error)                           // HTTP GET /api/tag_categories/{id}
+	ListTagCategories(ctx context.Context, page int) ([]*TagCategory, error)                   // HTTP GET /api/tag_categories
+	UpdateTagCategory(ctx context.Context, id ID, category *TagCategory) (*TagCategory, error) // HTTP PUT /api/tag_categories/{id}
+	PatchTagCategory(ctx context.Context, id ID, category *TagCategory) (*TagCategory, error)  // HTTP PATCH /api/tag_categories/{id}
+	DeleteTagCategory(ctx context.Context, id ID) error                                        // HTTP DELETE /api/tag_categories/{id}
+	ListTagCategoryTags(ctx context.Context, id ID, page int) ([]*Tag, error)                  // HTTP GET /api/tag_categories/{id}/tags
+	CreateTemplate(ctx context.Context, template *Template) (*Template, error)                 // HTTP POST /api/templates
+	GetTemplate(ctx context.Context, id ID) (*Template, error)                                 // HTTP GET /api/templates/{id}
+	ListTemplates(ctx context.Context, page int) ([]*Template, error)                          // HTTP GET /api/templates
+	UpdateTemplate(ctx context.Context, id ID, template *Template) (*Template, error)          // HTTP PUT /api/templates/{id}
+	PatchTemplate(ctx context.Context, id ID, template *Template) (*Template, error)           // HTTP PATCH /api/templates/{id}
+	DeleteTemplate(ctx context.Context, id ID) error                                           // HTTP DELETE /api/templates/{id}
+	GetUser(ctx context.Context, id ID) (*User, error)                                         // HTTP GET /api/users/{id}
+	ListUsers(ctx context.Context, page int) ([]*User, error)                                  // HTTP GET /api/users
+	CreateWish(ctx context.Context, wish *Wish) (*Wish, error)                                 // HTTP POST /api/wishes
+	GetWish(ctx context.Context, id ID) (*Wish, error)                                         // HTTP GET /api/wishes/{id}
+	ListWishes(ctx context.Context, page int) ([]*Wish, error)                                 // HTTP GET /api/wishes
+	UpdateWish(ctx context.Context, id ID, wish *Wish) (*Wish, error)                          // HTTP PUT /api/wishes/{id}
+	PatchWish(ctx context.Context, id ID, wish *Wish) (*Wish, error)                           // HTTP PATCH /api/wishes/{id}
+	DeleteWish(ctx context.Context, id ID) error                                               // HTTP DELETE /api/wishes/{id}
+	UploadWishImage(ctx context.Context, id ID, file []byte) (*Wish, error)                    // HTTP POST /api/wishes/{id}/image
+	GetWishWishlist(ctx context.Context, id ID) (*Wishlist, error)                             // HTTP GET /api/wishes/{id}/wishlist
+	CreateWishlist(ctx context.Context, wishlist *Wishlist) (*Wishlist, error)                 // HTTP POST /api/wishlists
+	GetWishlist(ctx context.Context, id ID) (*Wishlist, error)                                 // HTTP GET /api/wishlists/{id}
+	ListWishlists(ctx context.Context, page int) ([]*Wishlist, error)                          // HTTP GET /api/wishlists
+	UpdateWishlist(ctx context.Context, id ID, wishlist *Wishlist) (*Wishlist, error)          // HTTP PUT /api/wishlists/{id}
+	PatchWishlist(ctx context.Context, id ID, wishlist *Wishlist) (*Wishlist, error)           // HTTP PATCH /api/wishlists/{id}
+	DeleteWishlist(ctx context.Context, id ID) error                                           // HTTP DELETE /api/wishlists/{id}
+	ListWishlistWishes(ctx context.Context, id ID, page int) ([]*Wish, error)                  // HTTP GET /api/wishlists/{id}/wishes
+	ListWishlistChildren(ctx context.Context, id ID, page int) ([]*Wishlist, error)            // HTTP GET /api/wishlists/{id}/children
+	UploadWishlistImage(ctx context.Context, id ID, file []byte) (*Wishlist, error)            // HTTP POST /api/wishlists/{id}/image
+	GetWishlistParent(ctx context.Context, id ID) (*Wishlist, error)                           // HTTP GET /api/wishlists/{id}/parent
+}
+
 // NewHTTPClient creates a new HTTP client for the Koillection API.
 func NewHTTPClient(baseURL string, timeout time.Duration) Client {
 
@@ -68,7 +195,11 @@ func (c *httpClient) doRequest(ctx context.Context, method, path string, body io
 	} else if isMultipart {
 		req.Header.Set("Content-Type", "multipart/form-data")
 	}
-	req.Header.Set("Accept", "application/ld+json")
+	if path == "/api/metrics" {
+		req.Header.Set("Accept", "text/plain")
+	} else {
+		req.Header.Set("Accept", "application/ld+json")
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -1298,35 +1429,4 @@ func (c *httpClient) GetWishlistParent(ctx context.Context, id ID) (*Wishlist, e
 		return nil, err
 	}
 	return &wishlist, nil
-}
-
-// DisplayMetricsTable displays the metrics as a text-based table.
-func DisplayMetricsTable(w io.Writer, metrics *Metrics) {
-	if metrics == nil || len(*metrics) == 0 {
-		fmt.Fprintln(w, "No metrics available")
-		return
-	}
-
-	// Find the longest key and value for column widths.
-	maxKeyLen, maxValueLen := 4, 5 // Minimum lengths for "Key" and "Value" headers.
-	for key, value := range *metrics {
-		if len(key) > maxKeyLen {
-			maxKeyLen = len(key)
-		}
-		if len(value) > maxValueLen {
-			maxValueLen = len(value)
-		}
-	}
-
-	// Create format strings for headers and rows.
-	headerFormat := fmt.Sprintf("%%-%ds | %%-%ds\n", maxKeyLen, maxValueLen)
-	rowFormat := fmt.Sprintf("%%-%ds | %%-%ds\n", maxKeyLen, maxValueLen)
-	separator := strings.Repeat("-", maxKeyLen) + "-+-" + strings.Repeat("-", maxValueLen)
-
-	// Print table.
-	fmt.Fprintf(w, headerFormat, "Key", "Value")
-	fmt.Fprintln(w, separator)
-	for key, value := range *metrics {
-		fmt.Fprintf(w, rowFormat, key, value)
-	}
 }
