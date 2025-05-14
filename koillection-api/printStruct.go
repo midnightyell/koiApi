@@ -58,7 +58,7 @@ func validateFloat(value string) bool {
 	return err == nil
 }
 
-// validateStruct validates currency and price fields in a struct, setting default currency if needed.
+// validateStruct validates currency and price fields in a struct, setting default currency if addressable.
 func validateStruct(v interface{}) error {
 	val := reflect.ValueOf(v)
 	if val.Kind() == reflect.Ptr {
@@ -71,46 +71,56 @@ func validateStruct(v interface{}) error {
 		return fmt.Errorf("expected a struct or pointer to struct, got %v", val.Kind())
 	}
 
+	// Ensure the struct is addressable for modifications
+	if !val.CanSet() {
+		return fmt.Errorf("struct %v is not addressable; pass a pointer to modify currency fields", val.Type().Name())
+	}
+
 	typ := val.Type()
 	defaultCurrency := getDefaultCurrency()
 
 	switch typ.Name() {
 	case "User":
 		currencyField := val.FieldByName("Currency")
-		if currencyField.IsValid() && currencyField.String() == "" {
+		if !currencyField.IsValid() {
+			return fmt.Errorf("User.Currency field not found")
+		}
+		if currencyField.String() == "" && currencyField.CanSet() {
 			currencyField.SetString(defaultCurrency)
 		}
-		if currencyField.IsValid() && !validateCurrency(currencyField.String()) {
+		if !validateCurrency(currencyField.String()) {
 			return fmt.Errorf("invalid ISO 4217 currency code for User.Currency: %s", currencyField.String())
 		}
 	case "Datum":
 		datumTypeField := val.FieldByName("DatumType")
 		currencyField := val.FieldByName("Currency")
 		valueField := val.FieldByName("Value")
-		if datumTypeField.IsValid() && datumTypeField.String() == "price" {
-			if currencyField.IsValid() {
-				if currencyField.IsNil() {
-					currencyField.Set(reflect.ValueOf(&defaultCurrency))
-				} else if !validateCurrency(*currencyField.Interface().(*string)) {
-					return fmt.Errorf("invalid ISO 4217 currency code for Datum.Currency: %s", *currencyField.Interface().(*string))
-				}
+		if !datumTypeField.IsValid() || !currencyField.IsValid() || !valueField.IsValid() {
+			return fmt.Errorf("Datum fields (DatumType, Currency, Value) not found")
+		}
+		if datumTypeField.String() == "price" {
+			if currencyField.IsNil() && currencyField.CanSet() {
+				currencyField.Set(reflect.ValueOf(&defaultCurrency))
+			} else if !currencyField.IsNil() && !validateCurrency(*currencyField.Interface().(*string)) {
+				return fmt.Errorf("invalid ISO 4217 currency code for Datum.Currency: %s", *currencyField.Interface().(*string))
 			}
-			if valueField.IsValid() && valueField.IsNil() {
+			if valueField.IsNil() {
 				return fmt.Errorf("Datum.Value must be set for price type")
 			}
-			if valueField.IsValid() && !validateFloat(*valueField.Interface().(*string)) {
+			if !validateFloat(*valueField.Interface().(*string)) {
 				return fmt.Errorf("invalid float for Datum.Value (price): %s", *valueField.Interface().(*string))
 			}
 		}
 	case "Wish":
 		currencyField := val.FieldByName("Currency")
 		priceField := val.FieldByName("Price")
-		if currencyField.IsValid() {
-			if currencyField.IsNil() && (priceField.IsValid() && !priceField.IsNil()) {
-				currencyField.Set(reflect.ValueOf(&defaultCurrency))
-			} else if !currencyField.IsNil() && !validateCurrency(*currencyField.Interface().(*string)) {
-				return fmt.Errorf("invalid ISO 4217 currency code for Wish.Currency: %s", *currencyField.Interface().(*string))
-			}
+		if !currencyField.IsValid() || !priceField.IsValid() {
+			return fmt.Errorf("Wish fields (Currency, Price) not found")
+		}
+		if currencyField.IsNil() && priceField.IsValid() && !priceField.IsNil() && currencyField.CanSet() {
+			currencyField.Set(reflect.ValueOf(&defaultCurrency))
+		} else if !currencyField.IsNil() && !validateCurrency(*currencyField.Interface().(*string)) {
+			return fmt.Errorf("invalid ISO 4217 currency code for Wish.Currency: %s", *currencyField.Interface().(*string))
 		}
 		if priceField.IsValid() && !priceField.IsNil() && !validateFloat(*priceField.Interface().(*string)) {
 			return fmt.Errorf("invalid float in Wish.Price: %s", *priceField.Interface().(*string))
@@ -368,10 +378,10 @@ func PrintItemWithData(item *Item, data []*Datum, verbose bool, format string, a
 	// Print each Datum with 8-space indent
 	for i, datum := range sortedData {
 		if datum == nil {
-			fmt.Printf("    Datum[%d]: <nil>\n", i)
+			fmt.Printf("        Datum[%d]: <nil>\n", i)
 			continue
 		}
-		datumFields, err := printStruct(datum, 8, verbose, "    Datum[%d]\n", i)
+		datumFields, err := printStruct(datum, 8, verbose, "        Datum[%d]\n", i)
 		if err != nil {
 			return totalFields, fmt.Errorf("failed to print datum %d: %w", i, err)
 		}
@@ -383,65 +393,65 @@ func PrintItemWithData(item *Item, data []*Datum, verbose bool, format string, a
 
 // Print methods for each struct type
 func (a Album) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(a, 4, true, format, args...)
+	return printStruct(&a, 4, true, format, args...)
 }
 
 func (c ChoiceList) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(c, 4, true, format, args...)
+	return printStruct(&c, 4, true, format, args...)
 }
 
 func (c Collection) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(c, 4, true, format, args...)
+	return printStruct(&c, 4, true, format, args...)
 }
 
 func (d Datum) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(d, 4, true, format, args...)
+	return printStruct(&d, 4, true, format, args...)
 }
 
 func (f Field) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(f, 4, true, format, args...)
+	return printStruct(&f, 4, true, format, args...)
 }
 
 func (i Inventory) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(i, 4, true, format, args...)
+	return printStruct(&i, 4, true, format, args...)
 }
 
 func (i Item) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(i, 4, true, format, args...)
+	return printStruct(&i, 4, true, format, args...)
 }
 
 func (l Loan) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(l, 4, true, format, args...)
+	return printStruct(&l, 4, true, format, args...)
 }
 
 func (l Log) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(l, 4, true, format, args...)
+	return printStruct(&l, 4, true, format, args...)
 }
 
 func (p Photo) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(p, 4, true, format, args...)
+	return printStruct(&p, 4, true, format, args...)
 }
 
 func (t Tag) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(t, 4, true, format, args...)
+	return printStruct(&t, 4, true, format, args...)
 }
 
 func (tc TagCategory) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(tc, 4, true, format, args...)
+	return printStruct(&tc, 4, true, format, args...)
 }
 
 func (t Template) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(t, 4, true, format, args...)
+	return printStruct(&t, 4, true, format, args...)
 }
 
 func (u User) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(u, 4, true, format, args...)
+	return printStruct(&u, 4, true, format, args...)
 }
 
 func (w Wish) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(w, 4, true, format, args...)
+	return printStruct(&w, 4, true, format, args...)
 }
 
 func (w Wishlist) Print(format string, args ...interface{}) (int, error) {
-	return printStruct(w, 4, true, format, args...)
+	return printStruct(&w, 4, true, format, args...)
 }
