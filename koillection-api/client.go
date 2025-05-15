@@ -29,9 +29,11 @@ var (
 
 // httpClient implements the Client interface using net/http.
 type httpClient struct {
-	baseURL    string
-	httpClient *http.Client
-	token      string
+	baseURL      string
+	httpClient   *http.Client
+	token        string
+	lastError    error
+	lastResponse *http.Response
 }
 
 // Client defines the interface for interacting with the Koillection REST API.
@@ -159,6 +161,7 @@ type Client interface {
 	ListWishlistChildren(ctx context.Context, id ID, page int) ([]*Wishlist, error)            // HTTP GET /api/wishlists/{id}/children
 	UploadWishlistImage(ctx context.Context, id ID, file []byte) (*Wishlist, error)            // HTTP POST /api/wishlists/{id}/image
 	GetWishlistParent(ctx context.Context, id ID) (*Wishlist, error)                           // HTTP GET /api/wishlists/{id}/parent
+	GetResponse() string
 }
 
 // NewHTTPClient creates a new HTTP client for the Koillection API.
@@ -176,6 +179,18 @@ func NewHTTPClient(baseURL string, timeout time.Duration) Client {
 			Timeout: timeout,
 		},
 	}
+}
+
+func (c *httpClient) GetResponse() string {
+	if c.lastResponse == nil {
+		return "No response"
+	}
+	body, err := io.ReadAll(c.lastResponse.Body)
+	if err != nil {
+		return fmt.Sprintf("Error reading response body: %v", err)
+	}
+	return fmt.Sprintf("Response Status: %s\nBody: %s", c.lastResponse.Status, string(body))
+
 }
 
 // doRequest sends an HTTP request and returns the response body.
@@ -201,10 +216,12 @@ func (c *httpClient) doRequest(ctx context.Context, method, path string, body io
 		req.Header.Set("Accept", "application/ld+json")
 	}
 
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("sending request: %w", err)
+	c.lastResponse, c.lastError = c.httpClient.Do(req)
+	if c.lastError != nil {
+		return nil, fmt.Errorf("sending request: %w", c.lastError)
 	}
+
+	resp := c.lastResponse
 
 	switch resp.StatusCode {
 	case http.StatusOK, http.StatusCreated, http.StatusNoContent:
@@ -230,7 +247,9 @@ func (c *httpClient) doRequest(ctx context.Context, method, path string, body io
 
 // getResource retrieves a single resource and decodes it into the provided struct.
 func (c *httpClient) getResource(ctx context.Context, path string, out interface{}) error {
-	resp, err := c.doRequest(ctx, http.MethodGet, path, nil, false)
+	c.lastResponse, c.lastError = c.doRequest(ctx, http.MethodGet, path, nil, false)
+	resp := c.lastResponse
+	err := c.lastError
 	if err != nil {
 		return err
 	}
@@ -251,7 +270,9 @@ func (c *httpClient) listResources(ctx context.Context, path string, page int, o
 	}
 	u.RawQuery = q.Encode()
 
-	resp, err := c.doRequest(ctx, http.MethodGet, u.Path+"?"+u.RawQuery, nil, false)
+	c.lastResponse, c.lastError = c.doRequest(ctx, http.MethodGet, u.Path+"?"+u.RawQuery, nil, false)
+	resp := c.lastResponse
+
 	if err != nil {
 		return err
 	}
@@ -283,7 +304,10 @@ func (c *httpClient) postResource(ctx context.Context, path string, in, out inte
 		return fmt.Errorf("encoding request body: %w", err)
 	}
 
-	resp, err := c.doRequest(ctx, http.MethodPost, path, bytes.NewReader(body), false)
+	c.lastResponse, c.lastError = c.doRequest(ctx, http.MethodPost, path, bytes.NewReader(body), false)
+	resp := c.lastResponse
+	err = c.lastError
+
 	if err != nil {
 		return err
 	}
@@ -302,7 +326,10 @@ func (c *httpClient) putResource(ctx context.Context, path string, in, out inter
 		return fmt.Errorf("encoding request body: %w", err)
 	}
 
-	resp, err := c.doRequest(ctx, http.MethodPut, path, bytes.NewReader(body), false)
+	c.lastResponse, c.lastError = c.doRequest(ctx, http.MethodPut, path, bytes.NewReader(body), false)
+	resp := c.lastResponse
+	err = c.lastError
+
 	if err != nil {
 		return err
 	}
@@ -318,7 +345,9 @@ func (c *httpClient) patchResource(ctx context.Context, path string, in, out int
 		return fmt.Errorf("encoding request body: %w", err)
 	}
 
-	resp, err := c.doRequest(ctx, http.MethodPatch, path, bytes.NewReader(body), false)
+	c.lastResponse, c.lastError = c.doRequest(ctx, http.MethodPatch, path, bytes.NewReader(body), false)
+	resp := c.lastResponse
+	err = c.lastError
 	if err != nil {
 		return err
 	}
@@ -329,7 +358,10 @@ func (c *httpClient) patchResource(ctx context.Context, path string, in, out int
 
 // deleteResource deletes a resource.
 func (c *httpClient) deleteResource(ctx context.Context, path string) error {
-	resp, err := c.doRequest(ctx, http.MethodDelete, path, nil, false)
+	c.lastResponse, c.lastError = c.doRequest(ctx, http.MethodDelete, path, nil, false)
+	resp := c.lastResponse
+	err := c.lastError
+
 	if err != nil {
 		return err
 	}
@@ -341,18 +373,22 @@ func (c *httpClient) deleteResource(ctx context.Context, path string) error {
 func (c *httpClient) uploadFile(ctx context.Context, path string, file []byte, out interface{}) error {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("file", "file")
+	part, err := writer.CreateFormFile("file", path)
 	if err != nil {
 		return fmt.Errorf("creating form file: %w", err)
 	}
-	if _, err := part.Write(file); err != nil {
+	part.Write([]byte("file\r\n"))
+	if _, err = part.Write(file); err != nil {
 		return fmt.Errorf("writing file: %w", err)
 	}
+
 	if err := writer.Close(); err != nil {
 		return fmt.Errorf("closing writer: %w", err)
 	}
 
-	resp, err := c.doRequest(ctx, http.MethodPost, path, body, true)
+	c.lastResponse, c.lastError = c.doRequest(ctx, http.MethodPost, path, body, true)
+	resp := c.lastResponse
+	err = c.lastError
 	if err != nil {
 		return err
 	}
@@ -372,7 +408,10 @@ func (c *httpClient) CheckLogin(ctx context.Context, username, password string) 
 		return "", fmt.Errorf("encoding request body: %w", err)
 	}
 
-	resp, err := c.doRequest(ctx, http.MethodPost, "/api/authentication_token", bytes.NewReader(body), false)
+	c.lastResponse, c.lastError = c.doRequest(ctx, http.MethodPost, "/api/authentication_token", bytes.NewReader(body), false)
+	resp := c.lastResponse
+	err = c.lastError
+
 	if err != nil {
 		return "", err
 	}

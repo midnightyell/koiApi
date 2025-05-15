@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+type DatumType string
+
 const (
 	DatumTypeText       DatumType = "text"
 	DatumTypeTextarea   DatumType = "textarea"

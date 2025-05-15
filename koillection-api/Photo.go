@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+type PhotoImage struct {
+	File *string `json:"file,omitempty" access:"rw"` // Image file data
+}
+
 // PhotoInterface defines methods for interacting with Photo resources.
 type PhotoInterface interface {
 	Create(ctx context.Context, client Client) (*Photo, error)                                            // HTTP POST /api/photos

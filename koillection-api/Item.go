@@ -70,7 +70,7 @@ func (i *Item) Delete(ctx context.Context, client Client, itemID ...ID) error {
 }
 
 // Get
-func (i *Item) Get(ctx faciesContext, client Client, itemID ...ID) (*Item, error) {
+func (i *Item) Get(ctx context.Context, client Client, itemID ...ID) (*Item, error) {
 	id := i.whichID(itemID...)
 	return client.GetItem(ctx, id)
 }
