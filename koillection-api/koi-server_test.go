@@ -95,12 +95,12 @@ func TestCollectionAndItemLifecycleWithRealServer(t *testing.T) {
 	itemIRI := resultItem.IRI()
 	resultItem, err = resultItem.UploadImageByFile(ctx, client, "./picture001.jpg")
 	if err != nil {
-
-		t.Fatalf("Failed to upload image: %v\n%s", err, client.GetResponse())
+		client.PrintError(ctx)
+		t.Fatalf("Failed to upload image: %v\n", err)
 	}
 	resultItem, err = resultItem.UploadImageByFile(ctx, client, "./picture002.jpg")
 	if err != nil {
-		t.Fatalf("Failed to upload image: %v\n%s", err, client.GetResponse())
+		t.Fatalf("Failed to upload image: %v\n", err)
 	}
 
 	assert.NotEmpty(t, itemIRI, "Item IRI is empty")

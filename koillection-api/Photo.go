@@ -7,9 +7,7 @@ import (
 	"time"
 )
 
-type PhotoImage struct {
-	File *string `json:"file,omitempty" access:"rw"` // Image file data
-}
+type PhotoImage *string
 
 // PhotoInterface defines methods for interacting with Photo resources.
 type PhotoInterface interface {
