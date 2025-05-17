@@ -3,89 +3,94 @@ package koiApi
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 )
 
 // CollectionInterface defines methods for interacting with Collection resources.
 type CollectionInterface interface {
-	Create(ctx context.Context, client Client) (*Collection, error)
-	Get(ctx context.Context, client Client, id ID) (*Collection, error)
-	List(ctx context.Context, client Client) ([]*Collection, error)
-	Update(ctx context.Context, client Client, id ID) (*Collection, error)
-	Delete(ctx context.Context, client Client, id ID) error
-	ListCollectionItems(ctx context.Context, client Client, id ID) ([]*Item, error)
-	Validate(ctx context.Context, client Client) error
+	Create(ctx context.Context, client Client) (*Collection, error)                                                 // HTTP POST /api/collections
+	Delete(ctx context.Context, client Client, collectionID ...ID) error                                            // HTTP DELETE /api/collections/{id}
+	Get(ctx context.Context, client Client, collectionID ...ID) (*Collection, error)                                // HTTP GET /api/collections/{id}
+	GetDefaultTemplate(ctx context.Context, client Client, collectionID ...ID) (*Template, error)                   // HTTP GET /api/collections/{id}/items_default_template
+	GetParent(ctx context.Context, client Client, collectionID ...ID) (*Collection, error)                          // HTTP GET /api/collections/{id}/parent
+	IRI() string                                                                                                    // /api/collections/{id}
+	List(ctx context.Context, client Client) ([]*Collection, error)                                                 // HTTP GET /api/collections
+	ListChildren(ctx context.Context, client Client, collectionID ...ID) ([]*Collection, error)                     // HTTP GET /api/collections/{id}/children
+	ListCollectionData(ctx context.Context, client Client, collectionID ...ID) ([]*Datum, error)                    // HTTP GET /api/collections/{id}/data
+	ListCollectionItems(ctx context.Context, client Client, collectionID ...ID) ([]*Item, error)                    // HTTP GET /api/collections/{id}/items
+	Patch(ctx context.Context, client Client, collectionID ...ID) (*Collection, error)                              // HTTP PATCH /api/collections/{id}
+	Update(ctx context.Context, client Client, collectionID ...ID) (*Collection, error)                             // HTTP PUT /api/collections/{id}
+	UploadImage(ctx context.Context, client Client, file []byte, collectionID ...ID) (*Collection, error)           // HTTP POST /api/collections/{id}/image
+	UploadImageByFile(ctx context.Context, client Client, filename string, collectionID ...ID) (*Collection, error) // HTTP POST /api/collections/{id}/image
 }
 
-// Collection represents a collection in Koillection, combining read and write fields.
+// Collection represents a collection in Koillection, combining fields for JSON-LD and API interactions.
 type Collection struct {
-	Context         *Context   `json:"@context,omitempty"`        // JSON-LD only
-	ID_             ID         `json:"@id,omitempty"`             // JSON-LD only (maps to "@id" in JSON, read-only)
-	ID              ID         `json:"id,omitempty"`              // JSON-LD only (maps to "id" in JSON, read-only)
-	Type            string     `json:"@type,omitempty"`           // JSON-LD only
-	Title           string     `json:"title"`                     // Read and write
-	Visibility      Visibility `json:"visibility,omitempty"`      // Read and write
-	Owner           *string    `json:"owner,omitempty"`           // Read-only, IRI
-	SeenCounter     int        `json:"seenCounter,omitempty"`     // Read-only
-	ChildrenCounter int        `json:"childrenCounter,omitempty"` // Read-only
-	ItemsCounter    int        `json:"itemsCounter,omitempty"`    // Read-only
-	CreatedAt       time.Time  `json:"createdAt"`                 // Read-only
-	UpdatedAt       *time.Time `json:"updatedAt,omitempty"`       // Read-only
+	Context              *Context   `json:"@context,omitempty" access:"rw"`             // JSON-LD only
+	_ID                  ID         `json:"@id,omitempty" access:"ro"`                  // JSON-LD only
+	Type                 string     `json:"@type,omitempty" access:"rw"`                // JSON-LD only
+	ID                   ID         `json:"id,omitempty" access:"ro"`                   // Identifier
+	Title                string     `json:"title" access:"rw"`                          // Collection title
+	Parent               *string    `json:"parent,omitempty" access:"rw"`               // Parent collection IRI
+	Owner                *string    `json:"owner,omitempty" access:"ro"`                // Owner IRI
+	Color                string     `json:"color,omitempty" access:"ro"`                // Color code
+	Image                *string    `json:"image,omitempty" access:"ro"`                // Image URL
+	SeenCounter          int        `json:"seenCounter,omitempty" access:"ro"`          // View count
+	ItemsDefaultTemplate *string    `json:"itemsDefaultTemplate,omitempty" access:"rw"` // Default template IRI
+	Visibility           Visibility `json:"visibility,omitempty" access:"rw"`           // Visibility level
+	ParentVisibility     *string    `json:"parentVisibility,omitempty" access:"ro"`     // Parent visibility
+	FinalVisibility      Visibility `json:"finalVisibility,omitempty" access:"ro"`      // Effective visibility
+	ScrapedFromURL       *string    `json:"scrapedFromUrl,omitempty" access:"ro"`       // Source URL
+	CreatedAt            time.Time  `json:"createdAt" access:"ro"`                      // Creation timestamp
+	UpdatedAt            *time.Time `json:"updatedAt,omitempty" access:"ro"`            // Update timestamp
+	File                 *string    `json:"file,omitempty" access:"wo"`                 // Image file data
+	DeleteImage          *bool      `json:"deleteImage,omitempty" access:"wo"`          // Flag to delete image
 }
 
-// Validate checks the Collection's fields for validity, using ctx for cancellation.
-func (c *Collection) Validate(ctx context.Context, client Client) error {
-	// Check for context cancellation
-	if err := ctx.Err(); err != nil {
-		return fmt.Errorf("validation cancelled: %w", err)
+// whichID
+func (c *Collection) whichID(collectionID ...ID) ID {
+	if len(collectionID) > 0 {
+		return collectionID[0]
 	}
-
-	// Required fields
-	if c.Title == "" {
-		return fmt.Errorf("title must not be empty")
-	}
-
-	// Visibility must be a valid value
-	switch c.Visibility {
-	case VisibilityPublic, VisibilityInternal, VisibilityPrivate, "":
-		// Valid or unset (server may set default)
-	default:
-		return fmt.Errorf("invalid visibility value: %s", c.Visibility)
-	}
-
-	// Read-only fields for creation vs. update
-	if c.ID == "" && c.ID_ == "" {
-		// Creation: read-only fields should be empty
-		if c.ID_ != "" {
-			return fmt.Errorf("ID_ must be empty for creation")
-		}
-		if c.ID != "" {
-			return fmt.Errorf("ID must be empty for creation")
-		}
-		if c.Type != "" && c.Type != "Collection" {
-			return fmt.Errorf("Type must be empty or 'Collection' for creation: %s", c.Type)
-		}
-	} else {
-		// Update: ID should be non-empty
-		if c.ID == "" {
-			return fmt.Errorf("ID must not be empty for update")
-		}
-	}
-
-	return nil
+	return c.ID
 }
 
-// Create calls Client.CreateCollection to create a new Collection.
+// Create
 func (c *Collection) Create(ctx context.Context, client Client) (*Collection, error) {
 	return client.CreateCollection(ctx, c)
 }
 
-// Get retrieves a Collection by ID using Client.GetCollection.
-func (c *Collection) Get(ctx context.Context, client Client, id ID) (*Collection, error) {
+// Delete
+func (c *Collection) Delete(ctx context.Context, client Client, collectionID ...ID) error {
+	id := c.whichID(collectionID...)
+	return client.DeleteCollection(ctx, id)
+}
+
+// Get
+func (c *Collection) Get(ctx context.Context, client Client, collectionID ...ID) (*Collection, error) {
+	id := c.whichID(collectionID...)
 	return client.GetCollection(ctx, id)
 }
 
-// List retrieves all Collections across all pages using Client.ListCollections.
+// GetDefaultTemplate
+func (c *Collection) GetDefaultTemplate(ctx context.Context, client Client, collectionID ...ID) (*Template, error) {
+	id := c.whichID(collectionID...)
+	return client.GetCollectionDefaultTemplate(ctx, id)
+}
+
+// GetParent
+func (c *Collection) GetParent(ctx context.Context, client Client, collectionID ...ID) (*Collection, error) {
+	id := c.whichID(collectionID...)
+	return client.GetCollectionParent(ctx, id)
+}
+
+// IRI
+func (c *Collection) IRI() string {
+	return fmt.Sprintf("/api/collections/%s", c.ID)
+}
+
+// List
 func (c *Collection) List(ctx context.Context, client Client) ([]*Collection, error) {
 	var allCollections []*Collection
 	for page := 1; ; page++ {
@@ -101,23 +106,48 @@ func (c *Collection) List(ctx context.Context, client Client) ([]*Collection, er
 	return allCollections, nil
 }
 
-// Update updates a Collection by ID using Client.UpdateCollection.
-func (c *Collection) Update(ctx context.Context, client Client, id ID) (*Collection, error) {
-	return client.UpdateCollection(ctx, id, c)
+// ListChildren
+func (c *Collection) ListChildren(ctx context.Context, client Client, collectionID ...ID) ([]*Collection, error) {
+	id := c.whichID(collectionID...)
+	var allChildren []*Collection
+	for page := 1; ; page++ {
+		children, err := client.ListCollectionChildren(ctx, id, page)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list child collections for ID %s on page %d: %w", id, page, err)
+		}
+		if len(children) == 0 {
+			break
+		}
+		allChildren = append(allChildren, children...)
+	}
+	return allChildren, nil
 }
 
-// Delete removes a Collection by ID using Client.DeleteCollection.
-func (c *Collection) Delete(ctx context.Context, client Client, id ID) error {
-	return client.DeleteCollection(ctx, id)
+// ListCollectionData
+func (c *Collection) ListCollectionData(ctx context.Context, client Client, collectionID ...ID) ([]*Datum, error) {
+	id := c.whichID(collectionID...)
+	var allData []*Datum
+	for page := 1; ; page++ {
+		data, err := client.ListCollectionData(ctx, id, page)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list data for ID %s on page %d: %w", id, page, err)
+		}
+		if len(data) == 0 {
+			break
+		}
+		allData = append(allData, data...)
+	}
+	return allData, nil
 }
 
-// ListCollectionItems retrieves all Items associated with the Collection ID across all pages using Client.ListCollectionItems.
-func (c *Collection) ListCollectionItems(ctx context.Context, client Client, id ID) ([]*Item, error) {
+// ListCollectionItems
+func (c *Collection) ListCollectionItems(ctx context.Context, client Client, collectionID ...ID) ([]*Item, error) {
+	id := c.whichID(collectionID...)
 	var allItems []*Item
 	for page := 1; ; page++ {
 		items, err := client.ListCollectionItems(ctx, id, page)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list items for Collection ID %s on page %d: %w", id, page, err)
+			return nil, fmt.Errorf("failed to list items for ID %s on page %d: %w", id, page, err)
 		}
 		if len(items) == 0 {
 			break
@@ -125,4 +155,32 @@ func (c *Collection) ListCollectionItems(ctx context.Context, client Client, id 
 		allItems = append(allItems, items...)
 	}
 	return allItems, nil
+}
+
+// Patch
+func (c *Collection) Patch(ctx context.Context, client Client, collectionID ...ID) (*Collection, error) {
+	id := c.whichID(collectionID...)
+	return client.PatchCollection(ctx, id, c)
+}
+
+// Update
+func (c *Collection) Update(ctx context.Context, client Client, collectionID ...ID) (*Collection, error) {
+	id := c.whichID(collectionID...)
+	return client.UpdateCollection(ctx, id, c)
+}
+
+// UploadImage
+func (c *Collection) UploadImage(ctx context.Context, client Client, file []byte, collectionID ...ID) (*Collection, error) {
+	id := c.whichID(collectionID...)
+	return client.UploadCollectionImage(ctx, id, file)
+}
+
+// UploadImageByFile
+func (c *Collection) UploadImageByFile(ctx context.Context, client Client, filename string, collectionID ...ID) (*Collection, error) {
+	id := c.whichID(collectionID...)
+	file, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
+	}
+	return c.UploadImage(ctx, client, file, id)
 }

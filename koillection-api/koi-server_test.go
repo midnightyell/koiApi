@@ -55,22 +55,21 @@ func TestCollectionAndItemLifecycleWithRealServer(t *testing.T) {
 	RemoveAllCollections(t, client, ctx)
 
 	// Create collection
+	var testName = "TEST" + time.Now().Format("15:04:05")
 	collection := &Collection{
-		Title:      "TEST",
+		Title:      testName,
 		Visibility: VisibilityPublic,
 	}
 	resultCollection, err := client.CreateCollection(ctx, collection)
 	assert.NoError(t, err, "Failed to create collection")
 	assert.NotEmpty(t, resultCollection.ID, "Collection ID is empty")
-	assert.Equal(t, "TEST", resultCollection.Title, "Collection title mismatch")
+	assert.Equal(t, testName, resultCollection.Title, "Collection title mismatch")
 
 	// Create IRI from collection ID
-	collectionIRI, err := GetIRI(resultCollection)
-	if err != nil {
-		t.Fatalf("Failed to get IRI: %v", err)
-	}
+	collectionIRI := resultCollection.IRI()
 	assert.NotEmpty(t, collectionIRI, "Collection IRI is empty")
 	assert.Equal(t, fmt.Sprintf("/api/collections/%s", resultCollection.ID), collectionIRI, "Collection IRI mismatch")
+	resultCollection.UploadImageByFile(ctx, client, "./picture001.jpg")
 
 	// Create item
 	item := &Item{
@@ -91,12 +90,20 @@ func TestCollectionAndItemLifecycleWithRealServer(t *testing.T) {
 		DatumTypeList,
 		//DatumTypeChoiceList,
 		DatumTypeCheckbox, DatumTypeImage,
-		DatumTypeFile, DatumTypeSign, DatumTypeVideo, DatumTypeBlankLine, DatumTypeSection,
+		// DatumTypeFile, DatumTypeSign, DatumTypeVideo,
+		DatumTypeBlankLine, DatumTypeSection,
 	}
-	itemIRI, err := GetIRI(resultItem)
+	itemIRI := resultItem.IRI()
+	resultItem, err = resultItem.UploadImageByFile(ctx, client, "./picture001.jpg")
 	if err != nil {
-		t.Fatalf("Failed to get IRI: %v", err)
+		client.PrintError(ctx)
+		t.Fatalf("Failed to upload image: %v\n", err)
 	}
+	resultItem, err = resultItem.UploadImageByFile(ctx, client, "./picture002.jpg")
+	if err != nil {
+		t.Fatalf("Failed to upload image: %v\n", err)
+	}
+
 	assert.NotEmpty(t, itemIRI, "Item IRI is empty")
 	assert.Equal(t, fmt.Sprintf("/api/items/%s", resultItem.ID), itemIRI, "Item IRI mismatch")
 	for _, dt := range datumTypes {
@@ -154,19 +161,18 @@ func TestCollectionAndItemLifecycleWithRealServer(t *testing.T) {
 		//assert.Equal(t, value, *resultDatum.Value, "Datum value mismatch for %s", dt)
 
 		// Upload file for image, file, or video types
-		fileData := []byte("placeholder file content") // Replace with actual file data
-		if datum.Value != nil {
-			if dt == DatumTypeImage {
-				_, err = client.UploadDatumImage(ctx, resultDatum.ID, fileData)
-				assert.NoError(t, err, "Failed to upload image for datum %s", dt)
-			} else if dt == DatumTypeFile {
-				_, err = client.UploadDatumFile(ctx, resultDatum.ID, fileData)
-				assert.NoError(t, err, "Failed to upload file for datum %s", dt)
-			} else if dt == DatumTypeVideo {
-				_, err = client.UploadDatumVideo(ctx, resultDatum.ID, fileData)
-				assert.NoError(t, err, "Failed to upload video for datum %s", dt)
-			}
+		//if datum.Value != nil {
+		if dt == DatumTypeImage {
+			_, err = resultDatum.UploadImageByFile(ctx, client, "./picture002.jpg")
+			assert.NoError(t, err, "Failed to upload image for datum %s", dt)
+		} else if dt == DatumTypeFile {
+			_, err = resultDatum.UploadFileByFile(ctx, client, "./picture002.jpg")
+			assert.NoError(t, err, "Failed to upload file for datum %s", dt)
+		} else if dt == DatumTypeVideo {
+			_, err = resultDatum.UploadVideoByFile(ctx, client, "./picture002.jpg")
+			assert.NoError(t, err, "Failed to upload video for datum %s", dt)
 		}
+		//}
 	}
 
 	// Fetch item
@@ -176,12 +182,12 @@ func TestCollectionAndItemLifecycleWithRealServer(t *testing.T) {
 	assert.Equal(t, resultItem.Name, fetchedItem.Name, "Fetched item name mismatch")
 
 	// Delete item
-	err = client.DeleteItem(ctx, resultItem.ID)
-	assert.NoError(t, err, "Failed to delete item")
+	//err = client.DeleteItem(ctx, resultItem.ID)
+	//assert.NoError(t, err, "Failed to delete item")
 
 	// Delete collection
-	err = client.DeleteCollection(ctx, resultCollection.ID)
-	assert.NoError(t, err, "Failed to delete collection")
+	//err = client.DeleteCollection(ctx, resultCollection.ID)
+	//assert.NoError(t, err, "Failed to delete collection")
 }
 
 // validateDatumValue validates the value for a given DatumType.

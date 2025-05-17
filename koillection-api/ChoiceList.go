@@ -8,85 +8,59 @@ import (
 
 // ChoiceListInterface defines methods for interacting with ChoiceList resources.
 type ChoiceListInterface interface {
-	Create(ctx context.Context, client Client) (*ChoiceList, error)
-	Get(ctx context.Context, client Client, id ID) (*ChoiceList, error)
-	List(ctx context.Context, client Client) ([]*ChoiceList, error)
-	Update(ctx context.Context, client Client, id ID) (*ChoiceList, error)
-	Delete(ctx context.Context, client Client, id ID) error
-	ListChoiceListItems(ctx context.Context, client Client, id ID) ([]*Item, error)
-	Validate(ctx context.Context, client Client) error
+	Create(ctx context.Context, client Client) (*ChoiceList, error)                     // HTTP POST /api/choice_lists
+	Delete(ctx context.Context, client Client, choiceListID ...ID) error                // HTTP DELETE /api/choice_lists/{id}
+	Get(ctx context.Context, client Client, choiceListID ...ID) (*ChoiceList, error)    // HTTP GET /api/choice_lists/{id}
+	IRI() string                                                                        // /api/choice_lists/{id}
+	List(ctx context.Context, client Client) ([]*ChoiceList, error)                     // HTTP GET /api/choice_lists
+	Patch(ctx context.Context, client Client, choiceListID ...ID) (*ChoiceList, error)  // HTTP PATCH /api/choice_lists/{id}
+	Update(ctx context.Context, client Client, choiceListID ...ID) (*ChoiceList, error) // HTTP PUT /api/choice_lists/{id}
 }
 
-// ChoiceList represents a choice list in Koillection, combining read and write fields.
+// ChoiceList represents a choice list in Koillection, combining fields for JSON-LD and API interactions.
 type ChoiceList struct {
-	Context    *Context   `json:"@context,omitempty"`   // JSON-LD only
-	ID_        ID         `json:"@id,omitempty"`        // JSON-LD only (maps to "@id" in JSON, read-only)
-	ID         ID         `json:"id,omitempty"`         // JSON-LD only (maps to "id" in JSON, read-only)
-	Type       string     `json:"@type,omitempty"`      // JSON-LD only
-	Label      string     `json:"label"`                // Read and write
-	Choices    []string   `json:"choices"`              // Read and write
-	Visibility Visibility `json:"visibility,omitempty"` // Read and write
-	CreatedAt  time.Time  `json:"createdAt"`            // Read-only
-	UpdatedAt  *time.Time `json:"updatedAt,omitempty"`  // Read-only
+	Context   *Context   `json:"@context,omitempty" access:"rw"`  // JSON-LD only
+	_ID       ID         `json:"@id,omitempty" access:"ro"`       // JSON-LD only
+	Type      string     `json:"@type,omitempty" access:"rw"`     // JSON-LD only
+	ID        ID         `json:"id,omitempty" access:"ro"`        // Identifier
+	Name      string     `json:"name" access:"rw"`                // Choice list name
+	Choices   []string   `json:"choices" access:"rw"`             // List of choices
+	Owner     *string    `json:"owner,omitempty" access:"ro"`     // Owner IRI
+	CreatedAt time.Time  `json:"createdAt" access:"ro"`           // Creation timestamp
+	UpdatedAt *time.Time `json:"updatedAt,omitempty" access:"ro"` // Update timestamp
 }
 
-// Validate checks the ChoiceList's fields for validity, using ctx for cancellation.
-func (cl *ChoiceList) Validate(ctx context.Context, client Client) error {
-	// Check for context cancellation
-	if err := ctx.Err(); err != nil {
-		return fmt.Errorf("validation cancelled: %w", err)
+// whichID
+func (cl *ChoiceList) whichID(choiceListID ...ID) ID {
+	if len(choiceListID) > 0 {
+		return choiceListID[0]
 	}
-
-	// Required fields
-	if cl.Label == "" {
-		return fmt.Errorf("label must not be empty")
-	}
-
-	if len(cl.Choices) == 0 {
-		return fmt.Errorf("choices must contain at least one item")
-	}
-
-	// Visibility must be a valid value
-	switch cl.Visibility {
-	case VisibilityPublic, VisibilityInternal, VisibilityPrivate, "":
-		// Valid or unset (server may set default)
-	default:
-		return fmt.Errorf("invalid visibility value: %s", cl.Visibility)
-	}
-
-	// Read-only fields for creation vs. update
-	if cl.ID == "" && cl.ID_ == "" {
-		// Creation: read-only fields should be empty
-		if cl.ID_ != "" {
-			return fmt.Errorf("ID_ must be empty for creation")
-		}
-		if cl.ID != "" {
-			return fmt.Errorf("ID must be empty for creation")
-		}
-		if cl.Type != "" && cl.Type != "ChoiceList" {
-			return fmt.Errorf("Type must be empty or 'ChoiceList' for creation: %s", cl.Type)
-		}
-	} else {
-		// Update: ID should be non-empty
-		if cl.ID == "" {
-			return fmt.Errorf("ID must not be empty for update")
-		}
-	}
-
-	return nil
+	return cl.ID
 }
 
-// Create calls Client.CreateChoiceList to create a new ChoiceList.
+// Create
 func (cl *ChoiceList) Create(ctx context.Context, client Client) (*ChoiceList, error) {
 	return client.CreateChoiceList(ctx, cl)
 }
 
-// Get retrieves a ChoiceList by ID using Client.GetChoiceList.
-func (cl *ChoiceList) Get(ctx context.Context, client Client, id ID) (*ChoiceList, error) {
+// Delete
+func (cl *ChoiceList) Delete(ctx context.Context, client Client, choiceListID ...ID) error {
+	id := cl.whichID(choiceListID...)
+	return client.DeleteChoiceList(ctx, id)
+}
+
+// Get
+func (cl *ChoiceList) Get(ctx context.Context, client Client, choiceListID ...ID) (*ChoiceList, error) {
+	id := cl.whichID(choiceListID...)
 	return client.GetChoiceList(ctx, id)
 }
 
-// List retrieves all ChoiceLists across all pages using Client.ListChoiceLists.
+// IRI
+func (cl *ChoiceList) IRI() string {
+	return fmt.Sprintf("/api/choice_lists/%s", cl.ID)
+}
+
+// List
 func (cl *ChoiceList) List(ctx context.Context, client Client) ([]*ChoiceList, error) {
 	var allChoiceLists []*ChoiceList
 	for page := 1; ; page++ {
@@ -102,28 +76,14 @@ func (cl *ChoiceList) List(ctx context.Context, client Client) ([]*ChoiceList, e
 	return allChoiceLists, nil
 }
 
-// Update updates a ChoiceList by ID using Client.UpdateChoiceList.
-func (cl *ChoiceList) Update(ctx context.Context, client Client, id ID) (*ChoiceList, error) {
+// Patch
+func (cl *ChoiceList) Patch(ctx context.Context, client Client, choiceListID ...ID) (*ChoiceList, error) {
+	id := cl.whichID(choiceListID...)
+	return client.PatchChoiceList(ctx, id, cl)
+}
+
+// Update
+func (cl *ChoiceList) Update(ctx context.Context, client Client, choiceListID ...ID) (*ChoiceList, error) {
+	id := cl.whichID(choiceListID...)
 	return client.UpdateChoiceList(ctx, id, cl)
-}
-
-// Delete removes a ChoiceList by ID using Client.DeleteChoiceList.
-func (cl *ChoiceList) Delete(ctx context.Context, client Client, id ID) error {
-	return client.DeleteChoiceList(ctx, id)
-}
-
-// ListChoiceListItems retrieves all Items associated with the ChoiceList ID across all pages using Client.ListChoiceListItems.
-func (cl *ChoiceList) ListChoiceListItems(ctx context.Context, client Client, id ID) ([]*Item, error) {
-	var allItems []*Item
-	for page := 1; ; page++ {
-		items, err := client.ListChoiceListItems(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list items for ChoiceList ID %s on page %d: %w", id, page, err)
-		}
-		if len(items) == 0 {
-			break
-		}
-		allItems = append(allItems, items...)
-	}
-	return allItems, nil
 }

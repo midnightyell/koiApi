@@ -3,142 +3,129 @@ package koiApi
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"strings"
+	"os"
 	"time"
-
-	"golang.org/x/text/currency"
 )
+
+type DatumType string
+
+const (
+	DatumTypeText       DatumType = "text"
+	DatumTypeTextarea   DatumType = "textarea"
+	DatumTypeCountry    DatumType = "country"
+	DatumTypeDate       DatumType = "date"
+	DatumTypeRating     DatumType = "rating"
+	DatumTypeNumber     DatumType = "number"
+	DatumTypePrice      DatumType = "price"
+	DatumTypeLink       DatumType = "link"
+	DatumTypeList       DatumType = "list"
+	DatumTypeChoiceList DatumType = "choice-list"
+	DatumTypeCheckbox   DatumType = "checkbox"
+	DatumTypeImage      DatumType = "image"
+	DatumTypeFile       DatumType = "file"
+	DatumTypeSign       DatumType = "sign"
+	DatumTypeVideo      DatumType = "video"
+	DatumTypeBlankLine  DatumType = "blank-line"
+	DatumTypeSection    DatumType = "section"
+)
+
+func (dt DatumType) String() string {
+	return string(dt)
+}
 
 // DatumInterface defines methods for interacting with Datum resources.
 type DatumInterface interface {
-	Create(ctx context.Context, client Client) (*Datum, error)
-	Get(ctx context.Context, client Client, id ID) (*Datum, error)
-	List(ctx context.Context, client Client) ([]*Datum, error)
-	Update(ctx context.Context, client Client, id ID) (*Datum, error)
-	Delete(ctx context.Context, client Client, id ID) error
-	ListDatumItems(ctx context.Context, client Client, id ID) ([]*Item, error)
-	Validate(ctx context.Context, client Client) error
+	Create(ctx context.Context, client Client) (*Datum, error)                                            // HTTP POST /api/data
+	Delete(ctx context.Context, client Client, datumID ...ID) error                                       // HTTP DELETE /api/data/{id}
+	Get(ctx context.Context, client Client, datumID ...ID) (*Datum, error)                                // HTTP GET /api/data/{id}
+	GetCollection(ctx context.Context, client Client, datumID ...ID) (*Collection, error)                 // HTTP GET /api/data/{id}/collection
+	GetItem(ctx context.Context, client Client, datumID ...ID) (*Item, error)                             // HTTP GET /api/data/{id}/item
+	IRI() string                                                                                          // /api/data/{id}
+	List(ctx context.Context, client Client) ([]*Datum, error)                                            // HTTP GET /api/data
+	Patch(ctx context.Context, client Client, datumID ...ID) (*Datum, error)                              // HTTP PATCH /api/data/{id}
+	Update(ctx context.Context, client Client, datumID ...ID) (*Datum, error)                             // HTTP PUT /api/data/{id}
+	UploadFile(ctx context.Context, client Client, file []byte, datumID ...ID) (*Datum, error)            // HTTP POST /api/data/{id}/file
+	UploadFileByFile(ctx context.Context, client Client, filename string, datumID ...ID) (*Datum, error)  // HTTP POST /api/data/{id}/file
+	UploadImage(ctx context.Context, client Client, image []byte, datumID ...ID) (*Datum, error)          // HTTP POST /api/data/{id}/image
+	UploadImageByFile(ctx context.Context, client Client, filename string, datumID ...ID) (*Datum, error) // HTTP POST /api/data/{id}/image
+	UploadVideo(ctx context.Context, client Client, video []byte, datumID ...ID) (*Datum, error)          // HTTP POST /api/data/{id}/video
+	UploadVideoByFile(ctx context.Context, client Client, filename string, datumID ...ID) (*Datum, error) // HTTP POST /api/data/{id}/video
 }
 
-// Datum represents a datum in Koillection, combining read and write fields.
+// Datum represents a custom data field in Koillection, combining fields for JSON-LD and API interactions.
 type Datum struct {
 	Context             *Context   `json:"@context,omitempty" access:"rw"`            // JSON-LD only
-	ID_                 ID         `json:"@id,omitempty" access:"ro"`                 // JSON-LD only (maps to "@id" in JSON, read-only)
-	ID                  ID         `json:"id,omitempty" access:"ro"`                  // Maps to "id" in JSON, read-only
+	_ID                 ID         `json:"@id,omitempty" access:"ro"`                 // JSON-LD only
 	Type                string     `json:"@type,omitempty" access:"rw"`               // JSON-LD only
-	DatumType           DatumType  `json:"datumType" access:"rw"`                     // Read and write
-	Label               string     `json:"label" access:"rw"`                         // Read and write
-	Value               *string    `json:"value,omitempty" access:"rw"`               // Read and write
-	Currency            *string    `json:"currency,omitempty" access:"rw"`            // Read and write
-	Item                *string    `json:"item,omitempty" access:"rw"`                // Read and write, IRI
-	Position            *int       `json:"position,omitempty" access:"rw"`            // Read and write
-	Visibility          Visibility `json:"visibility,omitempty" access:"rw"`          // Read and write
-	CreatedAt           time.Time  `json:"createdAt" access:"ro"`                     // Read-only
-	UpdatedAt           *time.Time `json:"updatedAt,omitempty" access:"ro"`           // Read-only
-	Image               *string    `json:"image,omitempty" access:"ro"`               // Read-only
-	ImageSmallThumbnail *string    `json:"imageSmallThumbnail,omitempty" access:"ro"` // Read-only
+	ID                  ID         `json:"id,omitempty" access:"ro"`                  // Identifier
+	Item                *string    `json:"item,omitempty" access:"rw"`                // Item IRI
+	Collection          *string    `json:"collection,omitempty" access:"rw"`          // Collection IRI
+	DatumType           DatumType  `json:"type" access:"rw"`                          // Custom data field type
+	Label               string     `json:"label" access:"rw"`                         // Field label
+	Value               *string    `json:"value,omitempty" access:"rw"`               // Field value
+	Position            *int       `json:"position,omitempty" access:"rw"`            // Field position
+	Currency            *string    `json:"currency,omitempty" access:"rw"`            // Currency code
+	Image               *string    `json:"image,omitempty" access:"ro"`               // Image URL
+	ImageSmallThumbnail *string    `json:"imageSmallThumbnail,omitempty" access:"ro"` // Small thumbnail URL
+	ImageLargeThumbnail *string    `json:"imageLargeThumbnail,omitempty" access:"ro"` // Large thumbnail URL
+	File                *string    `json:"file,omitempty" access:"ro"`                // File URL
+	Video               *string    `json:"video,omitempty" access:"ro"`               // Video URL
+	OriginalFilename    *string    `json:"originalFilename,omitempty" access:"ro"`    // Original file name
+	ChoiceList          *string    `json:"choiceList,omitempty" access:"rw"`          // Choice list IRI
+	Owner               *string    `json:"owner,omitempty" access:"ro"`               // Owner IRI
+	Visibility          Visibility `json:"visibility,omitempty" access:"rw"`          // Visibility level
+	ParentVisibility    *string    `json:"parentVisibility,omitempty" access:"ro"`    // Parent visibility
+	FinalVisibility     Visibility `json:"finalVisibility,omitempty" access:"ro"`     // Effective visibility
+	CreatedAt           time.Time  `json:"createdAt" access:"ro"`                     // Creation timestamp
+	UpdatedAt           *time.Time `json:"updatedAt,omitempty" access:"ro"`           // Update timestamp
+	FileImage           *string    `json:"fileImage,omitempty" access:"wo"`           // Image file data
+	FileFile            *string    `json:"fileFile,omitempty" access:"wo"`            // File data
+	FileVideo           *string    `json:"fileVideo,omitempty" access:"wo"`           // Video file data
 }
 
-// Validate checks the Datum's fields for validity, using ctx for cancellation and client for optional IRI validation.
-func (d *Datum) Validate(ctx context.Context, client Client) error {
-	// Check for context cancellation
-	if err := ctx.Err(); err != nil {
-		return fmt.Errorf("validation cancelled: %w", err)
+// whichID
+func (d *Datum) whichID(datumID ...ID) ID {
+	if len(datumID) > 0 {
+		return datumID[0]
 	}
-
-	// Required fields
-	if d.DatumType == "" {
-		return fmt.Errorf("datumType must not be empty")
-	}
-	// Assume DatumType is an enum-like type; no specific validation unless enum values are defined
-	if d.Label == "" {
-		return fmt.Errorf("label must not be empty")
-	}
-
-	// Optional fields
-	if d.Value != nil {
-		if *d.Value == "" {
-			return fmt.Errorf("value must not be empty if set")
-		}
-		if d.DatumType == DatumTypePrice {
-			if _, err := strconv.ParseFloat(*d.Value, 64); err != nil {
-				return fmt.Errorf("value must be a valid float for price type: %s", *d.Value)
-			}
-		}
-	}
-
-	if d.Currency != nil {
-		if *d.Currency == "" {
-			return fmt.Errorf("currency must not be empty if set")
-		}
-		if _, err := currency.ParseISO(*d.Currency); err != nil {
-			return fmt.Errorf("currency must be a valid ISO 4217 code: %s", *d.Currency)
-		}
-	}
-
-	if d.Item != nil {
-		if *d.Item == "" {
-			return fmt.Errorf("item IRI must not be empty if set")
-		}
-		if !strings.HasPrefix(*d.Item, "/api/items/") {
-			return fmt.Errorf("item IRI must start with /api/items/: %s", *d.Item)
-		}
-		// Optionally validate Item exists if client is provided
-		if client != nil {
-			parts := strings.Split(*d.Item, "/")
-			if len(parts) < 4 {
-				return fmt.Errorf("invalid item IRI format: %s", *d.Item)
-			}
-			itemID := ID(parts[3])
-			_, err := client.GetItem(ctx, itemID)
-			if err != nil {
-				return fmt.Errorf("invalid item %s: %w", *d.Item, err)
-			}
-		}
-	}
-
-	// Visibility must be a valid value
-	switch d.Visibility {
-	case VisibilityPublic, VisibilityInternal, VisibilityPrivate, "":
-		// Valid or unset (server may set default)
-	default:
-		return fmt.Errorf("invalid visibility value: %s", d.Visibility)
-	}
-
-	// Read-only fields for creation vs. update
-	if d.ID == "" && d.ID_ == "" {
-		// Creation: read-only fields should be empty
-		if d.ID_ != "" {
-			return fmt.Errorf("ID_ must be empty for creation")
-		}
-		if d.ID != "" {
-			return fmt.Errorf("ID must be empty for creation")
-		}
-		if d.Type != "" && d.Type != "Datum" {
-			return fmt.Errorf("Type must be empty or 'Datum' for creation: %s", d.Type)
-		}
-	} else {
-		// Update: ID should be non-empty
-		if d.ID == "" {
-			return fmt.Errorf("ID must not be empty for update")
-		}
-	}
-
-	return nil
+	return d.ID
 }
 
-// Create calls Client.CreateDatum to create a new Datum.
+// Create
 func (d *Datum) Create(ctx context.Context, client Client) (*Datum, error) {
 	return client.CreateDatum(ctx, d)
 }
 
-// Get retrieves a Datum by ID using Client.GetDatum.
-func (d *Datum) Get(ctx context.Context, client Client, id ID) (*Datum, error) {
+// Delete
+func (d *Datum) Delete(ctx context.Context, client Client, datumID ...ID) error {
+	id := d.whichID(datumID...)
+	return client.DeleteDatum(ctx, id)
+}
+
+// Get
+func (d *Datum) Get(ctx context.Context, client Client, datumID ...ID) (*Datum, error) {
+	id := d.whichID(datumID...)
 	return client.GetDatum(ctx, id)
 }
 
-// List retrieves all Data across all pages using Client.ListData.
+// GetCollection
+func (d *Datum) GetCollection(ctx context.Context, client Client, datumID ...ID) (*Collection, error) {
+	id := d.whichID(datumID...)
+	return client.GetDatumCollection(ctx, id)
+}
+
+// GetItem
+func (d *Datum) GetItem(ctx context.Context, client Client, datumID ...ID) (*Item, error) {
+	id := d.whichID(datumID...)
+	return client.GetDatumItem(ctx, id)
+}
+
+// IRI
+func (d *Datum) IRI() string {
+	return fmt.Sprintf("/api/data/%s", d.ID)
+}
+
+// List
 func (d *Datum) List(ctx context.Context, client Client) ([]*Datum, error) {
 	var allData []*Datum
 	for page := 1; ; page++ {
@@ -154,28 +141,62 @@ func (d *Datum) List(ctx context.Context, client Client) ([]*Datum, error) {
 	return allData, nil
 }
 
-// Update updates a Datum by ID using Client.UpdateDatum.
-func (d *Datum) Update(ctx context.Context, client Client, id ID) (*Datum, error) {
+// Patch
+func (d *Datum) Patch(ctx context.Context, client Client, datumID ...ID) (*Datum, error) {
+	id := d.whichID(datumID...)
+	return client.PatchDatum(ctx, id, d)
+}
+
+// Update
+func (d *Datum) Update(ctx context.Context, client Client, datumID ...ID) (*Datum, error) {
+	id := d.whichID(datumID...)
 	return client.UpdateDatum(ctx, id, d)
 }
 
-// Delete removes a Datum by ID using Client.DeleteDatum.
-func (d *Datum) Delete(ctx context.Context, client Client, id ID) error {
-	return client.DeleteDatum(ctx, id)
+// UploadFile
+func (d *Datum) UploadFile(ctx context.Context, client Client, file []byte, datumID ...ID) (*Datum, error) {
+	id := d.whichID(datumID...)
+	return client.UploadDatumFile(ctx, id, file)
 }
 
-// ListDatumItems retrieves all Items associated with the Datum ID across all pages using Client.ListDatumItems.
-func (d *Datum) ListDatumItems(ctx context.Context, client Client, id ID) ([]*Item, error) {
-	var allItems []*Item
-	for page := 1; ; page++ {
-		items, err := client.ListDatumItems(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list items for Datum ID %s on page %d: %w", id, page, err)
-		}
-		if len(items) == 0 {
-			break
-		}
-		allItems = append(allItems, items...)
+// UploadFileByFile
+func (d *Datum) UploadFileByFile(ctx context.Context, client Client, filename string, datumID ...ID) (*Datum, error) {
+	id := d.whichID(datumID...)
+	file, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
 	}
-	return allItems, nil
+	return client.UploadDatumFile(ctx, id, file)
+}
+
+// UploadImage
+func (d *Datum) UploadImage(ctx context.Context, client Client, image []byte, datumID ...ID) (*Datum, error) {
+	id := d.whichID(datumID...)
+	return client.UploadDatumImage(ctx, id, image)
+}
+
+// UploadImageByFile
+func (d *Datum) UploadImageByFile(ctx context.Context, client Client, filename string, datumID ...ID) (*Datum, error) {
+	id := d.whichID(datumID...)
+	file, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
+	}
+	return client.UploadDatumImage(ctx, id, file)
+}
+
+// UploadVideo
+func (d *Datum) UploadVideo(ctx context.Context, client Client, video []byte, datumID ...ID) (*Datum, error) {
+	id := d.whichID(datumID...)
+	return client.UploadDatumVideo(ctx, id, video)
+}
+
+// UploadVideoByFile
+func (d *Datum) UploadVideoByFile(ctx context.Context, client Client, filename string, datumID ...ID) (*Datum, error) {
+	id := d.whichID(datumID...)
+	file, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
+	}
+	return client.UploadDatumVideo(ctx, id, file)
 }

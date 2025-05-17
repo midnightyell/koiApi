@@ -16,9 +16,6 @@ import (
 	"time"
 )
 
-//File Uploads: Assumes a file field for multipart/form-data uploads. If the API expects a different field name (e.g., fileImage for Datum uploads), the uploadFile method can be updated.
-// Pagination: Assumes the page query parameter is sufficient for pagination. If the API uses other parameters (e.g., per_page), the listResources method can be extended.
-
 // Errors for common HTTP status codes.
 var (
 	ErrInvalidInput  = errors.New("invalid input")
@@ -27,16 +24,40 @@ var (
 	ErrUnauthorized  = errors.New("unauthorized")
 )
 
+// KoiError represents a union of the 400 and 422 error response structures.
+type KoiError struct {
+	Context     string      `json:"@context,omitempty"`
+	ID          string      `json:"@id,omitempty"`
+	Type        string      `json:"@type,omitempty"`
+	Title       string      `json:"title,omitempty"`
+	Detail      string      `json:"detail,omitempty"`
+	Status      int         `json:"status,omitempty"`
+	Instance    string      `json:"instance,omitempty"`
+	Description string      `json:"description,omitempty"`
+	Violations  []Violation `json:"violations,omitempty"`
+}
+
+// Violation represents a single violation in a 422 error response.
+type Violation struct {
+	PropertyPath string `json:"propertyPath"`
+	Message      string `json:"message"`
+}
+
 // httpClient implements the Client interface using net/http.
 type httpClient struct {
-	baseURL    string
-	httpClient *http.Client
-	token      string
+	baseURL         string
+	httpClient      *http.Client
+	token           string
+	lastError       error
+	lastRequest     *http.Request
+	lastRequestBody []byte
+	lastResponse    *http.Response
+	koiError        *KoiError
+	rawError        string
 }
 
 // NewHTTPClient creates a new HTTP client for the Koillection API.
 func NewHTTPClient(baseURL string, timeout time.Duration) Client {
-
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		fmt.Println("Error creating cookie jar:", err)
@@ -48,58 +69,139 @@ func NewHTTPClient(baseURL string, timeout time.Duration) Client {
 			Jar:     jar,
 			Timeout: timeout,
 		},
+		lastRequest:     nil,
+		lastRequestBody: nil,
+		lastResponse:    nil,
+		koiError:        nil,
+		rawError:        "",
 	}
 }
 
-// doRequest sends an HTTP request and returns the response body.
-func (c *httpClient) doRequest(ctx context.Context, method, path string, body io.Reader, isMultipart bool) (*http.Response, error) {
-	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, body)
+// GetResponse retrieves the response from the httpClient struct.
+func (c *httpClient) GetResponse(ctx context.Context) string {
+	if c.koiError != nil {
+		// Return the structured error if available.
+		errBytes, err := json.MarshalIndent(c.koiError, "", "  ")
+		if err != nil {
+			return fmt.Sprintf("Error marshaling KoiError: %v\nRaw Error: %s", err, c.rawError)
+		}
+		return fmt.Sprintf("Response Status: %s\nBody: %s", c.lastResponse.Status, string(errBytes))
+	}
+	if c.rawError != "" {
+		// Return the raw error text.
+		return fmt.Sprintf("Response Status: %s\nBody: %s", c.lastResponse.Status, c.rawError)
+	}
+	if c.lastResponse == nil {
+		return "No response"
+	}
+	body, err := io.ReadAll(c.lastResponse.Body)
+	// Reset the response body so it can be read again if needed.
+	c.lastResponse.Body = io.NopCloser(bytes.NewReader(body))
 	if err != nil {
+		return fmt.Sprintf("Error reading response body: %v\nRaw Error: %s", err, c.rawError)
+	}
+	return fmt.Sprintf("Response Status: %s\nBody: %s", c.lastResponse.Status, string(body))
+}
+
+// doRequest sends an HTTP request, stores it and the response in the httpClient struct, and returns the response.
+func (c *httpClient) doRequest(ctx context.Context, method, path string, body io.Reader, multipartContentType string) (*http.Response, error) {
+	var bodyBytes []byte
+	if body != nil {
+		var err error
+		bodyBytes, err = io.ReadAll(body)
+		if err != nil {
+			c.lastRequest = nil
+			c.lastRequestBody = nil
+			c.lastResponse = nil
+			c.koiError = nil
+			c.rawError = fmt.Sprintf("Error reading request body: %v", err)
+			c.lastError = err
+			return nil, fmt.Errorf("reading request body: %w", err)
+		}
+	}
+
+	// Reset the body for the request.
+	var reqBody io.Reader
+	if bodyBytes != nil {
+		reqBody = bytes.NewReader(bodyBytes)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, reqBody)
+	if err != nil {
+		c.lastRequest = nil
+		c.lastRequestBody = nil
+		c.lastResponse = nil
+		c.koiError = nil
+		c.rawError = fmt.Sprintf("Error creating request: %v", err)
+		c.lastError = err
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
 
-	//if c.token != "" && path != "/api/authentication_token" {
-	//   Not needed because we use cookiejar
-	//   req.Header.Set("Authorization", "Bearer "+c.token)
-	//}
-
-	if body != nil && !isMultipart {
+	if multipartContentType != "" {
+		req.Header.Set("Content-Type", multipartContentType)
+	} else if body != nil {
 		req.Header.Set("Content-Type", "application/ld+json")
-	} else if isMultipart {
-		req.Header.Set("Content-Type", "multipart/form-data")
 	}
-	req.Header.Set("Accept", "application/ld+json")
+	if path == "/api/metrics" {
+		req.Header.Set("Accept", "text/plain")
+	} else {
+		req.Header.Set("Accept", "application/ld+json")
+	}
 
 	resp, err := c.httpClient.Do(req)
+	c.lastError = err
+	c.lastRequest = req
+	c.lastRequestBody = bodyBytes
+	c.lastResponse = resp
+	c.koiError = nil
+	c.rawError = ""
+
 	if err != nil {
+		c.rawError = fmt.Sprintf("Request failed: %v", err)
 		return nil, fmt.Errorf("sending request: %w", err)
+	}
+
+	// Read the response body for all status codes.
+	respBodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.rawError = fmt.Sprintf("Error reading response body: %v", err)
+	} else {
+		c.rawError = string(respBodyBytes)
+	}
+	// Reset the response body so callers can read it.
+	resp.Body = io.NopCloser(bytes.NewReader(respBodyBytes))
+
+	// Handle 400 and 422 errors by attempting to unmarshal into KoiError.
+	if resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusUnprocessableEntity {
+		if err == nil {
+			var koiErr KoiError
+			if err := json.Unmarshal(respBodyBytes, &koiErr); err != nil {
+				c.koiError = nil // Explicitly set to nil if unmarshaling fails.
+			} else {
+				c.koiError = &koiErr
+			}
+		}
 	}
 
 	switch resp.StatusCode {
 	case http.StatusOK, http.StatusCreated, http.StatusNoContent:
 		return resp, nil
 	case http.StatusBadRequest:
-		resp.Body.Close()
-		return nil, ErrInvalidInput
+		return resp, ErrInvalidInput
 	case http.StatusUnauthorized:
-		resp.Body.Close()
-		return nil, ErrUnauthorized
+		return resp, ErrUnauthorized
 	case http.StatusNotFound:
-		resp.Body.Close()
-		return nil, ErrNotFound
+		return resp, ErrNotFound
 	case http.StatusUnprocessableEntity:
-		resp.Body.Close()
-		return nil, ErrUnprocessable
+		return resp, ErrUnprocessable
 	default:
-		body, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
-		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
+		return resp, fmt.Errorf("unexpected status code %d", resp.StatusCode)
 	}
 }
 
 // getResource retrieves a single resource and decodes it into the provided struct.
 func (c *httpClient) getResource(ctx context.Context, path string, out interface{}) error {
-	resp, err := c.doRequest(ctx, http.MethodGet, path, nil, false)
+	resp, err := c.doRequest(ctx, http.MethodGet, path, nil, "")
 	if err != nil {
 		return err
 	}
@@ -120,7 +222,7 @@ func (c *httpClient) listResources(ctx context.Context, path string, page int, o
 	}
 	u.RawQuery = q.Encode()
 
-	resp, err := c.doRequest(ctx, http.MethodGet, u.Path+"?"+u.RawQuery, nil, false)
+	resp, err := c.doRequest(ctx, http.MethodGet, u.Path+"?"+u.RawQuery, nil, "")
 	if err != nil {
 		return err
 	}
@@ -142,7 +244,6 @@ func (c *httpClient) listResources(ctx context.Context, path string, page int, o
 		return err
 	}
 	return json.Unmarshal(bodyBytes, out)
-
 }
 
 // postResource creates a resource and decodes the response into the provided struct.
@@ -152,7 +253,7 @@ func (c *httpClient) postResource(ctx context.Context, path string, in, out inte
 		return fmt.Errorf("encoding request body: %w", err)
 	}
 
-	resp, err := c.doRequest(ctx, http.MethodPost, path, bytes.NewReader(body), false)
+	resp, err := c.doRequest(ctx, http.MethodPost, path, bytes.NewReader(body), "")
 	if err != nil {
 		return err
 	}
@@ -171,7 +272,7 @@ func (c *httpClient) putResource(ctx context.Context, path string, in, out inter
 		return fmt.Errorf("encoding request body: %w", err)
 	}
 
-	resp, err := c.doRequest(ctx, http.MethodPut, path, bytes.NewReader(body), false)
+	resp, err := c.doRequest(ctx, http.MethodPut, path, bytes.NewReader(body), "")
 	if err != nil {
 		return err
 	}
@@ -187,7 +288,7 @@ func (c *httpClient) patchResource(ctx context.Context, path string, in, out int
 		return fmt.Errorf("encoding request body: %w", err)
 	}
 
-	resp, err := c.doRequest(ctx, http.MethodPatch, path, bytes.NewReader(body), false)
+	resp, err := c.doRequest(ctx, http.MethodPatch, path, bytes.NewReader(body), "")
 	if err != nil {
 		return err
 	}
@@ -198,30 +299,31 @@ func (c *httpClient) patchResource(ctx context.Context, path string, in, out int
 
 // deleteResource deletes a resource.
 func (c *httpClient) deleteResource(ctx context.Context, path string) error {
-	resp, err := c.doRequest(ctx, http.MethodDelete, path, nil, false)
+	resp, err := c.doRequest(ctx, http.MethodDelete, path, nil, "")
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 	return nil
 }
 
 // uploadFile uploads a file using multipart/form-data and decodes the response.
-func (c *httpClient) uploadFile(ctx context.Context, path string, file []byte, out interface{}) error {
+func (c *httpClient) uploadFile(ctx context.Context, path string, file []byte, fieldName string, out interface{}) error {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("file", "file")
+	part, err := writer.CreateFormFile(fieldName, "upload")
 	if err != nil {
 		return fmt.Errorf("creating form file: %w", err)
 	}
-	if _, err := part.Write(file); err != nil {
+	if _, err = part.Write(file); err != nil {
 		return fmt.Errorf("writing file: %w", err)
 	}
 	if err := writer.Close(); err != nil {
 		return fmt.Errorf("closing writer: %w", err)
 	}
 
-	resp, err := c.doRequest(ctx, http.MethodPost, path, body, true)
+	contentType := writer.FormDataContentType()
+	resp, err := c.doRequest(ctx, http.MethodPost, path, body, contentType)
 	if err != nil {
 		return err
 	}
@@ -241,7 +343,7 @@ func (c *httpClient) CheckLogin(ctx context.Context, username, password string) 
 		return "", fmt.Errorf("encoding request body: %w", err)
 	}
 
-	resp, err := c.doRequest(ctx, http.MethodPost, "/api/authentication_token", bytes.NewReader(body), false)
+	resp, err := c.doRequest(ctx, http.MethodPost, "/api/authentication_token", bytes.NewReader(body), "")
 	if err != nil {
 		return "", err
 	}
@@ -256,1077 +358,4 @@ func (c *httpClient) CheckLogin(ctx context.Context, username, password string) 
 
 	c.token = result.Token
 	return result.Token, nil
-}
-
-// GetMetrics retrieves system or user-specific metrics.
-func (c *httpClient) GetMetrics(ctx context.Context) (*Metrics, error) {
-	var metrics Metrics
-	if err := c.getResource(ctx, "/api/metrics", &metrics); err != nil {
-		return nil, err
-	}
-	return &metrics, nil
-}
-
-// CreateAlbum creates a new album.
-func (c *httpClient) CreateAlbum(ctx context.Context, album *Album) (*Album, error) {
-	var result Album
-	if err := c.postResource(ctx, "/api/albums", album, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// GetAlbum retrieves an album by its ID.
-func (c *httpClient) GetAlbum(ctx context.Context, id ID) (*Album, error) {
-	var album Album
-	if err := c.getResource(ctx, "/api/albums/"+string(id), &album); err != nil {
-		return nil, err
-	}
-	return &album, nil
-}
-
-// ListAlbums retrieves a list of albums.
-func (c *httpClient) ListAlbums(ctx context.Context, page int) ([]*Album, error) {
-	var albums []*Album
-	if err := c.listResources(ctx, "/api/albums", page, &albums); err != nil {
-		return nil, err
-	}
-	return albums, nil
-}
-
-// UpdateAlbum replaces an existing album.
-func (c *httpClient) UpdateAlbum(ctx context.Context, id ID, album *Album) (*Album, error) {
-	var result Album
-	if err := c.putResource(ctx, "/api/albums/"+string(id), album, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// PatchAlbum updates an existing album partially.
-func (c *httpClient) PatchAlbum(ctx context.Context, id ID, album *Album) (*Album, error) {
-	var result Album
-	if err := c.patchResource(ctx, "/api/albums/"+string(id), album, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// DeleteAlbum deletes an album by its ID.
-func (c *httpClient) DeleteAlbum(ctx context.Context, id ID) error {
-	return c.deleteResource(ctx, "/api/albums/"+string(id))
-}
-
-// ListAlbumChildren retrieves child albums of an album.
-func (c *httpClient) ListAlbumChildren(ctx context.Context, id ID, page int) ([]*Album, error) {
-	var albums []*Album
-	if err := c.listResources(ctx, "/api/albums/"+string(id)+"/children", page, &albums); err != nil {
-		return nil, err
-	}
-	return albums, nil
-}
-
-// UploadAlbumImage uploads an image for an album.
-func (c *httpClient) UploadAlbumImage(ctx context.Context, id ID, file []byte) (*Album, error) {
-	var album Album
-	if err := c.uploadFile(ctx, "/api/albums/"+string(id)+"/image", file, &album); err != nil {
-		return nil, err
-	}
-	return &album, nil
-}
-
-// GetAlbumParent retrieves the parent album of an album.
-func (c *httpClient) GetAlbumParent(ctx context.Context, id ID) (*Album, error) {
-	var album Album
-	if err := c.getResource(ctx, "/api/albums/"+string(id)+"/parent", &album); err != nil {
-		return nil, err
-	}
-	return &album, nil
-}
-
-// ListAlbumPhotos retrieves photos in an album.
-func (c *httpClient) ListAlbumPhotos(ctx context.Context, id ID, page int) ([]*Photo, error) {
-	var photos []*Photo
-	if err := c.listResources(ctx, "/api/albums/"+string(id)+"/photos", page, &photos); err != nil {
-		return nil, err
-	}
-	return photos, nil
-}
-
-// CreateChoiceList creates a new choice list.
-func (c *httpClient) CreateChoiceList(ctx context.Context, choiceList *ChoiceList) (*ChoiceList, error) {
-	var result ChoiceList
-	if err := c.postResource(ctx, "/api/choice_lists", choiceList, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// GetChoiceList retrieves a choice list by its ID.
-func (c *httpClient) GetChoiceList(ctx context.Context, id ID) (*ChoiceList, error) {
-	var choiceList ChoiceList
-	if err := c.getResource(ctx, "/api/choice_lists/"+string(id), &choiceList); err != nil {
-		return nil, err
-	}
-	return &choiceList, nil
-}
-
-// ListChoiceLists retrieves a list of choice lists.
-func (c *httpClient) ListChoiceLists(ctx context.Context, page int) ([]*ChoiceList, error) {
-	var choiceLists []*ChoiceList
-	if err := c.listResources(ctx, "/api/choice_lists", page, &choiceLists); err != nil {
-		return nil, err
-	}
-	return choiceLists, nil
-}
-
-// UpdateChoiceList replaces an existing choice list.
-func (c *httpClient) UpdateChoiceList(ctx context.Context, id ID, choiceList *ChoiceList) (*ChoiceList, error) {
-	var result ChoiceList
-	if err := c.putResource(ctx, "/api/choice_lists/"+string(id), choiceList, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// PatchChoiceList updates an existing choice list partially.
-func (c *httpClient) PatchChoiceList(ctx context.Context, id ID, choiceList *ChoiceList) (*ChoiceList, error) {
-	var result ChoiceList
-	if err := c.patchResource(ctx, "/api/choice_lists/"+string(id), choiceList, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// DeleteChoiceList deletes a choice list by its ID.
-func (c *httpClient) DeleteChoiceList(ctx context.Context, id ID) error {
-	return c.deleteResource(ctx, "/api/choice_lists/"+string(id))
-}
-
-// CreateCollection creates a new collection.
-func (c *httpClient) CreateCollection(ctx context.Context, collection *Collection) (*Collection, error) {
-	var result Collection
-	if err := c.postResource(ctx, "/api/collections", collection, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// GetCollection retrieves a collection by its ID.
-func (c *httpClient) GetCollection(ctx context.Context, id ID) (*Collection, error) {
-	var collection Collection
-	if err := c.getResource(ctx, "/api/collections/"+string(id), &collection); err != nil {
-		return nil, err
-	}
-	return &collection, nil
-}
-
-// ListCollections retrieves a list of collections.
-func (c *httpClient) ListCollections(ctx context.Context, page int) ([]*Collection, error) {
-	var collections []*Collection
-	if err := c.listResources(ctx, "/api/collections", page, &collections); err != nil {
-		return nil, err
-	}
-	return collections, nil
-}
-
-// UpdateCollection replaces an existing collection.
-func (c *httpClient) UpdateCollection(ctx context.Context, id ID, collection *Collection) (*Collection, error) {
-	var result Collection
-	if err := c.putResource(ctx, "/api/collections/"+string(id), collection, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// PatchCollection updates an existing collection partially.
-func (c *httpClient) PatchCollection(ctx context.Context, id ID, collection *Collection) (*Collection, error) {
-	var result Collection
-	if err := c.patchResource(ctx, "/api/collections/"+string(id), collection, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// DeleteCollection deletes a collection by its ID.
-func (c *httpClient) DeleteCollection(ctx context.Context, id ID) error {
-	return c.deleteResource(ctx, "/api/collections/"+string(id))
-}
-
-// ListCollectionChildren retrieves child collections of a collection.
-func (c *httpClient) ListCollectionChildren(ctx context.Context, id ID, page int) ([]*Collection, error) {
-	var collections []*Collection
-	if err := c.listResources(ctx, "/api/collections/"+string(id)+"/children", page, &collections); err != nil {
-		return nil, err
-	}
-	return collections, nil
-}
-
-// UploadCollectionImage uploads an image for a collection.
-func (c *httpClient) UploadCollectionImage(ctx context.Context, id ID, file []byte) (*Collection, error) {
-	var collection Collection
-	if err := c.uploadFile(ctx, "/api/collections/"+string(id)+"/image", file, &collection); err != nil {
-		return nil, err
-	}
-	return &collection, nil
-}
-
-// GetCollectionParent retrieves the parent collection of a collection.
-func (c *httpClient) GetCollectionParent(ctx context.Context, id ID) (*Collection, error) {
-	var collection Collection
-	if err := c.getResource(ctx, "/api/collections/"+string(id)+"/parent", &collection); err != nil {
-		return nil, err
-	}
-	return &collection, nil
-}
-
-// ListCollectionItems retrieves items in a collection.
-func (c *httpClient) ListCollectionItems(ctx context.Context, id ID, page int) ([]*Item, error) {
-	var items []*Item
-	if err := c.listResources(ctx, "/api/collections/"+string(id)+"/items", page, &items); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-// ListCollectionData retrieves data fields in a collection.
-func (c *httpClient) ListCollectionData(ctx context.Context, id ID, page int) ([]*Datum, error) {
-	var data []*Datum
-	if err := c.listResources(ctx, "/api/collections/"+string(id)+"/data", page, &data); err != nil {
-		return nil, err
-	}
-	return data, nil
-}
-
-// GetCollectionDefaultTemplate retrieves the default template for items in a collection.
-func (c *httpClient) GetCollectionDefaultTemplate(ctx context.Context, id ID) (*Template, error) {
-	var template Template
-	if err := c.getResource(ctx, "/api/collections/"+string(id)+"/items_default_template", &template); err != nil {
-		return nil, err
-	}
-	return &template, nil
-}
-
-// CreateDatum creates a new datum.
-func (c *httpClient) CreateDatum(ctx context.Context, datum *Datum) (*Datum, error) {
-	var result Datum
-	if err := c.postResource(ctx, "/api/data", datum, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// GetDatum retrieves a datum by its ID.
-func (c *httpClient) GetDatum(ctx context.Context, id ID) (*Datum, error) {
-	var datum Datum
-	if err := c.getResource(ctx, "/api/data/"+string(id), &datum); err != nil {
-		return nil, err
-	}
-	return &datum, nil
-}
-
-// ListData retrieves a list of data fields.
-func (c *httpClient) ListData(ctx context.Context, page int) ([]*Datum, error) {
-	var data []*Datum
-	if err := c.listResources(ctx, "/api/data", page, &data); err != nil {
-		return nil, err
-	}
-	return data, nil
-}
-
-// UpdateDatum replaces an existing datum.
-func (c *httpClient) UpdateDatum(ctx context.Context, id ID, datum *Datum) (*Datum, error) {
-	var result Datum
-	if err := c.putResource(ctx, "/api/data/"+string(id), datum, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// PatchDatum updates an existing datum partially.
-func (c *httpClient) PatchDatum(ctx context.Context, id ID, datum *Datum) (*Datum, error) {
-	var result Datum
-	if err := c.patchResource(ctx, "/api/data/"+string(id), datum, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// DeleteDatum deletes a datum by its ID.
-func (c *httpClient) DeleteDatum(ctx context.Context, id ID) error {
-	return c.deleteResource(ctx, "/api/data/"+string(id))
-}
-
-// UploadDatumFile uploads a file for a datum.
-func (c *httpClient) UploadDatumFile(ctx context.Context, id ID, file []byte) (*Datum, error) {
-	var datum Datum
-	if err := c.uploadFile(ctx, "/api/data/"+string(id)+"/file", file, &datum); err != nil {
-		return nil, err
-	}
-	return &datum, nil
-}
-
-// UploadDatumImage uploads an image for a datum.
-func (c *httpClient) UploadDatumImage(ctx context.Context, id ID, image []byte) (*Datum, error) {
-	var datum Datum
-	if err := c.uploadFile(ctx, "/api/data/"+string(id)+"/image", image, &datum); err != nil {
-		return nil, err
-	}
-	return &datum, nil
-}
-
-// UploadDatumVideo uploads a video for a datum.
-func (c *httpClient) UploadDatumVideo(ctx context.Context, id ID, video []byte) (*Datum, error) {
-	var datum Datum
-	if err := c.uploadFile(ctx, "/api/data/"+string(id)+"/video", video, &datum); err != nil {
-		return nil, err
-	}
-	return &datum, nil
-}
-
-// GetDatumItem retrieves the item associated with a datum.
-func (c *httpClient) GetDatumItem(ctx context.Context, id ID) (*Item, error) {
-	var item Item
-	if err := c.getResource(ctx, "/api/data/"+string(id)+"/item", &item); err != nil {
-		return nil, err
-	}
-	return &item, nil
-}
-
-// GetDatumCollection retrieves the collection associated with a datum.
-func (c *httpClient) GetDatumCollection(ctx context.Context, id ID) (*Collection, error) {
-	var collection Collection
-	if err := c.getResource(ctx, "/api/data/"+string(id)+"/collection", &collection); err != nil {
-		return nil, err
-	}
-	return &collection, nil
-}
-
-// CreateField creates a new field.
-func (c *httpClient) CreateField(ctx context.Context, field *Field) (*Field, error) {
-	var result Field
-	if err := c.postResource(ctx, "/api/fields", field, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// GetField retrieves a field by its ID.
-func (c *httpClient) GetField(ctx context.Context, id ID) (*Field, error) {
-	var field Field
-	if err := c.getResource(ctx, "/api/fields/"+string(id), &field); err != nil {
-		return nil, err
-	}
-	return &field, nil
-}
-
-// ListFields retrieves a list of fields.
-func (c *httpClient) ListFields(ctx context.Context, page int) ([]*Field, error) {
-	var fields []*Field
-	if err := c.listResources(ctx, "/api/fields", page, &fields); err != nil {
-		return nil, err
-	}
-	return fields, nil
-}
-
-// UpdateField replaces an existing field.
-func (c *httpClient) UpdateField(ctx context.Context, id ID, field *Field) (*Field, error) {
-	var result Field
-	if err := c.putResource(ctx, "/api/fields/"+string(id), field, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// PatchField updates an existing field partially.
-func (c *httpClient) PatchField(ctx context.Context, id ID, field *Field) (*Field, error) {
-	var result Field
-	if err := c.patchResource(ctx, "/api/fields/"+string(id), field, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// DeleteField deletes a field by its ID.
-func (c *httpClient) DeleteField(ctx context.Context, id ID) error {
-	return c.deleteResource(ctx, "/api/fields/"+string(id))
-}
-
-// GetFieldTemplate retrieves the template associated with a field.
-func (c *httpClient) GetFieldTemplate(ctx context.Context, id ID) (*Template, error) {
-	var template Template
-	if err := c.getResource(ctx, "/api/fields/"+string(id)+"/template", &template); err != nil {
-		return nil, err
-	}
-	return &template, nil
-}
-
-// ListTemplateFields retrieves fields associated with a template.
-func (c *httpClient) ListTemplateFields(ctx context.Context, templateid ID, page int) ([]*Field, error) {
-	var fields []*Field
-	if err := c.listResources(ctx, "/api/templates/"+string(templateid)+"/fields", page, &fields); err != nil {
-		return nil, err
-	}
-	return fields, nil
-}
-
-// ListInventories retrieves a list of inventories.
-func (c *httpClient) ListInventories(ctx context.Context, page int) ([]*Inventory, error) {
-	var inventories []*Inventory
-	if err := c.listResources(ctx, "/api/inventories", page, &inventories); err != nil {
-		return nil, err
-	}
-	return inventories, nil
-}
-
-// GetInventory retrieves an inventory by its ID.
-func (c *httpClient) GetInventory(ctx context.Context, id ID) (*Inventory, error) {
-	var inventory Inventory
-	if err := c.getResource(ctx, "/api/inventories/"+string(id), &inventory); err != nil {
-		return nil, err
-	}
-	return &inventory, nil
-}
-
-// DeleteInventory deletes an inventory by its ID.
-func (c *httpClient) DeleteInventory(ctx context.Context, id ID) error {
-	return c.deleteResource(ctx, "/api/inventories/"+string(id))
-}
-
-// CreateItem creates a new item.
-func (c *httpClient) CreateItem(ctx context.Context, item *Item) (*Item, error) {
-	var result Item
-	if err := c.postResource(ctx, "/api/items", item, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// GetItem retrieves an item by its ID.
-func (c *httpClient) GetItem(ctx context.Context, id ID) (*Item, error) {
-	var item Item
-	if err := c.getResource(ctx, "/api/items/"+string(id), &item); err != nil {
-		return nil, err
-	}
-	return &item, nil
-}
-
-// ListItems retrieves a list of items.
-func (c *httpClient) ListItems(ctx context.Context, page int) ([]*Item, error) {
-	var items []*Item
-	if err := c.listResources(ctx, "/api/items", page, &items); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-// UpdateItem replaces an existing item.
-func (c *httpClient) UpdateItem(ctx context.Context, id ID, item *Item) (*Item, error) {
-	var result Item
-	if err := c.putResource(ctx, "/api/items/"+string(id), item, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// PatchItem updates an existing item partially.
-func (c *httpClient) PatchItem(ctx context.Context, id ID, item *Item) (*Item, error) {
-	var result Item
-	if err := c.patchResource(ctx, "/api/items/"+string(id), item, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// DeleteItem deletes an item by its ID.
-func (c *httpClient) DeleteItem(ctx context.Context, id ID) error {
-	return c.deleteResource(ctx, "/api/items/"+string(id))
-}
-
-// UploadItemImage uploads an image for an item.
-func (c *httpClient) UploadItemImage(ctx context.Context, id ID, file []byte) (*Item, error) {
-	var item Item
-	if err := c.uploadFile(ctx, "/api/items/"+string(id)+"/image", file, &item); err != nil {
-		return nil, err
-	}
-	return &item, nil
-}
-
-// ListItemRelatedItems retrieves related items for an item.
-func (c *httpClient) ListItemRelatedItems(ctx context.Context, id ID, page int) ([]*Item, error) {
-	var items []*Item
-	if err := c.listResources(ctx, "/api/items/"+string(id)+"/related_items", page, &items); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-// ListItemLoans retrieves loans for an item.
-func (c *httpClient) ListItemLoans(ctx context.Context, id ID, page int) ([]*Loan, error) {
-	var loans []*Loan
-	if err := c.listResources(ctx, "/api/items/"+string(id)+"/loans", page, &loans); err != nil {
-		return nil, err
-	}
-	return loans, nil
-}
-
-// ListItemTags retrieves tags for an item.
-func (c *httpClient) ListItemTags(ctx context.Context, id ID, page int) ([]*Tag, error) {
-	var tags []*Tag
-	if err := c.listResources(ctx, "/api/items/"+string(id)+"/tags", page, &tags); err != nil {
-		return nil, err
-	}
-	return tags, nil
-}
-
-// ListItemData retrieves data fields for an item.
-func (c *httpClient) ListItemData(ctx context.Context, id ID, page int) ([]*Datum, error) {
-	var data []*Datum
-	if err := c.listResources(ctx, "/api/items/"+string(id)+"/data", page, &data); err != nil {
-		return nil, err
-	}
-	return data, nil
-}
-
-// GetItemCollection retrieves the collection associated with an item.
-func (c *httpClient) GetItemCollection(ctx context.Context, id ID) (*Collection, error) {
-	var collection Collection
-	if err := c.getResource(ctx, "/api/items/"+string(id)+"/collection", &collection); err != nil {
-		return nil, err
-	}
-	return &collection, nil
-}
-
-// CreateLoan creates a new loan.
-func (c *httpClient) CreateLoan(ctx context.Context, loan *Loan) (*Loan, error) {
-	var result Loan
-	if err := c.postResource(ctx, "/api/loans", loan, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// GetLoan retrieves a loan by its ID.
-func (c *httpClient) GetLoan(ctx context.Context, id ID) (*Loan, error) {
-	var loan Loan
-	if err := c.getResource(ctx, "/api/loans/"+string(id), &loan); err != nil {
-		return nil, err
-	}
-	return &loan, nil
-}
-
-// ListLoans retrieves a list of loans.
-func (c *httpClient) ListLoans(ctx context.Context, page int) ([]*Loan, error) {
-	var loans []*Loan
-	if err := c.listResources(ctx, "/api/loans", page, &loans); err != nil {
-		return nil, err
-	}
-	return loans, nil
-}
-
-// UpdateLoan replaces an existing loan.
-func (c *httpClient) UpdateLoan(ctx context.Context, id ID, loan *Loan) (*Loan, error) {
-	var result Loan
-	if err := c.putResource(ctx, "/api/loans/"+string(id), loan, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// PatchLoan updates an existing loan partially.
-func (c *httpClient) PatchLoan(ctx context.Context, id ID, loan *Loan) (*Loan, error) {
-	var result Loan
-	if err := c.patchResource(ctx, "/api/loans/"+string(id), loan, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// DeleteLoan deletes a loan by its ID.
-func (c *httpClient) DeleteLoan(ctx context.Context, id ID) error {
-	return c.deleteResource(ctx, "/api/loans/"+string(id))
-}
-
-// GetLoanItem retrieves the item associated with a loan.
-func (c *httpClient) GetLoanItem(ctx context.Context, id ID) (*Item, error) {
-	var item Item
-	if err := c.getResource(ctx, "/api/loans/"+string(id)+"/item", &item); err != nil {
-		return nil, err
-	}
-	return &item, nil
-}
-
-// GetLog retrieves a log by its ID.
-func (c *httpClient) GetLog(ctx context.Context, id ID) (*Log, error) {
-	var log Log
-	if err := c.getResource(ctx, "/api/logs/"+string(id), &log); err != nil {
-		return nil, err
-	}
-	return &log, nil
-}
-
-// ListLogs retrieves a list of logs.
-func (c *httpClient) ListLogs(ctx context.Context, page int) ([]*Log, error) {
-	var logs []*Log
-	if err := c.listResources(ctx, "/api/logs", page, &logs); err != nil {
-		return nil, err
-	}
-	return logs, nil
-}
-
-// CreatePhoto creates a new photo.
-func (c *httpClient) CreatePhoto(ctx context.Context, photo *Photo) (*Photo, error) {
-	var result Photo
-	if err := c.postResource(ctx, "/api/photos", photo, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// GetPhoto retrieves a photo by its ID.
-func (c *httpClient) GetPhoto(ctx context.Context, id ID) (*Photo, error) {
-	var photo Photo
-	if err := c.getResource(ctx, "/api/photos/"+string(id), &photo); err != nil {
-		return nil, err
-	}
-	return &photo, nil
-}
-
-// ListPhotos retrieves a list of photos.
-func (c *httpClient) ListPhotos(ctx context.Context, page int) ([]*Photo, error) {
-	var photos []*Photo
-	if err := c.listResources(ctx, "/api/photos", page, &photos); err != nil {
-		return nil, err
-	}
-	return photos, nil
-}
-
-// UpdatePhoto replaces an existing photo.
-func (c *httpClient) UpdatePhoto(ctx context.Context, id ID, photo *Photo) (*Photo, error) {
-	var result Photo
-	if err := c.putResource(ctx, "/api/photos/"+string(id), photo, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// PatchPhoto updates an existing photo partially.
-func (c *httpClient) PatchPhoto(ctx context.Context, id ID, photo *Photo) (*Photo, error) {
-	var result Photo
-	if err := c.patchResource(ctx, "/api/photos/"+string(id), photo, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// DeletePhoto deletes a photo by its ID.
-func (c *httpClient) DeletePhoto(ctx context.Context, id ID) error {
-	return c.deleteResource(ctx, "/api/photos/"+string(id))
-}
-
-// UploadPhotoImage uploads an image for a photo.
-func (c *httpClient) UploadPhotoImage(ctx context.Context, id ID, file []byte) (*Photo, error) {
-	var photo Photo
-	if err := c.uploadFile(ctx, "/api/photos/"+string(id)+"/image", file, &photo); err != nil {
-		return nil, err
-	}
-	return &photo, nil
-}
-
-// GetPhotoAlbum retrieves the album associated with a photo.
-func (c *httpClient) GetPhotoAlbum(ctx context.Context, id ID) (*Album, error) {
-	var album Album
-	if err := c.getResource(ctx, "/api/photos/"+string(id)+"/album", &album); err != nil {
-		return nil, err
-	}
-	return &album, nil
-}
-
-// CreateTag creates a new tag.
-func (c *httpClient) CreateTag(ctx context.Context, tag *Tag) (*Tag, error) {
-	var result Tag
-	if err := c.postResource(ctx, "/api/tags", tag, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// GetTag retrieves a tag by its ID.
-func (c *httpClient) GetTag(ctx context.Context, id ID) (*Tag, error) {
-	var tag Tag
-	if err := c.getResource(ctx, "/api/tags/"+string(id), &tag); err != nil {
-		return nil, err
-	}
-	return &tag, nil
-}
-
-// ListTags retrieves a list of tags.
-func (c *httpClient) ListTags(ctx context.Context, page int) ([]*Tag, error) {
-	var tags []*Tag
-	if err := c.listResources(ctx, "/api/tags", page, &tags); err != nil {
-		return nil, err
-	}
-	return tags, nil
-}
-
-// UpdateTag replaces an existing tag.
-func (c *httpClient) UpdateTag(ctx context.Context, id ID, tag *Tag) (*Tag, error) {
-	var result Tag
-	if err := c.putResource(ctx, "/api/tags/"+string(id), tag, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// PatchTag updates an existing tag partially.
-func (c *httpClient) PatchTag(ctx context.Context, id ID, tag *Tag) (*Tag, error) {
-	var result Tag
-	if err := c.patchResource(ctx, "/api/tags/"+string(id), tag, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// DeleteTag deletes a tag by its ID.
-func (c *httpClient) DeleteTag(ctx context.Context, id ID) error {
-	return c.deleteResource(ctx, "/api/tags/"+string(id))
-}
-
-// UploadTagImage uploads an image for a tag.
-func (c *httpClient) UploadTagImage(ctx context.Context, id ID, file []byte) (*Tag, error) {
-	var tag Tag
-	if err := c.uploadFile(ctx, "/api/tags/"+string(id)+"/image", file, &tag); err != nil {
-		return nil, err
-	}
-	return &tag, nil
-}
-
-// ListTagItems retrieves items associated with a tag.
-func (c *httpClient) ListTagItems(ctx context.Context, id ID, page int) ([]*Item, error) {
-	var items []*Item
-	if err := c.listResources(ctx, "/api/tags/"+string(id)+"/items", page, &items); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-// GetTagsCategory retrieves the category associated with a tag.
-func (c *httpClient) GetCategoryOfTag(ctx context.Context, id ID) (*TagCategory, error) {
-	var category TagCategory
-	if err := c.getResource(ctx, "/api/tags/"+string(id)+"/category", &category); err != nil {
-		return nil, err
-	}
-	return &category, nil
-}
-
-// CreateTagCategory creates a new tag category.
-func (c *httpClient) CreateTagCategory(ctx context.Context, category *TagCategory) (*TagCategory, error) {
-	var result TagCategory
-	if err := c.postResource(ctx, "/api/tag_categories", category, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// GetTagCategory retrieves a tag category by its ID.
-func (c *httpClient) GetTagCategory(ctx context.Context, id ID) (*TagCategory, error) {
-	var category TagCategory
-	if err := c.getResource(ctx, "/api/tag_categories/"+string(id), &category); err != nil {
-		return nil, err
-	}
-	return &category, nil
-}
-
-// ListTagCategories retrieves a list of tag categories.
-func (c *httpClient) ListTagCategories(ctx context.Context, page int) ([]*TagCategory, error) {
-	var categories []*TagCategory
-	if err := c.listResources(ctx, "/api/tag_categories", page, &categories); err != nil {
-		return nil, err
-	}
-	return categories, nil
-}
-
-// UpdateTagCategory replaces an existing tag category.
-func (c *httpClient) UpdateTagCategory(ctx context.Context, id ID, category *TagCategory) (*TagCategory, error) {
-	var result TagCategory
-	if err := c.putResource(ctx, "/api/tag_categories/"+string(id), category, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// PatchTagCategory updates an existing tag category partially.
-func (c *httpClient) PatchTagCategory(ctx context.Context, id ID, category *TagCategory) (*TagCategory, error) {
-	var result TagCategory
-	if err := c.patchResource(ctx, "/api/tag_categories/"+string(id), category, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// DeleteTagCategory deletes a tag category by its ID.
-func (c *httpClient) DeleteTagCategory(ctx context.Context, id ID) error {
-	return c.deleteResource(ctx, "/api/tag_categories/"+string(id))
-}
-
-// ListTagCategoryTags retrieves tags in a tag category.
-func (c *httpClient) ListTagCategoryTags(ctx context.Context, id ID, page int) ([]*Tag, error) {
-	var tags []*Tag
-	if err := c.listResources(ctx, "/api/tag_categories/"+string(id)+"/tags", page, &tags); err != nil {
-		return nil, err
-	}
-	return tags, nil
-}
-
-// CreateTemplate creates a new template.
-func (c *httpClient) CreateTemplate(ctx context.Context, template *Template) (*Template, error) {
-	var result Template
-	if err := c.postResource(ctx, "/api/templates", template, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// GetTemplate retrieves a template by its ID.
-func (c *httpClient) GetTemplate(ctx context.Context, id ID) (*Template, error) {
-	var template Template
-	if err := c.getResource(ctx, "/api/templates/"+string(id), &template); err != nil {
-		return nil, err
-	}
-	return &template, nil
-}
-
-// ListTemplates retrieves a list of templates.
-func (c *httpClient) ListTemplates(ctx context.Context, page int) ([]*Template, error) {
-	var templates []*Template
-	if err := c.listResources(ctx, "/api/templates", page, &templates); err != nil {
-		return nil, err
-	}
-	return templates, nil
-}
-
-// UpdateTemplate replaces an existing template.
-func (c *httpClient) UpdateTemplate(ctx context.Context, id ID, template *Template) (*Template, error) {
-	var result Template
-	if err := c.putResource(ctx, "/api/templates/"+string(id), template, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// PatchTemplate updates an existing template partially.
-func (c *httpClient) PatchTemplate(ctx context.Context, id ID, template *Template) (*Template, error) {
-	var result Template
-	if err := c.patchResource(ctx, "/api/templates/"+string(id), template, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// DeleteTemplate deletes a template by its ID.
-func (c *httpClient) DeleteTemplate(ctx context.Context, id ID) error {
-	return c.deleteResource(ctx, "/api/templates/"+string(id))
-}
-
-// GetUser retrieves a user by its ID.
-func (c *httpClient) GetUser(ctx context.Context, id ID) (*User, error) {
-	var user User
-	if err := c.getResource(ctx, "/api/users/"+string(id), &user); err != nil {
-		return nil, err
-	}
-	return &user, nil
-}
-
-// ListUsers retrieves a list of users.
-func (c *httpClient) ListUsers(ctx context.Context, page int) ([]*User, error) {
-	var users []*User
-	if err := c.listResources(ctx, "/api/users", page, &users); err != nil {
-		return nil, err
-	}
-	return users, nil
-}
-
-// CreateWish creates a new wish.
-func (c *httpClient) CreateWish(ctx context.Context, wish *Wish) (*Wish, error) {
-	var result Wish
-	if err := c.postResource(ctx, "/api/wishes", wish, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// GetWish retrieves a wish by its ID.
-func (c *httpClient) GetWish(ctx context.Context, id ID) (*Wish, error) {
-	var wish Wish
-	if err := c.getResource(ctx, "/api/wishes/"+string(id), &wish); err != nil {
-		return nil, err
-	}
-	return &wish, nil
-}
-
-// ListWishes retrieves a list of wishes.
-func (c *httpClient) ListWishes(ctx context.Context, page int) ([]*Wish, error) {
-	var wishes []*Wish
-	if err := c.listResources(ctx, "/api/wishes", page, &wishes); err != nil {
-		return nil, err
-	}
-	return wishes, nil
-}
-
-// UpdateWish replaces an existing wish.
-func (c *httpClient) UpdateWish(ctx context.Context, id ID, wish *Wish) (*Wish, error) {
-	var result Wish
-	if err := c.putResource(ctx, "/api/wishes/"+string(id), wish, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// PatchWish updates an existing wish partially.
-func (c *httpClient) PatchWish(ctx context.Context, id ID, wish *Wish) (*Wish, error) {
-	var result Wish
-	if err := c.patchResource(ctx, "/api/wishes/"+string(id), wish, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// DeleteWish deletes a wish by its ID.
-func (c *httpClient) DeleteWish(ctx context.Context, id ID) error {
-	return c.deleteResource(ctx, "/api/wishes/"+string(id))
-}
-
-// UploadWishImage uploads an image for a wish.
-func (c *httpClient) UploadWishImage(ctx context.Context, id ID, file []byte) (*Wish, error) {
-	var wish Wish
-	if err := c.uploadFile(ctx, "/api/wishes/"+string(id)+"/image", file, &wish); err != nil {
-		return nil, err
-	}
-	return &wish, nil
-}
-
-// GetWishWishlist retrieves the wishlist associated with a wish.
-func (c *httpClient) GetWishWishlist(ctx context.Context, id ID) (*Wishlist, error) {
-	var wishlist Wishlist
-	if err := c.getResource(ctx, "/api/wishes/"+string(id)+"/wishlist", &wishlist); err != nil {
-		return nil, err
-	}
-	return &wishlist, nil
-}
-
-// CreateWishlist creates a new wishlist.
-func (c *httpClient) CreateWishlist(ctx context.Context, wishlist *Wishlist) (*Wishlist, error) {
-	var result Wishlist
-	if err := c.postResource(ctx, "/api/wishlists", wishlist, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// GetWishlist retrieves a wishlist by its ID.
-func (c *httpClient) GetWishlist(ctx context.Context, id ID) (*Wishlist, error) {
-	var wishlist Wishlist
-	if err := c.getResource(ctx, "/api/wishlists/"+string(id), &wishlist); err != nil {
-		return nil, err
-	}
-	return &wishlist, nil
-}
-
-// ListWishlists retrieves a list of wishlists.
-func (c *httpClient) ListWishlists(ctx context.Context, page int) ([]*Wishlist, error) {
-	var wishlists []*Wishlist
-	if err := c.listResources(ctx, "/api/wishlists", page, &wishlists); err != nil {
-		return nil, err
-	}
-	return wishlists, nil
-}
-
-// UpdateWishlist replaces an existing wishlist.
-func (c *httpClient) UpdateWishlist(ctx context.Context, id ID, wishlist *Wishlist) (*Wishlist, error) {
-	var result Wishlist
-	if err := c.putResource(ctx, "/api/wishlists/"+string(id), wishlist, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// PatchWishlist updates an existing wishlist partially.
-func (c *httpClient) PatchWishlist(ctx context.Context, id ID, wishlist *Wishlist) (*Wishlist, error) {
-	var result Wishlist
-	if err := c.patchResource(ctx, "/api/wishlists/"+string(id), wishlist, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// DeleteWishlist deletes a wishlist by its ID.
-func (c *httpClient) DeleteWishlist(ctx context.Context, id ID) error {
-	return c.deleteResource(ctx, "/api/wishlists/"+string(id))
-}
-
-// ListWishlistWishes retrieves wishes in a wishlist.
-func (c *httpClient) ListWishlistWishes(ctx context.Context, id ID, page int) ([]*Wish, error) {
-	var wishes []*Wish
-	if err := c.listResources(ctx, "/api/wishlists/"+string(id)+"/wishes", page, &wishes); err != nil {
-		return nil, err
-	}
-	return wishes, nil
-}
-
-// ListWishlistChildren retrieves child wishlists of a wishlist.
-func (c *httpClient) ListWishlistChildren(ctx context.Context, id ID, page int) ([]*Wishlist, error) {
-	var wishlists []*Wishlist
-	if err := c.listResources(ctx, "/api/wishlists/"+string(id)+"/children", page, &wishlists); err != nil {
-		return nil, err
-	}
-	return wishlists, nil
-}
-
-// UploadWishlistImage uploads an image for a wishlist.
-func (c *httpClient) UploadWishlistImage(ctx context.Context, id ID, file []byte) (*Wishlist, error) {
-	var wishlist Wishlist
-	if err := c.uploadFile(ctx, "/api/wishlists/"+string(id)+"/image", file, &wishlist); err != nil {
-		return nil, err
-	}
-	return &wishlist, nil
-}
-
-// GetWishlistParent retrieves the parent wishlist of a wishlist.
-func (c *httpClient) GetWishlistParent(ctx context.Context, id ID) (*Wishlist, error) {
-	var wishlist Wishlist
-	if err := c.getResource(ctx, "/api/wishlists/"+string(id)+"/parent", &wishlist); err != nil {
-		return nil, err
-	}
-	return &wishlist, nil
-}
-
-// DisplayMetricsTable displays the metrics as a text-based table.
-func DisplayMetricsTable(w io.Writer, metrics *Metrics) {
-	if metrics == nil || len(*metrics) == 0 {
-		fmt.Fprintln(w, "No metrics available")
-		return
-	}
-
-	// Find the longest key and value for column widths.
-	maxKeyLen, maxValueLen := 4, 5 // Minimum lengths for "Key" and "Value" headers.
-	for key, value := range *metrics {
-		if len(key) > maxKeyLen {
-			maxKeyLen = len(key)
-		}
-		if len(value) > maxValueLen {
-			maxValueLen = len(value)
-		}
-	}
-
-	// Create format strings for headers and rows.
-	headerFormat := fmt.Sprintf("%%-%ds | %%-%ds\n", maxKeyLen, maxValueLen)
-	rowFormat := fmt.Sprintf("%%-%ds | %%-%ds\n", maxKeyLen, maxValueLen)
-	separator := strings.Repeat("-", maxKeyLen) + "-+-" + strings.Repeat("-", maxValueLen)
-
-	// Print table.
-	fmt.Fprintf(w, headerFormat, "Key", "Value")
-	fmt.Fprintln(w, separator)
-	for key, value := range *metrics {
-		fmt.Fprintf(w, rowFormat, key, value)
-	}
 }
