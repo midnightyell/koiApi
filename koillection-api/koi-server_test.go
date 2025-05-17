@@ -69,6 +69,7 @@ func TestCollectionAndItemLifecycleWithRealServer(t *testing.T) {
 	collectionIRI := resultCollection.IRI()
 	assert.NotEmpty(t, collectionIRI, "Collection IRI is empty")
 	assert.Equal(t, fmt.Sprintf("/api/collections/%s", resultCollection.ID), collectionIRI, "Collection IRI mismatch")
+	resultCollection.UploadImageByFile(ctx, client, "./picture001.jpg")
 
 	// Create item
 	item := &Item{
@@ -160,18 +161,18 @@ func TestCollectionAndItemLifecycleWithRealServer(t *testing.T) {
 		//assert.Equal(t, value, *resultDatum.Value, "Datum value mismatch for %s", dt)
 
 		// Upload file for image, file, or video types
-		if datum.Value != nil {
-			if dt == DatumTypeImage {
-				_, err = resultDatum.UploadImageByFile(ctx, client, "./picture001.jpg")
-				assert.NoError(t, err, "Failed to upload image for datum %s", dt)
-			} else if dt == DatumTypeFile {
-				_, err = resultDatum.UploadFileByFile(ctx, client, "./picture001.jpg")
-				assert.NoError(t, err, "Failed to upload file for datum %s", dt)
-			} else if dt == DatumTypeVideo {
-				_, err = resultDatum.UploadVideoByFile(ctx, client, "./picture001.jpg")
-				assert.NoError(t, err, "Failed to upload video for datum %s", dt)
-			}
+		//if datum.Value != nil {
+		if dt == DatumTypeImage {
+			_, err = resultDatum.UploadImageByFile(ctx, client, "./picture002.jpg")
+			assert.NoError(t, err, "Failed to upload image for datum %s", dt)
+		} else if dt == DatumTypeFile {
+			_, err = resultDatum.UploadFileByFile(ctx, client, "./picture002.jpg")
+			assert.NoError(t, err, "Failed to upload file for datum %s", dt)
+		} else if dt == DatumTypeVideo {
+			_, err = resultDatum.UploadVideoByFile(ctx, client, "./picture002.jpg")
+			assert.NoError(t, err, "Failed to upload video for datum %s", dt)
 		}
+		//}
 	}
 
 	// Fetch item

@@ -202,7 +202,7 @@ func (c *httpClient) ListAlbumChildren(ctx context.Context, id ID, page int) ([]
 // UploadAlbumImage uploads an image for an album.
 func (c *httpClient) UploadAlbumImage(ctx context.Context, id ID, file []byte) (*Album, error) {
 	var album Album
-	if err := c.uploadFile(ctx, "/api/albums/"+string(id)+"/image", file, &album); err != nil {
+	if err := c.uploadFile(ctx, "/api/albums/"+string(id)+"/image", file, "file", &album); err != nil {
 		return nil, err
 	}
 	return &album, nil
@@ -338,7 +338,7 @@ func (c *httpClient) ListCollectionChildren(ctx context.Context, id ID, page int
 // UploadCollectionImage uploads an image for a collection.
 func (c *httpClient) UploadCollectionImage(ctx context.Context, id ID, file []byte) (*Collection, error) {
 	var collection Collection
-	if err := c.uploadFile(ctx, "/api/collections/"+string(id)+"/image", file, &collection); err != nil {
+	if err := c.uploadFile(ctx, "/api/collections/"+string(id)+"/image", file, "file", &collection); err != nil {
 		return nil, err
 	}
 	return &collection, nil
@@ -433,7 +433,7 @@ func (c *httpClient) DeleteDatum(ctx context.Context, id ID) error {
 // UploadDatumFile uploads a file for a datum.
 func (c *httpClient) UploadDatumFile(ctx context.Context, id ID, file []byte) (*Datum, error) {
 	var datum Datum
-	if err := c.uploadFile(ctx, "/api/data/"+string(id)+"/file", file, &datum); err != nil {
+	if err := c.uploadFile(ctx, "/api/data/"+string(id)+"/file", file, "fileFile", &datum); err != nil {
 		return nil, err
 	}
 	return &datum, nil
@@ -442,7 +442,7 @@ func (c *httpClient) UploadDatumFile(ctx context.Context, id ID, file []byte) (*
 // UploadDatumImage uploads an image for a datum.
 func (c *httpClient) UploadDatumImage(ctx context.Context, id ID, image []byte) (*Datum, error) {
 	var datum Datum
-	if err := c.uploadFile(ctx, "/api/data/"+string(id)+"/image", image, &datum); err != nil {
+	if err := c.uploadFile(ctx, "/api/data/"+string(id)+"/image", image, "fileImage", &datum); err != nil {
 		return nil, err
 	}
 	return &datum, nil
@@ -451,7 +451,7 @@ func (c *httpClient) UploadDatumImage(ctx context.Context, id ID, image []byte) 
 // UploadDatumVideo uploads a video for a datum.
 func (c *httpClient) UploadDatumVideo(ctx context.Context, id ID, video []byte) (*Datum, error) {
 	var datum Datum
-	if err := c.uploadFile(ctx, "/api/data/"+string(id)+"/video", video, &datum); err != nil {
+	if err := c.uploadFile(ctx, "/api/data/"+string(id)+"/video", video, "fileVideo", &datum); err != nil {
 		return nil, err
 	}
 	return &datum, nil
@@ -619,7 +619,7 @@ func (c *httpClient) DeleteItem(ctx context.Context, id ID) error {
 // UploadItemImage uploads an image for an item.
 func (c *httpClient) UploadItemImage(ctx context.Context, id ID, file []byte) (*Item, error) {
 	var item Item
-	if err := c.uploadFile(ctx, "/api/items/"+string(id)+"/image", file, &item); err != nil {
+	if err := c.uploadFile(ctx, "/api/items/"+string(id)+"/image", file, "file", &item); err != nil {
 		return nil, err
 	}
 	return &item, nil
@@ -800,7 +800,7 @@ func (c *httpClient) DeletePhoto(ctx context.Context, id ID) error {
 // UploadPhotoImage uploads an image for a photo.
 func (c *httpClient) UploadPhotoImage(ctx context.Context, id ID, file []byte) (*Photo, error) {
 	var photo Photo
-	if err := c.uploadFile(ctx, "/api/photos/"+string(id)+"/image", file, &photo); err != nil {
+	if err := c.uploadFile(ctx, "/api/photos/"+string(id)+"/image", file, "file", &photo); err != nil {
 		return nil, err
 	}
 	return &photo, nil
@@ -868,7 +868,7 @@ func (c *httpClient) DeleteTag(ctx context.Context, id ID) error {
 // UploadTagImage uploads an image for a tag.
 func (c *httpClient) UploadTagImage(ctx context.Context, id ID, file []byte) (*Tag, error) {
 	var tag Tag
-	if err := c.uploadFile(ctx, "/api/tags/"+string(id)+"/image", file, &tag); err != nil {
+	if err := c.uploadFile(ctx, "/api/tags/"+string(id)+"/image", file, "file", &tag); err != nil {
 		return nil, err
 	}
 	return &tag, nil
@@ -1072,7 +1072,7 @@ func (c *httpClient) DeleteWish(ctx context.Context, id ID) error {
 // UploadWishImage uploads an image for a wish.
 func (c *httpClient) UploadWishImage(ctx context.Context, id ID, file []byte) (*Wish, error) {
 	var wish Wish
-	if err := c.uploadFile(ctx, "/api/wishes/"+string(id)+"/image", file, &wish); err != nil {
+	if err := c.uploadFile(ctx, "/api/wishes/"+string(id)+"/image", file, "file", &wish); err != nil {
 		return nil, err
 	}
 	return &wish, nil
@@ -1158,7 +1158,7 @@ func (c *httpClient) ListWishlistChildren(ctx context.Context, id ID, page int) 
 // UploadWishlistImage uploads an image for a wishlist.
 func (c *httpClient) UploadWishlistImage(ctx context.Context, id ID, file []byte) (*Wishlist, error) {
 	var wishlist Wishlist
-	if err := c.uploadFile(ctx, "/api/wishlists/"+string(id)+"/image", file, &wishlist); err != nil {
+	if err := c.uploadFile(ctx, "/api/wishlists/"+string(id)+"/image", file, "file", &wishlist); err != nil {
 		return nil, err
 	}
 	return &wishlist, nil

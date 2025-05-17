@@ -16,9 +16,6 @@ import (
 	"time"
 )
 
-// File Uploads: Assumes a file field for multipart/form-data uploads. If the API expects a different field name (e.g., fileImage for Datum uploads), the fieldName parameter in uploadFile can be set accordingly.
-// Pagination: Assumes the page query parameter is sufficient for pagination. If the API uses other parameters (e.g., per_page), the listResources method can be extended.
-
 // Errors for common HTTP status codes.
 var (
 	ErrInvalidInput  = errors.New("invalid input")
@@ -311,10 +308,10 @@ func (c *httpClient) deleteResource(ctx context.Context, path string) error {
 }
 
 // uploadFile uploads a file using multipart/form-data and decodes the response.
-func (c *httpClient) uploadFile(ctx context.Context, path string, file []byte, out interface{}) error {
+func (c *httpClient) uploadFile(ctx context.Context, path string, file []byte, fieldName string, out interface{}) error {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("file", "upload")
+	part, err := writer.CreateFormFile(fieldName, "upload")
 	if err != nil {
 		return fmt.Errorf("creating form file: %w", err)
 	}

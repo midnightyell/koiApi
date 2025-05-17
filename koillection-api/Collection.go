@@ -182,5 +182,5 @@ func (c *Collection) UploadImageByFile(ctx context.Context, client Client, filen
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
 	}
-	return client.UploadCollectionImage(ctx, id, file)
+	return c.UploadImage(ctx, client, file, id)
 }
