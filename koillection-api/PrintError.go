@@ -8,31 +8,39 @@ import (
 	"strings"
 )
 
-// hasNonPrintable checks if a string contains non-printable characters (outside ASCII 32–126).
-func hasNonPrintable(s string) bool {
-	for _, r := range s {
+// hasNonPrintable checks if a string contains non-printable characters (outside ASCII 32–126) and returns the printable prefix and remaining length.
+func hasNonPrintable(s string) (prefix string, remaining int, hasNonPrintable bool) {
+	for i, r := range s {
 		if r < 32 || r > 126 {
-			return true
+			return s[:i], len(s[i:]), true
 		}
 	}
-	return false
+	return s, 0, false
 }
 
-// sanitizeNonJSONBody checks a non-JSON body for non-printable characters and returns a printable representation.
+// sanitizeNonJSONBody returns a printable representation of a non-JSON body, using the printable prefix and a placeholder for non-printable data.
 func sanitizeNonJSONBody(body string) string {
-	if hasNonPrintable(body) {
-		return fmt.Sprintf("<%d bytes of binary data>", len(body))
+	prefix, remaining, nonPrintable := hasNonPrintable(body)
+	if nonPrintable {
+		if prefix == "" {
+			return fmt.Sprintf("<%d bytes of binary data>", remaining)
+		}
+		return fmt.Sprintf("%s<%d bytes of binary data>", prefix, remaining)
 	}
 	return body
 }
 
-// replaceNonPrintableElements recursively inspects a JSON structure, replaces elements containing non-printable characters, and limits arrays to 3 elements.
+// replaceNonPrintableElements recursively inspects a JSON structure, replaces strings with non-printable characters with their printable prefix and a placeholder, and limits arrays to 3 elements.
 func replaceNonPrintableElements(data interface{}) (interface{}, error) {
 	switch v := data.(type) {
 	case string:
-		// Replace strings with non-printable characters.
-		if hasNonPrintable(v) {
-			return fmt.Sprintf("<%d bytes of binary data>", len(v)), nil
+		// Replace strings with non-printable characters, keeping the printable prefix.
+		prefix, remaining, nonPrintable := hasNonPrintable(v)
+		if nonPrintable {
+			if prefix == "" {
+				return fmt.Sprintf("<%d bytes of binary data>", remaining), nil
+			}
+			return fmt.Sprintf("%s<%d bytes of binary data>", prefix, remaining), nil
 		}
 		return v, nil
 	case []interface{}:
@@ -102,8 +110,13 @@ func (c *httpClient) PrintError(ctx context.Context) {
 	} else {
 		for key, values := range c.lastRequest.Header {
 			joinedValue := strings.Join(values, ", ")
-			if len(joinedValue) > maxFieldSize || hasNonPrintable(joinedValue) {
-				fmt.Printf("  %s: <%d bytes of data>\n", key, len(joinedValue))
+			prefix, remaining, nonPrintable := hasNonPrintable(joinedValue)
+			if len(joinedValue) > maxFieldSize || nonPrintable {
+				if prefix == "" {
+					fmt.Printf("  %s: <%d bytes of data>\n", key, len(joinedValue))
+				} else {
+					fmt.Printf("  %s: %s<%d bytes of data>\n", key, prefix, remaining)
+				}
 			} else {
 				fmt.Printf("  %s: %s\n", key, joinedValue)
 			}
@@ -126,7 +139,7 @@ func (c *httpClient) PrintError(ctx context.Context) {
 				fmt.Printf("  %s\n", sanitizeNonJSONBody(string(c.lastRequestBody)))
 			}
 		} else {
-			// If not JSON, sanitize for non-printable characters.
+			// If not JSON, use printable prefix and placeholder.
 			fmt.Printf("  %s\n", sanitizeNonJSONBody(string(c.lastRequestBody)))
 		}
 	}
@@ -138,8 +151,13 @@ func (c *httpClient) PrintError(ctx context.Context) {
 	} else {
 		for key, values := range c.lastResponse.Header {
 			joinedValue := strings.Join(values, ", ")
-			if len(joinedValue) > maxFieldSize || hasNonPrintable(joinedValue) {
-				fmt.Printf("  %s: <%d bytes of data>\n", key, len(joinedValue))
+			prefix, remaining, nonPrintable := hasNonPrintable(joinedValue)
+			if len(joinedValue) > maxFieldSize || nonPrintable {
+				if prefix == "" {
+					fmt.Printf("  %s: <%d bytes of data>\n", key, len(joinedValue))
+				} else {
+					fmt.Printf("  %s: %s<%d bytes of data>\n", key, prefix, remaining)
+				}
 			} else {
 				fmt.Printf("  %s: %s\n", key, joinedValue)
 			}
@@ -162,7 +180,7 @@ func (c *httpClient) PrintError(ctx context.Context) {
 				fmt.Printf("  %s\n", sanitizeNonJSONBody(c.rawError))
 			}
 		} else {
-			// If not JSON, sanitize for non-printable characters.
+			// If not JSON, use printable prefix and placeholder.
 			fmt.Printf("  %s\n", sanitizeNonJSONBody(c.rawError))
 		}
 	}
