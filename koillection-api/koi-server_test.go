@@ -69,7 +69,7 @@ func TestCollectionAndItemLifecycleWithRealServer(t *testing.T) {
 	collectionIRI := resultCollection.IRI()
 	assert.NotEmpty(t, collectionIRI, "Collection IRI is empty")
 	assert.Equal(t, fmt.Sprintf("/api/collections/%s", resultCollection.ID), collectionIRI, "Collection IRI mismatch")
-	resultCollection.UploadImageByFile(ctx, client, "./picture001.jpg")
+	resultCollection.UploadImageByFile(ctx, client, "./picture002.jpg")
 
 	// Create item
 	item := &Item{
@@ -88,9 +88,9 @@ func TestCollectionAndItemLifecycleWithRealServer(t *testing.T) {
 		DatumTypeText, DatumTypeTextarea, DatumTypeCountry, DatumTypeDate,
 		DatumTypeRating, DatumTypeNumber, DatumTypePrice, DatumTypeLink,
 		DatumTypeList,
-		//DatumTypeChoiceList,
+		DatumTypeChoiceList,
 		DatumTypeCheckbox, DatumTypeImage,
-		// DatumTypeFile, DatumTypeSign, DatumTypeVideo,
+		DatumTypeFile, DatumTypeSign, DatumTypeVideo,
 		DatumTypeBlankLine, DatumTypeSection,
 	}
 	itemIRI := resultItem.IRI()
@@ -106,8 +106,32 @@ func TestCollectionAndItemLifecycleWithRealServer(t *testing.T) {
 
 	assert.NotEmpty(t, itemIRI, "Item IRI is empty")
 	assert.Equal(t, fmt.Sprintf("/api/items/%s", resultItem.ID), itemIRI, "Item IRI mismatch")
+
+	// Create a datum for the it
+	name := "Name of the thing"
+
+	datum := &Datum{
+		Item:       &itemIRI,
+		DatumType:  DatumTypeText,
+		Label:      "Name",
+		Value:      &name,
+		Visibility: VisibilityPublic,
+	}
+
+	datum.Print("%s:\n", *datum.Item)
+	fmt.Printf("\n")
+
+	resultDatum, err := client.CreateDatum(ctx, datum)
+	assert.NoError(t, err, "Failed to create datum")
+	assert.NotEmpty(t, resultDatum.ID, "Datum ID is empty")
+	assert.Equal(t, DatumTypeText, resultDatum.DatumType, "Datum type mismatch")
+	assert.Equal(t, name, *resultDatum.Value, "Datum value mismatch")
+	assert.Equal(t, VisibilityPublic, resultDatum.Visibility, "Datum visibility mismatch")
+	assert.Equal(t, itemIRI, *resultDatum.Item, "Datum item mismatch")
+
 	for _, dt := range datumTypes {
 		value := "test-value"
+		currency := ""
 		if dt == DatumTypeCheckbox {
 			value = "1"
 		} else if dt == DatumTypeDate {
@@ -117,20 +141,20 @@ func TestCollectionAndItemLifecycleWithRealServer(t *testing.T) {
 		} else if dt == DatumTypeRating {
 			value = "5"
 		} else if dt == DatumTypePrice {
-			//value = "99.99"
-			value = ""
-		} else if dt == DatumTypeFile || dt == DatumTypeVideo {
-			value = "/path/to/file" // Placeholder for file-based types
+			value = "99.99"
+			currency = "EUR"
 		} else if dt == DatumTypeCountry {
 			value = "US"
 		} else if dt == DatumTypeLink {
 			value = "https://example.com"
-		} else if dt == DatumTypeChoiceList || dt == DatumTypeList {
+		} else if dt == DatumTypeChoiceList {
+			continue
+		} else if dt == DatumTypeList {
 			value = `["List item 1", "List item 2"]`
 		} else if dt == DatumTypeSign || dt == DatumTypeImage || dt == DatumTypeFile || dt == DatumTypeVideo {
-			value = ""
+			continue
 		} else if dt == DatumTypeBlankLine {
-			value = " "
+			value = "This is a blank line"
 		} else if dt == DatumTypeSection {
 			value = "Section title"
 		}
@@ -138,12 +162,13 @@ func TestCollectionAndItemLifecycleWithRealServer(t *testing.T) {
 		if *strP == "" {
 			strP = nil
 		}
-		datum := &Datum{
+		datum = &Datum{
 			Item:       &itemIRI,
 			DatumType:  dt,
 			Label:      string(dt) + " Field",
 			Value:      strP,
 			Visibility: VisibilityPublic,
+			Currency:   &currency,
 		}
 
 		datum.Print("%s:\n", *datum.Item)
