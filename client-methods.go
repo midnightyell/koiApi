@@ -129,6 +129,7 @@ type Client interface {
 	GetWishlistParent(ctx context.Context, id ID) (*Wishlist, error)                           // HTTP GET /api/wishlists/{id}/parent
 	GetResponse(ctx context.Context) string
 	PrintError(ctx context.Context)
+	DeleteAllData(ctx context.Context) error
 }
 
 // GetMetrics retrieves system or user-specific metrics.
@@ -140,8 +141,11 @@ func (c *httpClient) GetMetrics(ctx context.Context) (*Metrics, error) {
 	return &metrics, nil
 }
 
-// CreateAlbum creates a new album.
+// CreateAlbum creates a new album with schema validation.
 func (c *httpClient) CreateAlbum(ctx context.Context, album *Album) (*Album, error) {
+	if err := c.validateAlbum(album); err != nil {
+		return nil, err
+	}
 	var result Album
 	if err := c.postResource(ctx, "/api/albums", album, &result); err != nil {
 		return nil, err
@@ -226,8 +230,11 @@ func (c *httpClient) ListAlbumPhotos(ctx context.Context, id ID, page int) ([]*P
 	return photos, nil
 }
 
-// CreateChoiceList creates a new choice list.
+// CreateChoiceList creates a new choice list with schema validation.
 func (c *httpClient) CreateChoiceList(ctx context.Context, choiceList *ChoiceList) (*ChoiceList, error) {
+	if err := c.validateChoiceList(choiceList); err != nil {
+		return nil, err
+	}
 	var result ChoiceList
 	if err := c.postResource(ctx, "/api/choice_lists", choiceList, &result); err != nil {
 		return nil, err
@@ -276,8 +283,11 @@ func (c *httpClient) DeleteChoiceList(ctx context.Context, id ID) error {
 	return c.deleteResource(ctx, "/api/choice_lists/"+string(id))
 }
 
-// CreateCollection creates a new collection.
+// CreateCollection creates a new collection with schema validation.
 func (c *httpClient) CreateCollection(ctx context.Context, collection *Collection) (*Collection, error) {
+	if err := c.validateCollection(collection); err != nil {
+		return nil, err
+	}
 	var result Collection
 	if err := c.postResource(ctx, "/api/collections", collection, &result); err != nil {
 		return nil, err
@@ -380,8 +390,11 @@ func (c *httpClient) GetCollectionDefaultTemplate(ctx context.Context, id ID) (*
 	return &template, nil
 }
 
-// CreateDatum creates a new datum.
+// CreateDatum creates a new datum with schema validation.
 func (c *httpClient) CreateDatum(ctx context.Context, datum *Datum) (*Datum, error) {
+	if err := c.validateDatum(datum); err != nil {
+		return nil, err
+	}
 	var result Datum
 	if err := c.postResource(ctx, "/api/data", datum, &result); err != nil {
 		return nil, err
@@ -475,8 +488,11 @@ func (c *httpClient) GetDatumCollection(ctx context.Context, id ID) (*Collection
 	return &collection, nil
 }
 
-// CreateField creates a new field.
+// CreateField creates a new field with schema validation.
 func (c *httpClient) CreateField(ctx context.Context, field *Field) (*Field, error) {
+	if err := c.validateField(field); err != nil {
+		return nil, err
+	}
 	var result Field
 	if err := c.postResource(ctx, "/api/fields", field, &result); err != nil {
 		return nil, err
@@ -568,6 +584,9 @@ func (c *httpClient) DeleteInventory(ctx context.Context, id ID) error {
 
 // CreateItem creates a new item.
 func (c *httpClient) CreateItem(ctx context.Context, item *Item) (*Item, error) {
+	if err := c.validateItem(item); err != nil {
+		return nil, err
+	}
 	var result Item
 	if err := c.postResource(ctx, "/api/items", item, &result); err != nil {
 		return nil, err
@@ -670,8 +689,11 @@ func (c *httpClient) GetItemCollection(ctx context.Context, id ID) (*Collection,
 	return &collection, nil
 }
 
-// CreateLoan creates a new loan.
+// / CreateLoan creates a new loan with schema validation.
 func (c *httpClient) CreateLoan(ctx context.Context, loan *Loan) (*Loan, error) {
+	if err := c.validateLoan(loan); err != nil {
+		return nil, err
+	}
 	var result Loan
 	if err := c.postResource(ctx, "/api/loans", loan, &result); err != nil {
 		return nil, err
@@ -747,8 +769,11 @@ func (c *httpClient) ListLogs(ctx context.Context, page int) ([]*Log, error) {
 	return logs, nil
 }
 
-// CreatePhoto creates a new photo.
+// CreatePhoto creates a new photo with schema validation.
 func (c *httpClient) CreatePhoto(ctx context.Context, photo *Photo) (*Photo, error) {
+	if err := c.validatePhoto(photo); err != nil {
+		return nil, err
+	}
 	var result Photo
 	if err := c.postResource(ctx, "/api/photos", photo, &result); err != nil {
 		return nil, err
@@ -815,8 +840,11 @@ func (c *httpClient) GetPhotoAlbum(ctx context.Context, id ID) (*Album, error) {
 	return &album, nil
 }
 
-// CreateTag creates a new tag.
+// CreateTag creates a new tag with schema validation.
 func (c *httpClient) CreateTag(ctx context.Context, tag *Tag) (*Tag, error) {
+	if err := c.validateTag(tag); err != nil {
+		return nil, err
+	}
 	var result Tag
 	if err := c.postResource(ctx, "/api/tags", tag, &result); err != nil {
 		return nil, err
@@ -892,8 +920,11 @@ func (c *httpClient) GetCategoryOfTag(ctx context.Context, id ID) (*TagCategory,
 	return &category, nil
 }
 
-// CreateTagCategory creates a new tag category.
+// CreateTagCategory creates a new tag category with schema validation.
 func (c *httpClient) CreateTagCategory(ctx context.Context, category *TagCategory) (*TagCategory, error) {
+	if err := c.validateTagCategory(category); err != nil {
+		return nil, err
+	}
 	var result TagCategory
 	if err := c.postResource(ctx, "/api/tag_categories", category, &result); err != nil {
 		return nil, err
@@ -951,8 +982,11 @@ func (c *httpClient) ListTagCategoryTags(ctx context.Context, id ID, page int) (
 	return tags, nil
 }
 
-// CreateTemplate creates a new template.
+// CreateTemplate creates a new template with schema validation.
 func (c *httpClient) CreateTemplate(ctx context.Context, template *Template) (*Template, error) {
+	if err := c.validateTemplate(template); err != nil {
+		return nil, err
+	}
 	var result Template
 	if err := c.postResource(ctx, "/api/templates", template, &result); err != nil {
 		return nil, err
@@ -1019,8 +1053,11 @@ func (c *httpClient) ListUsers(ctx context.Context, page int) ([]*User, error) {
 	return users, nil
 }
 
-// CreateWish creates a new wish.
+// CreateWish creates a new wish with schema validation.
 func (c *httpClient) CreateWish(ctx context.Context, wish *Wish) (*Wish, error) {
+	if err := c.validateWish(wish); err != nil {
+		return nil, err
+	}
 	var result Wish
 	if err := c.postResource(ctx, "/api/wishes", wish, &result); err != nil {
 		return nil, err
@@ -1087,8 +1124,11 @@ func (c *httpClient) GetWishWishlist(ctx context.Context, id ID) (*Wishlist, err
 	return &wishlist, nil
 }
 
-// CreateWishlist creates a new wishlist.
+// CreateWishlist creates a new wishlist with schema validation.
 func (c *httpClient) CreateWishlist(ctx context.Context, wishlist *Wishlist) (*Wishlist, error) {
+	if err := c.validateWishlist(wishlist); err != nil {
+		return nil, err
+	}
 	var result Wishlist
 	if err := c.postResource(ctx, "/api/wishlists", wishlist, &result); err != nil {
 		return nil, err

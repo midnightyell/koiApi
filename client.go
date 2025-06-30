@@ -211,7 +211,7 @@ func (c *httpClient) getResource(ctx context.Context, path string, out interface
 }
 
 // listResources retrieves a paginated list of resources and decodes the member array.
-func (c *httpClient) listResources(ctx context.Context, path string, page int, out interface{}) error {
+func (c *httpClient) listResources(ctx context.Context, path string, page int, out interface{}, queryParams ...string) error {
 	u, err := url.Parse(c.baseURL + path)
 	if err != nil {
 		return fmt.Errorf("parsing URL: %w", err)
@@ -219,6 +219,15 @@ func (c *httpClient) listResources(ctx context.Context, path string, page int, o
 	q := u.Query()
 	if page > 0 {
 		q.Set("page", strconv.Itoa(page))
+	}
+	// Append query parameters
+	for _, param := range queryParams {
+		if param != "" {
+			parts := strings.SplitN(param, "=", 2)
+			if len(parts) == 2 {
+				q.Set(parts[0], parts[1])
+			}
+		}
 	}
 	u.RawQuery = q.Encode()
 

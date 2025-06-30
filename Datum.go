@@ -7,31 +7,25 @@ import (
 	"time"
 )
 
-type DatumType string
-
 const (
-	DatumTypeText       DatumType = "text"
-	DatumTypeTextarea   DatumType = "textarea"
-	DatumTypeCountry    DatumType = "country"
-	DatumTypeDate       DatumType = "date"
-	DatumTypeRating     DatumType = "rating"
-	DatumTypeNumber     DatumType = "number"
-	DatumTypePrice      DatumType = "price"
-	DatumTypeLink       DatumType = "link"
-	DatumTypeList       DatumType = "list"
-	DatumTypeChoiceList DatumType = "choice-list"
-	DatumTypeCheckbox   DatumType = "checkbox"
-	DatumTypeImage      DatumType = "image"
-	DatumTypeFile       DatumType = "file"
-	DatumTypeSign       DatumType = "sign"
-	DatumTypeVideo      DatumType = "video"
-	DatumTypeBlankLine  DatumType = "blank-line"
-	DatumTypeSection    DatumType = "section"
+	DatumTypeText       string = "text"
+	DatumTypeTextarea   string = "textarea"
+	DatumTypeCountry    string = "country"
+	DatumTypeDate       string = "date"
+	DatumTypeRating     string = "rating"
+	DatumTypeNumber     string = "number"
+	DatumTypePrice      string = "price"
+	DatumTypeLink       string = "link"
+	DatumTypeList       string = "list"
+	DatumTypeChoiceList string = "choice-list"
+	DatumTypeCheckbox   string = "checkbox"
+	DatumTypeImage      string = "image"
+	DatumTypeFile       string = "file"
+	DatumTypeSign       string = "sign"
+	DatumTypeVideo      string = "video"
+	DatumTypeBlankLine  string = "blank-line"
+	DatumTypeSection    string = "section"
 )
-
-func (dt DatumType) String() string {
-	return string(dt)
-}
 
 // DatumInterface defines methods for interacting with Datum resources.
 type DatumInterface interface {
@@ -60,7 +54,7 @@ type Datum struct {
 	ID                  ID         `json:"id,omitempty" access:"ro"`                  // Identifier
 	Item                *string    `json:"item,omitempty" access:"rw"`                // Item IRI
 	Collection          *string    `json:"collection,omitempty" access:"rw"`          // Collection IRI
-	DatumType           DatumType  `json:"type" access:"rw"`                          // Custom data field type
+	DatumType           string     `json:"type" access:"rw"`                          // Custom data field type
 	Label               string     `json:"label" access:"rw"`                         // Field label
 	Value               *string    `json:"value,omitempty" access:"rw"`               // Field value
 	Position            *int       `json:"position,omitempty" access:"rw"`            // Field position
