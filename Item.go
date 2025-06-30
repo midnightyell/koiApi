@@ -30,7 +30,7 @@ type Item struct {
 	Context             *Context   `json:"@context,omitempty" access:"rw"`            // JSON-LD only
 	_ID                 ID         `json:"@id,omitempty" access:"ro"`                 // JSON-LD only
 	Type                string     `json:"@type,omitempty" access:"rw"`               // JSON-LD only
-	ID                  ID         `json:"koiid,omitempty" access:"ro"`               // Identifier
+	ID                  ID         `json:"id,omitempty" access:"ro"`                  // Identifier
 	Name                string     `json:"name" access:"rw"`                          // Item name
 	Quantity            int        `json:"quantity" access:"rw"`                      // Item quantity
 	Collection          *string    `json:"collection" access:"rw"`                    // Collection IRI
