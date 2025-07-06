@@ -41,6 +41,7 @@ type FieldInterface interface {
 	IRI() string                                                                      // /api/fields/{id}
 	Patch(ctx context.Context, client Client, fieldID ...ID) (*Field, error)          // HTTP PATCH /api/fields/{id}
 	Update(ctx context.Context, client Client, fieldID ...ID) (*Field, error)         // HTTP PUT /api/fields/{id}
+	Summary() string
 }
 
 // Field represents a template field in Koillection, combining fields for JSON-LD and API interactions.
@@ -56,6 +57,7 @@ type Field struct {
 	Template   *string    `json:"template" access:"rw"`             // Template IRI
 	Visibility Visibility `json:"visibility,omitempty" access:"rw"` // Visibility level
 	Owner      *string    `json:"owner,omitempty" access:"ro"`      // Owner IRI
+
 }
 
 // whichID

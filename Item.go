@@ -18,6 +18,7 @@ type ItemInterface interface {
 	Update(ctx context.Context, client Client, itemID ...ID) (*Item, error)                             // HTTP PUT /api/items/{id}
 	UploadImage(ctx context.Context, client Client, file []byte, itemID ...ID) (*Item, error)           // HTTP POST /api/items/{id}/image
 	UploadImageByFile(ctx context.Context, client Client, filename string, itemID ...ID) (*Item, error) // HTTP POST /api/items/{id}/image
+	Summary() string
 }
 
 // Item represents an item within a collection, combining fields for JSON-LD and API interactions.
@@ -43,6 +44,7 @@ type Item struct {
 	Tags                []string   `json:"tags,omitempty" access:"wo"`                // Tag IRIs
 	RelatedItems        []string   `json:"relatedItems,omitempty" access:"wo"`        // Related item IRIs
 	File                *string    `json:"file,omitempty" access:"wo"`                // Image file data
+
 }
 
 // whichID

@@ -11,6 +11,7 @@ type InventoryInterface interface {
 	Delete(ctx context.Context, client Client, inventoryID ...ID) error            // HTTP DELETE /api/inventories/{id}
 	Get(ctx context.Context, client Client, inventoryID ...ID) (*Inventory, error) // HTTP GET /api/inventories/{id}
 	IRI() string                                                                   // /api/inventories/{id}
+	Summary() string
 }
 
 // Inventory represents an inventory record in Koillection, combining fields for JSON-LD and API interactions.
@@ -24,6 +25,7 @@ type Inventory struct {
 	Owner     *string    `json:"owner,omitempty" access:"ro"`     // Owner IRI
 	CreatedAt time.Time  `json:"createdAt" access:"ro"`           // Creation timestamp
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" access:"ro"` // Update timestamp
+
 }
 
 // whichID

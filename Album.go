@@ -21,6 +21,7 @@ type AlbumInterface interface {
 	Update(ctx context.Context, client Client, albumID ...ID) (*Album, error)                             // HTTP PUT /api/albums/{id}
 	UploadImage(ctx context.Context, client Client, file []byte, albumID ...ID) (*Album, error)           // HTTP POST /api/albums/{id}/image
 	UploadImageByFile(ctx context.Context, client Client, filename string, albumID ...ID) (*Album, error) // HTTP POST /api/albums/{id}/image
+	Summary() string
 }
 
 // Album represents an album in Koillection, combining fields for JSON-LD and API interactions.

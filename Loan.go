@@ -16,6 +16,7 @@ type LoanInterface interface {
 	List(ctx context.Context, client Client) ([]*Loan, error)                // HTTP GET /api/loans
 	Patch(ctx context.Context, client Client, loanID ...ID) (*Loan, error)   // HTTP PATCH /api/loans/{id}
 	Update(ctx context.Context, client Client, loanID ...ID) (*Loan, error)  // HTTP PUT /api/loans/{id}
+	Summary() string
 }
 
 // Loan represents a loan record in Koillection, combining fields for JSON-LD and API interactions.
@@ -29,6 +30,7 @@ type Loan struct {
 	LentAt     time.Time  `json:"lentAt" access:"rw"`               // Loan start date
 	ReturnedAt *time.Time `json:"returnedAt,omitempty" access:"rw"` // Loan return date
 	Owner      *string    `json:"owner,omitempty" access:"ro"`      // Owner IRI
+
 }
 
 // whichID

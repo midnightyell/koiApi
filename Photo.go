@@ -21,6 +21,7 @@ type PhotoInterface interface {
 	Update(ctx context.Context, client Client, photoID ...ID) (*Photo, error)                             // HTTP PUT /api/photos/{id}
 	UploadImage(ctx context.Context, client Client, file []byte, photoID ...ID) (*Photo, error)           // HTTP POST /api/photos/{id}/image
 	UploadImageByFile(ctx context.Context, client Client, filename string, photoID ...ID) (*Photo, error) // HTTP POST /api/photos/{id}/image
+	Summary() string
 }
 
 // Photo represents a photo in Koillection, combining fields for JSON-LD and API interactions.
@@ -43,6 +44,7 @@ type Photo struct {
 	CreatedAt           time.Time  `json:"createdAt" access:"ro"`                     // Creation timestamp
 	UpdatedAt           *time.Time `json:"updatedAt,omitempty" access:"ro"`           // Update timestamp
 	File                *string    `json:"file,omitempty" access:"wo"`                // Image file data
+
 }
 
 // whichID

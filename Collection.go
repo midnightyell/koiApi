@@ -48,10 +48,6 @@ type Collection struct {
 	DeleteImage          *bool      `json:"deleteImage,omitempty" access:"wo"`          // Flag to delete image
 }
 
-func (c *Collection) Summary() string {
-	return fmt.Sprintf("%-40s %s", c.Title, c.ID)
-}
-
 // whichID
 func (c *Collection) whichID(collectionID ...ID) ID {
 	if len(collectionID) > 0 {

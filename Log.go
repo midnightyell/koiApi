@@ -11,6 +11,7 @@ type LogInterface interface {
 	Get(ctx context.Context, client Client, logID ...ID) (*Log, error) // HTTP GET /api/logs/{id}
 	IRI() string                                                       // /api/logs/{id}
 	List(ctx context.Context, client Client) ([]*Log, error)           // HTTP GET /api/logs
+	Summary() string
 }
 
 // Log represents an action or event in Koillection, combining fields for JSON-LD and API interactions.
@@ -26,6 +27,7 @@ type Log struct {
 	ObjectClass   string    `json:"objectClass" access:"rw"`        // Object class
 	ObjectDeleted bool      `json:"objectDeleted" access:"ro"`      // Deletion status
 	Owner         *string   `json:"owner,omitempty" access:"ro"`    // Owner IRI
+
 }
 
 // whichID

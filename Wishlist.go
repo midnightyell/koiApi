@@ -21,6 +21,7 @@ type WishlistInterface interface {
 	Update(ctx context.Context, client Client, wishlistID ...ID) (*Wishlist, error)                             // HTTP PUT /api/wishlists/{id}
 	UploadImage(ctx context.Context, client Client, file []byte, wishlistID ...ID) (*Wishlist, error)           // HTTP POST /api/wishlists/{id}/image
 	UploadImageByFile(ctx context.Context, client Client, filename string, wishlistID ...ID) (*Wishlist, error) // HTTP POST /api/wishlists/{id}/image
+	Summary() string
 }
 
 // Wishlist represents a wishlist in Koillection, combining fields for JSON-LD and API interactions.
@@ -42,6 +43,7 @@ type Wishlist struct {
 	UpdatedAt        *time.Time `json:"updatedAt,omitempty" access:"ro"`        // Update timestamp
 	File             *string    `json:"file,omitempty" access:"wo"`             // Image file data
 	DeleteImage      *bool      `json:"deleteImage,omitempty" access:"wo"`      // Flag to delete image
+
 }
 
 // whichID

@@ -15,6 +15,7 @@ type ChoiceListInterface interface {
 	List(ctx context.Context, client Client) ([]*ChoiceList, error)                     // HTTP GET /api/choice_lists
 	Patch(ctx context.Context, client Client, choiceListID ...ID) (*ChoiceList, error)  // HTTP PATCH /api/choice_lists/{id}
 	Update(ctx context.Context, client Client, choiceListID ...ID) (*ChoiceList, error) // HTTP PUT /api/choice_lists/{id}
+	Summary() string
 }
 
 // ChoiceList represents a choice list in Koillection, combining fields for JSON-LD and API interactions.

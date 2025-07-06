@@ -19,6 +19,7 @@ type WishInterface interface {
 	Update(ctx context.Context, client Client, wishID ...ID) (*Wish, error)                             // HTTP PUT /api/wishes/{id}
 	UploadImage(ctx context.Context, client Client, file []byte, wishID ...ID) (*Wish, error)           // HTTP POST /api/wishes/{id}/image
 	UploadImageByFile(ctx context.Context, client Client, filename string, wishID ...ID) (*Wish, error) // HTTP POST /api/wishes/{id}/image
+	Summary() string
 }
 
 // Wish represents a wish in Koillection, combining fields for JSON-LD and API interactions.
@@ -43,6 +44,7 @@ type Wish struct {
 	CreatedAt           time.Time  `json:"createdAt" access:"ro"`                     // Creation timestamp
 	UpdatedAt           *time.Time `json:"updatedAt,omitempty" access:"ro"`           // Update timestamp
 	File                *string    `json:"file,omitempty" access:"wo"`                // Image file data
+
 }
 
 // whichID

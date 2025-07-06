@@ -16,6 +16,7 @@ type TagCategoryInterface interface {
 	ListTags(ctx context.Context, client Client, tagCategoryID ...ID) ([]*Tag, error)     // HTTP GET /api/tag_categories/{id}/tags
 	Patch(ctx context.Context, client Client, tagCategoryID ...ID) (*TagCategory, error)  // HTTP PATCH /api/tag_categories/{id}
 	Update(ctx context.Context, client Client, tagCategoryID ...ID) (*TagCategory, error) // HTTP PUT /api/tag_categories/{id}
+	Summary() string
 }
 
 // TagCategory represents a tag category in Koillection, combining fields for JSON-LD and API interactions.
@@ -30,6 +31,7 @@ type TagCategory struct {
 	Owner       *string    `json:"owner,omitempty" access:"ro"`       // Owner IRI
 	CreatedAt   time.Time  `json:"createdAt" access:"ro"`             // Creation timestamp
 	UpdatedAt   *time.Time `json:"updatedAt,omitempty" access:"ro"`   // Update timestamp
+
 }
 
 // whichID

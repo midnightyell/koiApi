@@ -20,6 +20,7 @@ type TagInterface interface {
 	Update(ctx context.Context, client Client, tagID ...ID) (*Tag, error)                             // HTTP PUT /api/tags/{id}
 	UploadImage(ctx context.Context, client Client, file []byte, tagID ...ID) (*Tag, error)           // HTTP POST /api/tags/{id}/image
 	UploadImageByFile(ctx context.Context, client Client, filename string, tagID ...ID) (*Tag, error) // HTTP POST /api/tags/{id}/image
+	Summary() string
 }
 
 // Tag represents a tag in Koillection, combining fields for JSON-LD and API interactions.
@@ -39,6 +40,7 @@ type Tag struct {
 	CreatedAt           time.Time  `json:"createdAt" access:"ro"`                     // Creation timestamp
 	UpdatedAt           *time.Time `json:"updatedAt,omitempty" access:"ro"`           // Update timestamp
 	File                *string    `json:"file,omitempty" access:"wo"`                // Image file data
+
 }
 
 // whichID

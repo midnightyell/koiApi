@@ -43,6 +43,7 @@ type DatumInterface interface {
 	UploadImageByFile(ctx context.Context, client Client, filename string, datumID ...ID) (*Datum, error) // HTTP POST /api/data/{id}/image
 	UploadVideo(ctx context.Context, client Client, video []byte, datumID ...ID) (*Datum, error)          // HTTP POST /api/data/{id}/video
 	UploadVideoByFile(ctx context.Context, client Client, filename string, datumID ...ID) (*Datum, error) // HTTP POST /api/data/{id}/video
+	Summary() string
 }
 
 // Datum represents a custom data field in Koillection, combining fields for JSON-LD and API interactions.

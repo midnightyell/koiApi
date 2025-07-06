@@ -27,14 +27,21 @@ func init() {
 	var serverURL, username, password string
 
 	// Define flags
-	flag.BoolVar(&verbose, dprefix+"verbose", false, "Enable verbose output")
-	flag.StringVar(&configFile, dprefix+"config", configFile, "Path to config file")
-	flag.StringVar(&serverURL, dprefix+"server", "", "Server URL")
-	flag.StringVar(&username, dprefix+"user", "", "Username")
-	flag.StringVar(&password, dprefix+"password", "", "Password")
+	fs := flag.NewFlagSet("koiAuth", flag.ContinueOnError)
+	fs.BoolVar(&verbose, dprefix+"verbose", false, "Enable verbose output")
+	fs.StringVar(&configFile, dprefix+"config", configFile, "Path to config file")
+	fs.StringVar(&serverURL, dprefix+"server", "", "Server URL")
+	fs.StringVar(&username, dprefix+"user", "", "Username")
+	fs.StringVar(&password, dprefix+"password", "", "Password")
+
+	myArgs := filterArgs(fs, os.Args[1:])
+
+	newArgs := os.Args[:]
+	newArgs = removeFlagSetArgs(fs, newArgs[:])
+	os.Args = newArgs
 
 	// Parse os.Args
-	flag.CommandLine.Parse(os.Args[1:])
+	fs.Parse(myArgs)
 
 	// Resolve config file path: use home directory if no '/' in path
 	configPath := configFile
@@ -100,4 +107,72 @@ func KoiAuthUsage() {
 	fmt.Fprintf(os.Stderr, "  - %s: Username\n", dprefix+"user")
 	fmt.Fprintf(os.Stderr, "  - %s: Password\n", dprefix+"password")
 	fmt.Fprintf(os.Stderr, "\nPrecedence: config file < environment variables < command-line flags\n")
+}
+
+// filterArgs removes arguments from myArgs whose flag names are not defined in fs.
+// Returns a new slice with only valid flags and non-flag arguments.
+func filterArgs(fs *flag.FlagSet, myArgs []string) []string {
+	// Map of valid flag names in fs
+	validFlags := make(map[string]bool)
+	fs.VisitAll(func(f *flag.Flag) {
+		validFlags[f.Name] = true
+	})
+
+	var filtered []string
+	skipNext := false
+	for i, arg := range myArgs {
+		if skipNext {
+			skipNext = false
+			continue
+		}
+		// Check if arg is a flag (starts with - or --)
+		if strings.HasPrefix(arg, "-") || strings.HasPrefix(arg, "--") {
+			// Extract flag name (strip - or --, handle --flag=value)
+			flagName := strings.TrimPrefix(strings.TrimPrefix(arg, "--"), "-")
+			flagName = strings.Split(flagName, "=")[0]
+			if !validFlags[flagName] {
+				// Skip unrecognized flag and its value if separate (e.g., -flag value)
+				if i+1 < len(myArgs) && !strings.HasPrefix(myArgs[i+1], "-") && !strings.Contains(arg, "=") {
+					skipNext = true
+				}
+				continue
+			}
+		}
+		filtered = append(filtered, arg)
+	}
+	return filtered
+}
+
+// removeFlagSetArgs removes arguments from args that are defined in fs, including their values.
+// Returns a new slice with only unrecognized flags and non-flag arguments.
+func removeFlagSetArgs(fs *flag.FlagSet, args []string) []string {
+	// Map of valid flag names in fs
+	validFlags := make(map[string]bool)
+	fs.VisitAll(func(f *flag.Flag) {
+		validFlags[f.Name] = true
+	})
+
+	var filtered []string
+	skipNext := false
+	for i, arg := range args {
+		if skipNext {
+			skipNext = false
+			continue
+		}
+		// Check if arg is a flag (starts with - or --)
+		if strings.HasPrefix(arg, "-") || strings.HasPrefix(arg, "--") {
+			// Extract flag name (strip - or --, handle --flag=value)
+			flagName := strings.TrimPrefix(strings.TrimPrefix(arg, "--"), "-")
+			flagName = strings.Split(flagName, "=")[0]
+			if validFlags[flagName] {
+				// Skip recognized flag and its value if separate (e.g., -flag value)
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") && !strings.Contains(arg, "=") {
+					skipNext = true
+				}
+				continue
+			}
+		}
+		filtered = append(filtered, arg)
+	}
+	return filtered
 }

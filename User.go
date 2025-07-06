@@ -11,6 +11,7 @@ type UserInterface interface {
 	Get(ctx context.Context, client Client, userID ...ID) (*User, error) // HTTP GET /api/users/{id}
 	IRI() string                                                         // /api/users/{id}
 	List(ctx context.Context, client Client) ([]*User, error)            // HTTP GET /api/users
+	Summary() string
 }
 
 // User represents a user in Koillection, combining fields for JSON-LD and API interactions.
@@ -44,6 +45,7 @@ type User struct {
 	SearchResultsDisplayMode     string     `json:"searchResultsDisplayMode" access:"rw"`     // Search display mode
 	CreatedAt                    time.Time  `json:"createdAt" access:"ro"`                    // Creation timestamp
 	UpdatedAt                    *time.Time `json:"updatedAt,omitempty" access:"ro"`          // Update timestamp
+
 }
 
 // whichID

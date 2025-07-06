@@ -15,6 +15,7 @@ type TemplateInterface interface {
 	List(ctx context.Context, client Client) ([]*Template, error)                   // HTTP GET /api/templates
 	Patch(ctx context.Context, client Client, templateID ...ID) (*Template, error)  // HTTP PATCH /api/templates/{id}
 	Update(ctx context.Context, client Client, templateID ...ID) (*Template, error) // HTTP PUT /api/templates/{id}
+	Summary() string
 }
 
 // Template represents a template in Koillection, combining fields for JSON-LD and API interactions.
@@ -27,6 +28,7 @@ type Template struct {
 	Owner     *string    `json:"owner,omitempty" access:"ro"`     // Owner IRI
 	CreatedAt time.Time  `json:"createdAt" access:"ro"`           // Creation timestamp
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" access:"ro"` // Update timestamp
+
 }
 
 // whichID
