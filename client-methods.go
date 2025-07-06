@@ -2,133 +2,133 @@ package koiApi
 
 import (
 	"context"
+	"fmt"
 )
 
-// Client defines the interface for interacting with the Koillection REST API.
 type Client interface {
-	CheckLogin(ctx context.Context, username, password string) (string, error)                 // HTTP POST /api/authentication_token
-	GetMetrics(ctx context.Context) (*Metrics, error)                                          // HTTP GET /api/metrics
-	CreateAlbum(ctx context.Context, album *Album) (*Album, error)                             // HTTP POST /api/albums
-	GetAlbum(ctx context.Context, id ID) (*Album, error)                                       // HTTP GET /api/albums/{id}
-	ListAlbums(ctx context.Context) ([]*Album, error)                                          // HTTP GET /api/albums
-	UpdateAlbum(ctx context.Context, id ID, album *Album) (*Album, error)                      // HTTP PUT /api/albums/{id}
-	PatchAlbum(ctx context.Context, id ID, album *Album) (*Album, error)                       // HTTP PATCH /api/albums/{id}
-	DeleteAlbum(ctx context.Context, id ID) error                                              // HTTP DELETE /api/albums/{id}
-	ListAlbumChildren(ctx context.Context, id ID) ([]*Album, error)                            // HTTP GET /api/albums/{id}/children
-	UploadAlbumImage(ctx context.Context, id ID, file []byte) (*Album, error)                  // HTTP POST /api/albums/{id}/image
-	GetAlbumParent(ctx context.Context, id ID) (*Album, error)                                 // HTTP GET /api/albums/{id}/parent
-	ListAlbumPhotos(ctx context.Context, id ID) ([]*Photo, error)                              // HTTP GET /api/albums/{id}/photos
-	CreateChoiceList(ctx context.Context, choiceList *ChoiceList) (*ChoiceList, error)         // HTTP POST /api/choice_lists
-	GetChoiceList(ctx context.Context, id ID) (*ChoiceList, error)                             // HTTP GET /api/choice_lists/{id}
-	ListChoiceLists(ctx context.Context) ([]*ChoiceList, error)                                // HTTP GET /api/choice_lists
-	UpdateChoiceList(ctx context.Context, id ID, choiceList *ChoiceList) (*ChoiceList, error)  // HTTP PUT /api/choice_lists/{id}
-	PatchChoiceList(ctx context.Context, id ID, choiceList *ChoiceList) (*ChoiceList, error)   // HTTP PATCH /api/choice_lists/{id}
-	DeleteChoiceList(ctx context.Context, id ID) error                                         // HTTP DELETE /api/choice_lists/{id}
-	CreateCollection(ctx context.Context, collection *Collection) (*Collection, error)         // HTTP POST /api/collections
-	GetCollection(ctx context.Context, id ID) (*Collection, error)                             // HTTP GET /api/collections/{id}
-	ListCollections(ctx context.Context) ([]*Collection, error)                                // HTTP GET /api/collections
-	UpdateCollection(ctx context.Context, id ID, collection *Collection) (*Collection, error)  // HTTP PUT /api/collections/{id}
-	PatchCollection(ctx context.Context, id ID, collection *Collection) (*Collection, error)   // HTTP PATCH /api/collections/{id}
-	DeleteCollection(ctx context.Context, id ID) error                                         // HTTP DELETE /api/collections/{id}
-	ListCollectionChildren(ctx context.Context, id ID) ([]*Collection, error)                  // HTTP GET /api/collections/{id}/children
-	UploadCollectionImage(ctx context.Context, id ID, file []byte) (*Collection, error)        // HTTP POST /api/collections/{id}/image
-	GetCollectionParent(ctx context.Context, id ID) (*Collection, error)                       // HTTP GET /api/collections/{id}/parent
-	ListCollectionItems(ctx context.Context, id ID) ([]*Item, error)                           // HTTP GET /api/collections/{id}/items
-	ListCollectionData(ctx context.Context, id ID) ([]*Datum, error)                           // HTTP GET /api/collections/{id}/data
-	GetCollectionDefaultTemplate(ctx context.Context, id ID) (*Template, error)                // HTTP GET /api/collections/{id}/items_default_template
-	CreateDatum(ctx context.Context, datum *Datum) (*Datum, error)                             // HTTP POST /api/data
-	GetDatum(ctx context.Context, id ID) (*Datum, error)                                       // HTTP GET /api/data/{id}
-	ListData(ctx context.Context) ([]*Datum, error)                                            // HTTP GET /api/data
-	UpdateDatum(ctx context.Context, id ID, datum *Datum) (*Datum, error)                      // HTTP PUT /api/data/{id}
-	PatchDatum(ctx context.Context, id ID, datum *Datum) (*Datum, error)                       // HTTP PATCH /api/data/{id}
-	DeleteDatum(ctx context.Context, id ID) error                                              // HTTP DELETE /api/data/{id}
-	UploadDatumFile(ctx context.Context, id ID, file []byte) (*Datum, error)                   // HTTP POST /api/data/{id}/file
-	UploadDatumImage(ctx context.Context, id ID, image []byte) (*Datum, error)                 // HTTP POST /api/data/{id}/image
-	UploadDatumVideo(ctx context.Context, id ID, video []byte) (*Datum, error)                 // HTTP POST /api/data/{id}/video
-	GetDatumItem(ctx context.Context, id ID) (*Item, error)                                    // HTTP GET /api/data/{id}/item
-	GetDatumCollection(ctx context.Context, id ID) (*Collection, error)                        // HTTP GET /api/data/{id}/collection
-	CreateField(ctx context.Context, field *Field) (*Field, error)                             // HTTP POST /api/fields
-	GetField(ctx context.Context, id ID) (*Field, error)                                       // HTTP GET /api/fields/{id}
-	ListFields(ctx context.Context) ([]*Field, error)                                          // HTTP GET /api/fields
-	UpdateField(ctx context.Context, id ID, field *Field) (*Field, error)                      // HTTP PUT /api/fields/{id}
-	PatchField(ctx context.Context, id ID, field *Field) (*Field, error)                       // HTTP PATCH /api/fields/{id}
-	DeleteField(ctx context.Context, id ID) error                                              // HTTP DELETE /api/fields/{id}
-	GetFieldTemplate(ctx context.Context, id ID) (*Template, error)                            // HTTP GET /api/fields/{id}/template
-	ListTemplateFields(ctx context.Context, templateid ID) ([]*Field, error)                   // HTTP GET /api/templates/{id}/fields
-	ListInventories(ctx context.Context) ([]*Inventory, error)                                 // HTTP GET /api/inventories
-	GetInventory(ctx context.Context, id ID) (*Inventory, error)                               // HTTP GET /api/inventories/{id}
-	DeleteInventory(ctx context.Context, id ID) error                                          // HTTP DELETE /api/inventories/{id}
-	CreateItem(ctx context.Context, item *Item) (*Item, error)                                 // HTTP POST /api/items
-	GetItem(ctx context.Context, id ID) (*Item, error)                                         // HTTP GET /api/items/{id}
-	ListItems(ctx context.Context) ([]*Item, error)                                            // HTTP GET /api/items
-	UpdateItem(ctx context.Context, id ID, item *Item) (*Item, error)                          // HTTP PUT /api/items/{id}
-	PatchItem(ctx context.Context, id ID, item *Item) (*Item, error)                           // HTTP PATCH /api/items/{id}
-	DeleteItem(ctx context.Context, id ID) error                                               // HTTP DELETE /api/items/{id}
-	UploadItemImage(ctx context.Context, id ID, file []byte) (*Item, error)                    // HTTP POST /api/items/{id}/image
-	ListItemRelatedItems(ctx context.Context, id ID) ([]*Item, error)                          // HTTP GET /api/items/{id}/related_items
-	ListItemLoans(ctx context.Context, id ID) ([]*Loan, error)                                 // HTTP GET /api/items/{id}/loans
-	ListItemTags(ctx context.Context, id ID) ([]*Tag, error)                                   // HTTP GET /api/items/{id}/tags
-	ListItemData(ctx context.Context, id ID) ([]*Datum, error)                                 // HTTP GET /api/items/{id}/data
-	GetItemCollection(ctx context.Context, id ID) (*Collection, error)                         // HTTP GET /api/items/{id}/collection
-	CreateLoan(ctx context.Context, loan *Loan) (*Loan, error)                                 // HTTP POST /api/loans
-	GetLoan(ctx context.Context, id ID) (*Loan, error)                                         // HTTP GET /api/loans/{id}
-	ListLoans(ctx context.Context) ([]*Loan, error)                                            // HTTP GET /api/loans
-	UpdateLoan(ctx context.Context, id ID, loan *Loan) (*Loan, error)                          // HTTP PUT /api/loans/{id}
-	PatchLoan(ctx context.Context, id ID, loan *Loan) (*Loan, error)                           // HTTP PATCH /api/loans/{id}
-	DeleteLoan(ctx context.Context, id ID) error                                               // HTTP DELETE /api/loans/{id}
-	GetLoanItem(ctx context.Context, id ID) (*Item, error)                                     // HTTP GET /api/loans/{id}/item
-	GetLog(ctx context.Context, id ID) (*Log, error)                                           // HTTP GET /api/logs/{id}
-	ListLogs(ctx context.Context) ([]*Log, error)                                              // HTTP GET /api/logs
-	CreatePhoto(ctx context.Context, photo *Photo) (*Photo, error)                             // HTTP POST /api/photos
-	GetPhoto(ctx context.Context, id ID) (*Photo, error)                                       // HTTP GET /api/photos/{id}
-	ListPhotos(ctx context.Context) ([]*Photo, error)                                          // HTTP GET /api/photos
-	UpdatePhoto(ctx context.Context, id ID, photo *Photo) (*Photo, error)                      // HTTP PUT /api/photos/{id}
-	PatchPhoto(ctx context.Context, id ID, photo *Photo) (*Photo, error)                       // HTTP PATCH /api/photos/{id}
-	DeletePhoto(ctx context.Context, id ID) error                                              // HTTP DELETE /api/photos/{id}
-	UploadPhotoImage(ctx context.Context, id ID, file []byte) (*Photo, error)                  // HTTP POST /api/photos/{id}/image
-	GetPhotoAlbum(ctx context.Context, id ID) (*Album, error)                                  // HTTP GET /api/photos/{id}/album
-	CreateTag(ctx context.Context, tag *Tag) (*Tag, error)                                     // HTTP POST /api/tags
-	GetTag(ctx context.Context, id ID) (*Tag, error)                                           // HTTP GET /api/tags/{id}
-	ListTags(ctx context.Context) ([]*Tag, error)                                              // HTTP GET /api/tags
-	UpdateTag(ctx context.Context, id ID, tag *Tag) (*Tag, error)                              // HTTP PUT /api/tags/{id}
-	PatchTag(ctx context.Context, id ID, tag *Tag) (*Tag, error)                               // HTTP PATCH /api/tags/{id}
-	DeleteTag(ctx context.Context, id ID) error                                                // HTTP DELETE /api/tags/{id}
-	UploadTagImage(ctx context.Context, id ID, file []byte) (*Tag, error)                      // HTTP POST /api/tags/{id}/image
-	ListTagItems(ctx context.Context, id ID) ([]*Item, error)                                  // HTTP GET /api/tags/{id}/items
-	GetCategoryOfTag(ctx context.Context, id ID) (*TagCategory, error)                         // HTTP GET /api/tags/{id}/category
-	CreateTagCategory(ctx context.Context, category *TagCategory) (*TagCategory, error)        // HTTP POST /api/tag_categories
-	GetTagCategory(ctx context.Context, id ID) (*TagCategory, error)                           // HTTP GET /api/tag_categories/{id}
-	ListTagCategories(ctx context.Context) ([]*TagCategory, error)                             // HTTP GET /api/tag_categories
-	UpdateTagCategory(ctx context.Context, id ID, category *TagCategory) (*TagCategory, error) // HTTP PUT /api/tag_categories/{id}
-	PatchTagCategory(ctx context.Context, id ID, category *TagCategory) (*TagCategory, error)  // HTTP PATCH /api/tag_categories/{id}
-	DeleteTagCategory(ctx context.Context, id ID) error                                        // HTTP DELETE /api/tag_categories/{id}
-	ListTagCategoryTags(ctx context.Context, id ID) ([]*Tag, error)                            // HTTP GET /api/tag_categories/{id}/tags
-	CreateTemplate(ctx context.Context, template *Template) (*Template, error)                 // HTTP POST /api/templates
-	GetTemplate(ctx context.Context, id ID) (*Template, error)                                 // HTTP GET /api/templates/{id}
-	ListTemplates(ctx context.Context) ([]*Template, error)                                    // HTTP GET /api/templates
-	UpdateTemplate(ctx context.Context, id ID, template *Template) (*Template, error)          // HTTP PUT /api/templates/{id}
-	PatchTemplate(ctx context.Context, id ID, template *Template) (*Template, error)           // HTTP PATCH /api/templates/{id}
-	DeleteTemplate(ctx context.Context, id ID) error                                           // HTTP DELETE /api/templates/{id}
-	GetUser(ctx context.Context, id ID) (*User, error)                                         // HTTP GET /api/users/{id}
-	ListUsers(ctx context.Context) ([]*User, error)                                            // HTTP GET /api/users
-	CreateWish(ctx context.Context, wish *Wish) (*Wish, error)                                 // HTTP POST /api/wishes
-	GetWish(ctx context.Context, id ID) (*Wish, error)                                         // HTTP GET /api/wishes/{id}
-	ListWishes(ctx context.Context) ([]*Wish, error)                                           // HTTP GET /api/wishes
-	UpdateWish(ctx context.Context, id ID, wish *Wish) (*Wish, error)                          // HTTP PUT /api/wishes/{id}
-	PatchWish(ctx context.Context, id ID, wish *Wish) (*Wish, error)                           // HTTP PATCH /api/wishes/{id}
-	DeleteWish(ctx context.Context, id ID) error                                               // HTTP DELETE /api/wishes/{id}
-	UploadWishImage(ctx context.Context, id ID, file []byte) (*Wish, error)                    // HTTP POST /api/wishes/{id}/image
-	GetWishWishlist(ctx context.Context, id ID) (*Wishlist, error)                             // HTTP GET /api/wishes/{id}/wishlist
-	CreateWishlist(ctx context.Context, wishlist *Wishlist) (*Wishlist, error)                 // HTTP POST /api/wishlists
-	GetWishlist(ctx context.Context, id ID) (*Wishlist, error)                                 // HTTP GET /api/wishlists/{id}
-	ListWishlists(ctx context.Context) ([]*Wishlist, error)                                    // HTTP GET /api/wishlists
-	UpdateWishlist(ctx context.Context, id ID, wishlist *Wishlist) (*Wishlist, error)          // HTTP PUT /api/wishlists/{id}
-	PatchWishlist(ctx context.Context, id ID, wishlist *Wishlist) (*Wishlist, error)           // HTTP PATCH /api/wishlists/{id}
-	DeleteWishlist(ctx context.Context, id ID) error                                           // HTTP DELETE /api/wishlists/{id}
-	ListWishlistWishes(ctx context.Context, id ID) ([]*Wish, error)                            // HTTP GET /api/wishlists/{id}/wishes
-	ListWishlistChildren(ctx context.Context, id ID) ([]*Wishlist, error)                      // HTTP GET /api/wishlists/{id}/children
-	UploadWishlistImage(ctx context.Context, id ID, file []byte) (*Wishlist, error)            // HTTP POST /api/wishlists/{id}/image
-	GetWishlistParent(ctx context.Context, id ID) (*Wishlist, error)                           // HTTP GET /api/wishlists/{id}/parent
+	CheckLogin(ctx context.Context, username, password string) (string, error)                       // HTTP POST /api/authentication_token
+	GetMetrics(ctx context.Context) (*Metrics, error)                                                // HTTP GET /api/metrics
+	CreateAlbum(ctx context.Context, album *Album) (*Album, error)                                   // HTTP POST /api/albums
+	GetAlbum(ctx context.Context, id ID) (*Album, error)                                             // HTTP GET /api/albums/{id}
+	ListAlbums(ctx context.Context, queryParams ...string) ([]*Album, error)                         // HTTP GET /api/albums
+	UpdateAlbum(ctx context.Context, id ID, album *Album) (*Album, error)                            // HTTP PUT /api/albums/{id}
+	PatchAlbum(ctx context.Context, id ID, album *Album) (*Album, error)                             // HTTP PATCH /api/albums/{id}
+	DeleteAlbum(ctx context.Context, id ID) error                                                    // HTTP DELETE /api/albums/{id}
+	ListAlbumChildren(ctx context.Context, id ID, queryParams ...string) ([]*Album, error)           // HTTP GET /api/albums/{id}/children
+	UploadAlbumImage(ctx context.Context, id ID, file []byte) (*Album, error)                        // HTTP POST /api/albums/{id}/image
+	GetAlbumParent(ctx context.Context, id ID) (*Album, error)                                       // HTTP GET /api/albums/{id}/parent
+	ListAlbumPhotos(ctx context.Context, id ID, queryParams ...string) ([]*Photo, error)             // HTTP GET /api/albums/{id}/photos
+	CreateChoiceList(ctx context.Context, choiceList *ChoiceList) (*ChoiceList, error)               // HTTP POST /api/choice_lists
+	GetChoiceList(ctx context.Context, id ID) (*ChoiceList, error)                                   // HTTP GET /api/choice_lists/{id}
+	ListChoiceLists(ctx context.Context, queryParams ...string) ([]*ChoiceList, error)               // HTTP GET /api/choice_lists
+	UpdateChoiceList(ctx context.Context, id ID, choiceList *ChoiceList) (*ChoiceList, error)        // HTTP PUT /api/choice_lists/{id}
+	PatchChoiceList(ctx context.Context, id ID, choiceList *ChoiceList) (*ChoiceList, error)         // HTTP PATCH /api/choice_lists/{id}
+	DeleteChoiceList(ctx context.Context, id ID) error                                               // HTTP DELETE /api/choice_lists/{id}
+	CreateCollection(ctx context.Context, collection *Collection) (*Collection, error)               // HTTP POST /api/collections
+	GetCollection(ctx context.Context, id ID) (*Collection, error)                                   // HTTP GET /api/collections/{id}
+	ListCollections(ctx context.Context, queryParams ...string) ([]*Collection, error)               // HTTP GET /api/collections
+	UpdateCollection(ctx context.Context, id ID, collection *Collection) (*Collection, error)        // HTTP PUT /api/collections/{id}
+	PatchCollection(ctx context.Context, id ID, collection *Collection) (*Collection, error)         // HTTP PATCH /api/collections/{id}
+	DeleteCollection(ctx context.Context, id ID) error                                               // HTTP DELETE /api/collections/{id}
+	ListCollectionChildren(ctx context.Context, id ID, queryParams ...string) ([]*Collection, error) // HTTP GET /api/collections/{id}/children
+	UploadCollectionImage(ctx context.Context, id ID, file []byte) (*Collection, error)              // HTTP POST /api/collections/{id}/image
+	GetCollectionParent(ctx context.Context, id ID) (*Collection, error)                             // HTTP GET /api/collections/{id}/parent
+	ListCollectionItems(ctx context.Context, id ID, queryParams ...string) ([]*Item, error)          // HTTP GET /api/collections/{id}/items
+	ListCollectionData(ctx context.Context, id ID, queryParams ...string) ([]*Datum, error)          // HTTP GET /api/collections/{id}/data
+	GetCollectionDefaultTemplate(ctx context.Context, id ID) (*Template, error)                      // HTTP GET /api/collections/{id}/items_default_template
+	CreateDatum(ctx context.Context, datum *Datum) (*Datum, error)                                   // HTTP POST /api/data
+	GetDatum(ctx context.Context, id ID) (*Datum, error)                                             // HTTP GET /api/data/{id}
+	ListData(ctx context.Context, queryParams ...string) ([]*Datum, error)                           // HTTP GET /api/data
+	UpdateDatum(ctx context.Context, id ID, datum *Datum) (*Datum, error)                            // HTTP PUT /api/data/{id}
+	PatchDatum(ctx context.Context, id ID, datum *Datum) (*Datum, error)                             // HTTP PATCH /api/data/{id}
+	DeleteDatum(ctx context.Context, id ID) error                                                    // HTTP DELETE /api/data/{id}
+	UploadDatumFile(ctx context.Context, id ID, file []byte) (*Datum, error)                         // HTTP POST /api/data/{id}/file
+	UploadDatumImage(ctx context.Context, id ID, image []byte) (*Datum, error)                       // HTTP POST /api/data/{id}/image
+	UploadDatumVideo(ctx context.Context, id ID, video []byte) (*Datum, error)                       // HTTP POST /api/data/{id}/video
+	GetDatumItem(ctx context.Context, id ID) (*Item, error)                                          // HTTP GET /api/data/{id}/item
+	GetDatumCollection(ctx context.Context, id ID) (*Collection, error)                              // HTTP GET /api/data/{id}/collection
+	CreateField(ctx context.Context, field *Field) (*Field, error)                                   // HTTP POST /api/fields
+	GetField(ctx context.Context, id ID) (*Field, error)                                             // HTTP GET /api/fields/{id}
+	ListFields(ctx context.Context, queryParams ...string) ([]*Field, error)                         // HTTP GET /api/fields
+	UpdateField(ctx context.Context, id ID, field *Field) (*Field, error)                            // HTTP PUT /api/fields/{id}
+	PatchField(ctx context.Context, id ID, field *Field) (*Field, error)                             // HTTP PATCH /api/fields/{id}
+	DeleteField(ctx context.Context, id ID) error                                                    // HTTP DELETE /api/fields/{id}
+	GetFieldTemplate(ctx context.Context, id ID) (*Template, error)                                  // HTTP GET /api/fields/{id}/template
+	ListTemplateFields(ctx context.Context, templateid ID, queryParams ...string) ([]*Field, error)  // HTTP GET /api/templates/{id}/fields
+	ListInventories(ctx context.Context, queryParams ...string) ([]*Inventory, error)                // HTTP GET /api/inventories
+	GetInventory(ctx context.Context, id ID) (*Inventory, error)                                     // HTTP GET /api/inventories/{id}
+	DeleteInventory(ctx context.Context, id ID) error                                                // HTTP DELETE /api/inventories/{id}
+	CreateItem(ctx context.Context, item *Item) (*Item, error)                                       // HTTP POST /api/items
+	GetItem(ctx context.Context, id ID) (*Item, error)                                               // HTTP GET /api/items/{id}
+	ListItems(ctx context.Context, queryParams ...string) ([]*Item, error)                           // HTTP GET /api/items
+	UpdateItem(ctx context.Context, id ID, item *Item) (*Item, error)                                // HTTP PUT /api/items/{id}
+	PatchItem(ctx context.Context, id ID, item *Item) (*Item, error)                                 // HTTP PATCH /api/items/{id}
+	DeleteItem(ctx context.Context, id ID) error                                                     // HTTP DELETE /api/items/{id}
+	UploadItemImage(ctx context.Context, id ID, file []byte) (*Item, error)                          // HTTP POST /api/items/{id}/image
+	ListItemRelatedItems(ctx context.Context, id ID, queryParams ...string) ([]*Item, error)         // HTTP GET /api/items/{id}/related_items
+	ListItemLoans(ctx context.Context, id ID, queryParams ...string) ([]*Loan, error)                // HTTP GET /api/items/{id}/loans
+	ListItemTags(ctx context.Context, id ID, queryParams ...string) ([]*Tag, error)                  // HTTP GET /api/items/{id}/tags
+	ListItemData(ctx context.Context, id ID, queryParams ...string) ([]*Datum, error)                // HTTP GET /api/items/{id}/data
+	GetItemCollection(ctx context.Context, id ID) (*Collection, error)                               // HTTP GET /api/items/{id}/collection
+	CreateLoan(ctx context.Context, loan *Loan) (*Loan, error)                                       // HTTP POST /api/loans
+	GetLoan(ctx context.Context, id ID) (*Loan, error)                                               // HTTP GET /api/loans/{id}
+	ListLoans(ctx context.Context, queryParams ...string) ([]*Loan, error)                           // HTTP GET /api/loans
+	UpdateLoan(ctx context.Context, id ID, loan *Loan) (*Loan, error)                                // HTTP PUT /api/loans/{id}
+	PatchLoan(ctx context.Context, id ID, loan *Loan) (*Loan, error)                                 // HTTP PATCH /api/loans/{id}
+	DeleteLoan(ctx context.Context, id ID) error                                                     // HTTP DELETE /api/loans/{id}
+	GetLoanItem(ctx context.Context, id ID) (*Item, error)                                           // HTTP GET /api/loans/{id}/item
+	GetLog(ctx context.Context, id ID) (*Log, error)                                                 // HTTP GET /api/logs/{id}
+	ListLogs(ctx context.Context, queryParams ...string) ([]*Log, error)                             // HTTP GET /api/logs
+	CreatePhoto(ctx context.Context, photo *Photo) (*Photo, error)                                   // HTTP POST /api/photos
+	GetPhoto(ctx context.Context, id ID) (*Photo, error)                                             // HTTP GET /api/photos/{id}
+	ListPhotos(ctx context.Context, queryParams ...string) ([]*Photo, error)                         // HTTP GET /api/photos
+	UpdatePhoto(ctx context.Context, id ID, photo *Photo) (*Photo, error)                            // HTTP PUT /api/photos/{id}
+	PatchPhoto(ctx context.Context, id ID, photo *Photo) (*Photo, error)                             // HTTP PATCH /api/photos/{id}
+	DeletePhoto(ctx context.Context, id ID) error                                                    // HTTP DELETE /api/photos/{id}
+	UploadPhotoImage(ctx context.Context, id ID, file []byte) (*Photo, error)                        // HTTP POST /api/photos/{id}/image
+	GetPhotoAlbum(ctx context.Context, id ID) (*Album, error)                                        // HTTP GET /api/photos/{id}/album
+	CreateTag(ctx context.Context, tag *Tag) (*Tag, error)                                           // HTTP POST /api/tags
+	GetTag(ctx context.Context, id ID) (*Tag, error)                                                 // HTTP GET /api/tags/{id}
+	ListTags(ctx context.Context, queryParams ...string) ([]*Tag, error)                             // HTTP GET /api/tags
+	UpdateTag(ctx context.Context, id ID, tag *Tag) (*Tag, error)                                    // HTTP PUT /api/tags/{id}
+	PatchTag(ctx context.Context, id ID, tag *Tag) (*Tag, error)                                     // HTTP PATCH /api/tags/{id}
+	DeleteTag(ctx context.Context, id ID) error                                                      // HTTP DELETE /api/tags/{id}
+	UploadTagImage(ctx context.Context, id ID, file []byte) (*Tag, error)                            // HTTP POST /api/tags/{id}/image
+	ListTagItems(ctx context.Context, id ID, queryParams ...string) ([]*Item, error)                 // HTTP GET /api/tags/{id}/items
+	GetCategoryOfTag(ctx context.Context, id ID) (*TagCategory, error)                               // HTTP GET /api/tags/{id}/category
+	CreateTagCategory(ctx context.Context, category *TagCategory) (*TagCategory, error)              // HTTP POST /api/tag_categories
+	GetTagCategory(ctx context.Context, id ID) (*TagCategory, error)                                 // HTTP GET /api/tag_categories/{id}
+	ListTagCategories(ctx context.Context, queryParams ...string) ([]*TagCategory, error)            // HTTP GET /api/tag_categories
+	UpdateTagCategory(ctx context.Context, id ID, category *TagCategory) (*TagCategory, error)       // HTTP PUT /api/tag_categories/{id}
+	PatchTagCategory(ctx context.Context, id ID, category *TagCategory) (*TagCategory, error)        // HTTP PATCH /api/tag_categories/{id}
+	DeleteTagCategory(ctx context.Context, id ID) error                                              // HTTP DELETE /api/tag_categories/{id}
+	ListTagCategoryTags(ctx context.Context, id ID, queryParams ...string) ([]*Tag, error)           // HTTP GET /api/tag_categories/{id}/tags
+	CreateTemplate(ctx context.Context, template *Template) (*Template, error)                       // HTTP POST /api/templates
+	GetTemplate(ctx context.Context, id ID) (*Template, error)                                       // HTTP GET /api/templates/{id}
+	ListTemplates(ctx context.Context, queryParams ...string) ([]*Template, error)                   // HTTP GET /api/templates
+	UpdateTemplate(ctx context.Context, id ID, template *Template) (*Template, error)                // HTTP PUT /api/templates/{id}
+	PatchTemplate(ctx context.Context, id ID, template *Template) (*Template, error)                 // HTTP PATCH /api/templates/{id}
+	DeleteTemplate(ctx context.Context, id ID) error                                                 // HTTP DELETE /api/templates/{id}
+	GetUser(ctx context.Context, id ID) (*User, error)                                               // HTTP GET /api/users/{id}
+	ListUsers(ctx context.Context, queryParams ...string) ([]*User, error)                           // HTTP GET /api/users
+	CreateWish(ctx context.Context, wish *Wish) (*Wish, error)                                       // HTTP POST /api/wishes
+	GetWish(ctx context.Context, id ID) (*Wish, error)                                               // HTTP GET /api/wishes/{id}
+	ListWishes(ctx context.Context, queryParams ...string) ([]*Wish, error)                          // HTTP GET /api/wishes
+	UpdateWish(ctx context.Context, id ID, wish *Wish) (*Wish, error)                                // HTTP PUT /api/wishes/{id}
+	PatchWish(ctx context.Context, id ID, wish *Wish) (*Wish, error)                                 // HTTP PATCH /api/wishes/{id}
+	DeleteWish(ctx context.Context, id ID) error                                                     // HTTP DELETE /api/wishes/{id}
+	UploadWishImage(ctx context.Context, id ID, file []byte) (*Wish, error)                          // HTTP POST /api/wishes/{id}/image
+	GetWishWishlist(ctx context.Context, id ID) (*Wishlist, error)                                   // HTTP GET /api/wishes/{id}/wishlist
+	CreateWishlist(ctx context.Context, wishlist *Wishlist) (*Wishlist, error)                       // HTTP POST /api/wishlists
+	GetWishlist(ctx context.Context, id ID) (*Wishlist, error)                                       // HTTP GET /api/wishlists/{id}
+	ListWishlists(ctx context.Context, queryParams ...string) ([]*Wishlist, error)                   // HTTP GET /api/wishlists
+	UpdateWishlist(ctx context.Context, id ID, wishlist *Wishlist) (*Wishlist, error)                // HTTP PUT /api/wishlists/{id}
+	PatchWishlist(ctx context.Context, id ID, wishlist *Wishlist) (*Wishlist, error)                 // HTTP PATCH /api/wishlists/{id}
+	DeleteWishlist(ctx context.Context, id ID) error                                                 // HTTP DELETE /api/wishlists/{id}
+	ListWishlistWishes(ctx context.Context, id ID, queryParams ...string) ([]*Wish, error)           // HTTP GET /api/wishlists/{id}/wishes
+	ListWishlistChildren(ctx context.Context, id ID, queryParams ...string) ([]*Wishlist, error)     // HTTP GET /api/wishlists/{id}/children
+	UploadWishlistImage(ctx context.Context, id ID, file []byte) (*Wishlist, error)                  // HTTP POST /api/wishlists/{id}/image
+	GetWishlistParent(ctx context.Context, id ID) (*Wishlist, error)                                 // HTTP GET /api/wishlists/{id}/parent
 	GetResponse(ctx context.Context) string
 	PrintError(ctx context.Context)
 	DeleteAllData(ctx context.Context) error
@@ -165,9 +165,9 @@ func (c *httpClient) GetAlbum(ctx context.Context, id ID) (*Album, error) {
 }
 
 // ListAlbums retrieves a list of albums.
-func (c *httpClient) ListAlbums(ctx context.Context) ([]*Album, error) {
+func (c *httpClient) ListAlbums(ctx context.Context, queryParams ...string) ([]*Album, error) {
 	var albums []*Album
-	if err := c.listResources(ctx, "/api/albums", &albums); err != nil {
+	if err := c.listResources(ctx, "/api/albums", &albums, queryParams...); err != nil {
 		return nil, err
 	}
 	return albums, nil
@@ -196,10 +196,11 @@ func (c *httpClient) DeleteAlbum(ctx context.Context, id ID) error {
 	return c.deleteResource(ctx, "/api/albums/"+string(id))
 }
 
-// ListAlbumChildren retrieves child albums of an album.
-func (c *httpClient) ListAlbumChildren(ctx context.Context, id ID) ([]*Album, error) {
+// ListAlbumChildren retrieves the children of an album.
+func (c *httpClient) ListAlbumChildren(ctx context.Context, id ID, queryParams ...string) ([]*Album, error) {
 	var albums []*Album
-	if err := c.listResources(ctx, "/api/albums/"+string(id)+"/children", &albums); err != nil {
+	path := fmt.Sprintf("/api/albums/%s/children", id)
+	if err := c.listResources(ctx, path, &albums, queryParams...); err != nil {
 		return nil, err
 	}
 	return albums, nil
@@ -223,10 +224,11 @@ func (c *httpClient) GetAlbumParent(ctx context.Context, id ID) (*Album, error) 
 	return &album, nil
 }
 
-// ListAlbumPhotos retrieves photos in an album.
-func (c *httpClient) ListAlbumPhotos(ctx context.Context, id ID) ([]*Photo, error) {
+// ListAlbumPhotos retrieves the photos in an album.
+func (c *httpClient) ListAlbumPhotos(ctx context.Context, id ID, queryParams ...string) ([]*Photo, error) {
 	var photos []*Photo
-	if err := c.listResources(ctx, "/api/albums/"+string(id)+"/photos", &photos); err != nil {
+	path := fmt.Sprintf("/api/albums/%s/photos", id)
+	if err := c.listResources(ctx, path, &photos, queryParams...); err != nil {
 		return nil, err
 	}
 	return photos, nil
@@ -254,9 +256,9 @@ func (c *httpClient) GetChoiceList(ctx context.Context, id ID) (*ChoiceList, err
 }
 
 // ListChoiceLists retrieves a list of choice lists.
-func (c *httpClient) ListChoiceLists(ctx context.Context) ([]*ChoiceList, error) {
+func (c *httpClient) ListChoiceLists(ctx context.Context, queryParams ...string) ([]*ChoiceList, error) {
 	var choiceLists []*ChoiceList
-	if err := c.listResources(ctx, "/api/choice_lists", &choiceLists); err != nil {
+	if err := c.listResources(ctx, "/api/choice_lists", &choiceLists, queryParams...); err != nil {
 		return nil, err
 	}
 	return choiceLists, nil
@@ -307,9 +309,9 @@ func (c *httpClient) GetCollection(ctx context.Context, id ID) (*Collection, err
 }
 
 // ListCollections retrieves a list of collections.
-func (c *httpClient) ListCollections(ctx context.Context) ([]*Collection, error) {
+func (c *httpClient) ListCollections(ctx context.Context, queryParams ...string) ([]*Collection, error) {
 	var collections []*Collection
-	if err := c.listResources(ctx, "/api/collections", &collections); err != nil {
+	if err := c.listResources(ctx, "/api/collections", &collections, queryParams...); err != nil {
 		return nil, err
 	}
 	return collections, nil
@@ -338,10 +340,11 @@ func (c *httpClient) DeleteCollection(ctx context.Context, id ID) error {
 	return c.deleteResource(ctx, "/api/collections/"+string(id))
 }
 
-// ListCollectionChildren retrieves child collections of a collection.
-func (c *httpClient) ListCollectionChildren(ctx context.Context, id ID) ([]*Collection, error) {
+// ListCollectionChildren retrieves the children of a collection.
+func (c *httpClient) ListCollectionChildren(ctx context.Context, id ID, queryParams ...string) ([]*Collection, error) {
 	var collections []*Collection
-	if err := c.listResources(ctx, "/api/collections/"+string(id)+"/children", &collections); err != nil {
+	path := fmt.Sprintf("/api/collections/%s/children", id)
+	if err := c.listResources(ctx, path, &collections, queryParams...); err != nil {
 		return nil, err
 	}
 	return collections, nil
@@ -365,19 +368,21 @@ func (c *httpClient) GetCollectionParent(ctx context.Context, id ID) (*Collectio
 	return &collection, nil
 }
 
-// ListCollectionItems retrieves items in a collection.
-func (c *httpClient) ListCollectionItems(ctx context.Context, id ID) ([]*Item, error) {
+// ListCollectionItems retrieves the items in a collection.
+func (c *httpClient) ListCollectionItems(ctx context.Context, id ID, queryParams ...string) ([]*Item, error) {
 	var items []*Item
-	if err := c.listResources(ctx, "/api/collections/"+string(id)+"/items", &items); err != nil {
+	path := fmt.Sprintf("/api/collections/%s/items", id)
+	if err := c.listResources(ctx, path, &items, queryParams...); err != nil {
 		return nil, err
 	}
 	return items, nil
 }
 
-// ListCollectionData retrieves data fields in a collection.
-func (c *httpClient) ListCollectionData(ctx context.Context, id ID) ([]*Datum, error) {
+// ListCollectionData retrieves the data in a collection.
+func (c *httpClient) ListCollectionData(ctx context.Context, id ID, queryParams ...string) ([]*Datum, error) {
 	var data []*Datum
-	if err := c.listResources(ctx, "/api/collections/"+string(id)+"/data", &data); err != nil {
+	path := fmt.Sprintf("/api/collections/%s/data", id)
+	if err := c.listResources(ctx, path, &data, queryParams...); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -413,10 +418,10 @@ func (c *httpClient) GetDatum(ctx context.Context, id ID) (*Datum, error) {
 	return &datum, nil
 }
 
-// ListData retrieves a list of data fields.
-func (c *httpClient) ListData(ctx context.Context) ([]*Datum, error) {
+// ListData retrieves a list of data.
+func (c *httpClient) ListData(ctx context.Context, queryParams ...string) ([]*Datum, error) {
 	var data []*Datum
-	if err := c.listResources(ctx, "/api/data", &data); err != nil {
+	if err := c.listResources(ctx, "/api/data", &data, queryParams...); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -512,9 +517,9 @@ func (c *httpClient) GetField(ctx context.Context, id ID) (*Field, error) {
 }
 
 // ListFields retrieves a list of fields.
-func (c *httpClient) ListFields(ctx context.Context) ([]*Field, error) {
+func (c *httpClient) ListFields(ctx context.Context, queryParams ...string) ([]*Field, error) {
 	var fields []*Field
-	if err := c.listResources(ctx, "/api/fields", &fields); err != nil {
+	if err := c.listResources(ctx, "/api/fields", &fields, queryParams...); err != nil {
 		return nil, err
 	}
 	return fields, nil
@@ -552,19 +557,20 @@ func (c *httpClient) GetFieldTemplate(ctx context.Context, id ID) (*Template, er
 	return &template, nil
 }
 
-// ListTemplateFields retrieves fields associated with a template.
-func (c *httpClient) ListTemplateFields(ctx context.Context, templateid ID) ([]*Field, error) {
+// ListTemplateFields retrieves the fields of a template.
+func (c *httpClient) ListTemplateFields(ctx context.Context, templateid ID, queryParams ...string) ([]*Field, error) {
 	var fields []*Field
-	if err := c.listResources(ctx, "/api/templates/"+string(templateid)+"/fields", &fields); err != nil {
+	path := fmt.Sprintf("/api/templates/%s/fields", templateid)
+	if err := c.listResources(ctx, path, &fields, queryParams...); err != nil {
 		return nil, err
 	}
 	return fields, nil
 }
 
 // ListInventories retrieves a list of inventories.
-func (c *httpClient) ListInventories(ctx context.Context) ([]*Inventory, error) {
+func (c *httpClient) ListInventories(ctx context.Context, queryParams ...string) ([]*Inventory, error) {
 	var inventories []*Inventory
-	if err := c.listResources(ctx, "/api/inventories", &inventories); err != nil {
+	if err := c.listResources(ctx, "/api/inventories", &inventories, queryParams...); err != nil {
 		return nil, err
 	}
 	return inventories, nil
@@ -605,6 +611,7 @@ func (c *httpClient) GetItem(ctx context.Context, id ID) (*Item, error) {
 	return &item, nil
 }
 
+// ListItems retrieves a list of items.
 func (c *httpClient) ListItems(ctx context.Context, queryParams ...string) ([]*Item, error) {
 	var items []*Item
 	if err := c.listResources(ctx, "/api/items", &items, queryParams...); err != nil {
@@ -645,37 +652,41 @@ func (c *httpClient) UploadItemImage(ctx context.Context, id ID, file []byte) (*
 	return &item, nil
 }
 
-// ListItemRelatedItems retrieves related items for an item.
-func (c *httpClient) ListItemRelatedItems(ctx context.Context, id ID) ([]*Item, error) {
+// ListItemRelatedItems retrieves the related items of an item.
+func (c *httpClient) ListItemRelatedItems(ctx context.Context, id ID, queryParams ...string) ([]*Item, error) {
 	var items []*Item
-	if err := c.listResources(ctx, "/api/items/"+string(id)+"/related_items", &items); err != nil {
+	path := fmt.Sprintf("/api/items/%s/related_items", id)
+	if err := c.listResources(ctx, path, &items, queryParams...); err != nil {
 		return nil, err
 	}
 	return items, nil
 }
 
-// ListItemLoans retrieves loans for an item.
-func (c *httpClient) ListItemLoans(ctx context.Context, id ID) ([]*Loan, error) {
+// ListItemLoans retrieves the loans of an item.
+func (c *httpClient) ListItemLoans(ctx context.Context, id ID, queryParams ...string) ([]*Loan, error) {
 	var loans []*Loan
-	if err := c.listResources(ctx, "/api/items/"+string(id)+"/loans", &loans); err != nil {
+	path := fmt.Sprintf("/api/items/%s/loans", id)
+	if err := c.listResources(ctx, path, &loans, queryParams...); err != nil {
 		return nil, err
 	}
 	return loans, nil
 }
 
-// ListItemTags retrieves tags for an item.
-func (c *httpClient) ListItemTags(ctx context.Context, id ID) ([]*Tag, error) {
+// ListItemTags retrieves the tags of an item.
+func (c *httpClient) ListItemTags(ctx context.Context, id ID, queryParams ...string) ([]*Tag, error) {
 	var tags []*Tag
-	if err := c.listResources(ctx, "/api/items/"+string(id)+"/tags", &tags); err != nil {
+	path := fmt.Sprintf("/api/items/%s/tags", id)
+	if err := c.listResources(ctx, path, &tags, queryParams...); err != nil {
 		return nil, err
 	}
 	return tags, nil
 }
 
-// ListItemData retrieves data fields for an item.
-func (c *httpClient) ListItemData(ctx context.Context, id ID) ([]*Datum, error) {
+// ListItemData retrieves the data of an item.
+func (c *httpClient) ListItemData(ctx context.Context, id ID, queryParams ...string) ([]*Datum, error) {
 	var data []*Datum
-	if err := c.listResources(ctx, "/api/items/"+string(id)+"/data", &data); err != nil {
+	path := fmt.Sprintf("/api/items/%s/data", id)
+	if err := c.listResources(ctx, path, &data, queryParams...); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -712,9 +723,9 @@ func (c *httpClient) GetLoan(ctx context.Context, id ID) (*Loan, error) {
 }
 
 // ListLoans retrieves a list of loans.
-func (c *httpClient) ListLoans(ctx context.Context) ([]*Loan, error) {
+func (c *httpClient) ListLoans(ctx context.Context, queryParams ...string) ([]*Loan, error) {
 	var loans []*Loan
-	if err := c.listResources(ctx, "/api/loans", &loans); err != nil {
+	if err := c.listResources(ctx, "/api/loans", &loans, queryParams...); err != nil {
 		return nil, err
 	}
 	return loans, nil
@@ -762,9 +773,9 @@ func (c *httpClient) GetLog(ctx context.Context, id ID) (*Log, error) {
 }
 
 // ListLogs retrieves a list of logs.
-func (c *httpClient) ListLogs(ctx context.Context) ([]*Log, error) {
+func (c *httpClient) ListLogs(ctx context.Context, queryParams ...string) ([]*Log, error) {
 	var logs []*Log
-	if err := c.listResources(ctx, "/api/logs", &logs); err != nil {
+	if err := c.listResources(ctx, "/api/logs", &logs, queryParams...); err != nil {
 		return nil, err
 	}
 	return logs, nil
@@ -792,9 +803,9 @@ func (c *httpClient) GetPhoto(ctx context.Context, id ID) (*Photo, error) {
 }
 
 // ListPhotos retrieves a list of photos.
-func (c *httpClient) ListPhotos(ctx context.Context) ([]*Photo, error) {
+func (c *httpClient) ListPhotos(ctx context.Context, queryParams ...string) ([]*Photo, error) {
 	var photos []*Photo
-	if err := c.listResources(ctx, "/api/photos", &photos); err != nil {
+	if err := c.listResources(ctx, "/api/photos", &photos, queryParams...); err != nil {
 		return nil, err
 	}
 	return photos, nil
@@ -863,9 +874,9 @@ func (c *httpClient) GetTag(ctx context.Context, id ID) (*Tag, error) {
 }
 
 // ListTags retrieves a list of tags.
-func (c *httpClient) ListTags(ctx context.Context) ([]*Tag, error) {
+func (c *httpClient) ListTags(ctx context.Context, queryParams ...string) ([]*Tag, error) {
 	var tags []*Tag
-	if err := c.listResources(ctx, "/api/tags", &tags); err != nil {
+	if err := c.listResources(ctx, "/api/tags", &tags, queryParams...); err != nil {
 		return nil, err
 	}
 	return tags, nil
@@ -903,10 +914,11 @@ func (c *httpClient) UploadTagImage(ctx context.Context, id ID, file []byte) (*T
 	return &tag, nil
 }
 
-// ListTagItems retrieves items associated with a tag.
-func (c *httpClient) ListTagItems(ctx context.Context, id ID) ([]*Item, error) {
+// ListTagItems retrieves the items of a tag.
+func (c *httpClient) ListTagItems(ctx context.Context, id ID, queryParams ...string) ([]*Item, error) {
 	var items []*Item
-	if err := c.listResources(ctx, "/api/tags/"+string(id)+"/items", &items); err != nil {
+	path := fmt.Sprintf("/api/tags/%s/items", id)
+	if err := c.listResources(ctx, path, &items, queryParams...); err != nil {
 		return nil, err
 	}
 	return items, nil
@@ -943,9 +955,9 @@ func (c *httpClient) GetTagCategory(ctx context.Context, id ID) (*TagCategory, e
 }
 
 // ListTagCategories retrieves a list of tag categories.
-func (c *httpClient) ListTagCategories(ctx context.Context) ([]*TagCategory, error) {
+func (c *httpClient) ListTagCategories(ctx context.Context, queryParams ...string) ([]*TagCategory, error) {
 	var categories []*TagCategory
-	if err := c.listResources(ctx, "/api/tag_categories", &categories); err != nil {
+	if err := c.listResources(ctx, "/api/tag_categories", &categories, queryParams...); err != nil {
 		return nil, err
 	}
 	return categories, nil
@@ -974,10 +986,11 @@ func (c *httpClient) DeleteTagCategory(ctx context.Context, id ID) error {
 	return c.deleteResource(ctx, "/api/tag_categories/"+string(id))
 }
 
-// ListTagCategoryTags retrieves tags in a tag category.
-func (c *httpClient) ListTagCategoryTags(ctx context.Context, id ID) ([]*Tag, error) {
+// ListTagCategoryTags retrieves the tags of a tag category.
+func (c *httpClient) ListTagCategoryTags(ctx context.Context, id ID, queryParams ...string) ([]*Tag, error) {
 	var tags []*Tag
-	if err := c.listResources(ctx, "/api/tag_categories/"+string(id)+"/tags", &tags); err != nil {
+	path := fmt.Sprintf("/api/tag_categories/%s/tags", id)
+	if err := c.listResources(ctx, path, &tags, queryParams...); err != nil {
 		return nil, err
 	}
 	return tags, nil
@@ -1005,9 +1018,9 @@ func (c *httpClient) GetTemplate(ctx context.Context, id ID) (*Template, error) 
 }
 
 // ListTemplates retrieves a list of templates.
-func (c *httpClient) ListTemplates(ctx context.Context) ([]*Template, error) {
+func (c *httpClient) ListTemplates(ctx context.Context, queryParams ...string) ([]*Template, error) {
 	var templates []*Template
-	if err := c.listResources(ctx, "/api/templates", &templates); err != nil {
+	if err := c.listResources(ctx, "/api/templates", &templates, queryParams...); err != nil {
 		return nil, err
 	}
 	return templates, nil
@@ -1046,9 +1059,9 @@ func (c *httpClient) GetUser(ctx context.Context, id ID) (*User, error) {
 }
 
 // ListUsers retrieves a list of users.
-func (c *httpClient) ListUsers(ctx context.Context) ([]*User, error) {
+func (c *httpClient) ListUsers(ctx context.Context, queryParams ...string) ([]*User, error) {
 	var users []*User
-	if err := c.listResources(ctx, "/api/users", &users); err != nil {
+	if err := c.listResources(ctx, "/api/users", &users, queryParams...); err != nil {
 		return nil, err
 	}
 	return users, nil
@@ -1076,9 +1089,9 @@ func (c *httpClient) GetWish(ctx context.Context, id ID) (*Wish, error) {
 }
 
 // ListWishes retrieves a list of wishes.
-func (c *httpClient) ListWishes(ctx context.Context) ([]*Wish, error) {
+func (c *httpClient) ListWishes(ctx context.Context, queryParams ...string) ([]*Wish, error) {
 	var wishes []*Wish
-	if err := c.listResources(ctx, "/api/wishes", &wishes); err != nil {
+	if err := c.listResources(ctx, "/api/wishes", &wishes, queryParams...); err != nil {
 		return nil, err
 	}
 	return wishes, nil
@@ -1147,9 +1160,9 @@ func (c *httpClient) GetWishlist(ctx context.Context, id ID) (*Wishlist, error) 
 }
 
 // ListWishlists retrieves a list of wishlists.
-func (c *httpClient) ListWishlists(ctx context.Context) ([]*Wishlist, error) {
+func (c *httpClient) ListWishlists(ctx context.Context, queryParams ...string) ([]*Wishlist, error) {
 	var wishlists []*Wishlist
-	if err := c.listResources(ctx, "/api/wishlists", &wishlists); err != nil {
+	if err := c.listResources(ctx, "/api/wishlists", &wishlists, queryParams...); err != nil {
 		return nil, err
 	}
 	return wishlists, nil
@@ -1178,19 +1191,21 @@ func (c *httpClient) DeleteWishlist(ctx context.Context, id ID) error {
 	return c.deleteResource(ctx, "/api/wishlists/"+string(id))
 }
 
-// ListWishlistWishes retrieves wishes in a wishlist.
-func (c *httpClient) ListWishlistWishes(ctx context.Context, id ID) ([]*Wish, error) {
+// ListWishlistWishes retrieves the wishes in a wishlist.
+func (c *httpClient) ListWishlistWishes(ctx context.Context, id ID, queryParams ...string) ([]*Wish, error) {
 	var wishes []*Wish
-	if err := c.listResources(ctx, "/api/wishlists/"+string(id)+"/wishes", &wishes); err != nil {
+	path := fmt.Sprintf("/api/wishlists/%s/wishes", id)
+	if err := c.listResources(ctx, path, &wishes, queryParams...); err != nil {
 		return nil, err
 	}
 	return wishes, nil
 }
 
-// ListWishlistChildren retrieves child wishlists of a wishlist.
-func (c *httpClient) ListWishlistChildren(ctx context.Context, id ID) ([]*Wishlist, error) {
+// ListWishlistChildren retrieves the children of a wishlist.
+func (c *httpClient) ListWishlistChildren(ctx context.Context, id ID, queryParams ...string) ([]*Wishlist, error) {
 	var wishlists []*Wishlist
-	if err := c.listResources(ctx, "/api/wishlists/"+string(id)+"/children", &wishlists); err != nil {
+	path := fmt.Sprintf("/api/wishlists/%s/children", id)
+	if err := c.listResources(ctx, path, &wishlists, queryParams...); err != nil {
 		return nil, err
 	}
 	return wishlists, nil
