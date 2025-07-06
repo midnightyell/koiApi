@@ -22,6 +22,7 @@ type CollectionInterface interface {
 	Update(ctx context.Context, client Client, collectionID ...ID) (*Collection, error)                             // HTTP PUT /api/collections/{id}
 	UploadImage(ctx context.Context, client Client, file []byte, collectionID ...ID) (*Collection, error)           // HTTP POST /api/collections/{id}/image
 	UploadImageByFile(ctx context.Context, client Client, filename string, collectionID ...ID) (*Collection, error) // HTTP POST /api/collections/{id}/image
+	Summary() string
 }
 
 // Collection represents a collection in Koillection, combining fields for JSON-LD and API interactions.
@@ -45,6 +46,10 @@ type Collection struct {
 	UpdatedAt            *time.Time `json:"updatedAt,omitempty" access:"ro"`            // Update timestamp
 	File                 *string    `json:"file,omitempty" access:"wo"`                 // Image file data
 	DeleteImage          *bool      `json:"deleteImage,omitempty" access:"wo"`          // Flag to delete image
+}
+
+func (c *Collection) Summary() string {
+	return fmt.Sprintf("%-40s %s", c.Title, c.ID)
 }
 
 // whichID
