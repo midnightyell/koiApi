@@ -15,6 +15,8 @@ type koiAuth struct {
 	Password  *string `json:"password"`
 }
 
+var flagSets []*flag.FlagSet
+
 var (
 	verbose    bool
 	configFile string = ".koiauth"
@@ -28,6 +30,7 @@ func init() {
 
 	// Define flags
 	fs := flag.NewFlagSet("koiAuth", flag.ContinueOnError)
+	flagSets = append(flagSets, fs)
 	fs.BoolVar(&verbose, dprefix+"verbose", false, "Enable verbose output")
 	fs.StringVar(&configFile, dprefix+"config", configFile, "Path to config file")
 	fs.StringVar(&serverURL, dprefix+"server", "", "Server URL")
@@ -175,4 +178,10 @@ func removeFlagSetArgs(fs *flag.FlagSet, args []string) []string {
 		filtered = append(filtered, arg)
 	}
 	return filtered
+}
+
+func Usage() {
+	for _, f := range flagSets {
+		f.PrintDefaults()
+	}
 }
