@@ -59,6 +59,9 @@ type httpClient struct {
 
 // NewHTTPClient creates a new HTTP client for the Koillection API.
 func NewHTTPClient(baseURL string, timeout time.Duration) Client {
+	if baseURL == "" {
+		baseURL = *auth.ServerURL
+	}
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		fmt.Println("Error creating cookie jar:", err)
@@ -354,6 +357,18 @@ func (c *httpClient) uploadFile(ctx context.Context, path string, file []byte, f
 
 // CheckLogin authenticates a user and returns a JWT token.
 func (c *httpClient) CheckLogin(ctx context.Context, username, password string) (string, error) {
+
+	if username == "" {
+		username = *auth.Username
+	} else {
+		auth.Username = &username
+	}
+	if password == "" {
+		password = *auth.Password
+	} else {
+		auth.Password = &password
+	}
+
 	reqBody := map[string]string{
 		"username": username,
 		"password": password,
