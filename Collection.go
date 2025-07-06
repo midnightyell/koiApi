@@ -23,6 +23,7 @@ type CollectionInterface interface {
 	UploadImage(ctx context.Context, client Client, file []byte, collectionID ...ID) (*Collection, error)           // HTTP POST /api/collections/{id}/image
 	UploadImageByFile(ctx context.Context, client Client, filename string, collectionID ...ID) (*Collection, error) // HTTP POST /api/collections/{id}/image
 	Summary() string
+	Exists()
 }
 
 // Collection represents a collection in Koillection, combining fields for JSON-LD and API interactions.
