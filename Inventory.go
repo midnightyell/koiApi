@@ -11,7 +11,6 @@ type InventoryInterface interface {
 	Delete(ctx context.Context, client Client, inventoryID ...ID) error            // HTTP DELETE /api/inventories/{id}
 	Get(ctx context.Context, client Client, inventoryID ...ID) (*Inventory, error) // HTTP GET /api/inventories/{id}
 	IRI() string                                                                   // /api/inventories/{id}
-	List(ctx context.Context, client Client) ([]*Inventory, error)                 // HTTP GET /api/inventories
 }
 
 // Inventory represents an inventory record in Koillection, combining fields for JSON-LD and API interactions.
@@ -50,20 +49,4 @@ func (i *Inventory) Get(ctx context.Context, client Client, inventoryID ...ID) (
 // IRI
 func (i *Inventory) IRI() string {
 	return fmt.Sprintf("/api/inventories/%s", i.ID)
-}
-
-// List
-func (i *Inventory) List(ctx context.Context, client Client) ([]*Inventory, error) {
-	var allInventories []*Inventory
-	for page := 1; ; page++ {
-		inventories, err := client.ListInventories(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list inventories on page %d: %w", page, err)
-		}
-		if len(inventories) == 0 {
-			break
-		}
-		allInventories = append(allInventories, inventories...)
-	}
-	return allInventories, nil
 }

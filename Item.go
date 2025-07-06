@@ -14,11 +14,6 @@ type ItemInterface interface {
 	Get(ctx context.Context, client Client, itemID ...ID) (*Item, error)                                // HTTP GET /api/items/{id}
 	GetCollection(ctx context.Context, client Client, itemID ...ID) (*Collection, error)                // HTTP GET /api/items/{id}/collection
 	IRI() string                                                                                        // /api/items/{id}
-	List(ctx context.Context, client Client) ([]*Item, error)                                           // HTTP GET /api/items
-	ListData(ctx context.Context, client Client, itemID ...ID) ([]*Datum, error)                        // HTTP GET /api/items/{id}/data
-	ListLoans(ctx context.Context, client Client, itemID ...ID) ([]*Loan, error)                        // HTTP GET /api/items/{id}/loans
-	ListRelatedItems(ctx context.Context, client Client, itemID ...ID) ([]*Item, error)                 // HTTP GET /api/items/{id}/related_items
-	ListTags(ctx context.Context, client Client, itemID ...ID) ([]*Tag, error)                          // HTTP GET /api/items/{id}/tags
 	Patch(ctx context.Context, client Client, itemID ...ID) (*Item, error)                              // HTTP PATCH /api/items/{id}
 	Update(ctx context.Context, client Client, itemID ...ID) (*Item, error)                             // HTTP PUT /api/items/{id}
 	UploadImage(ctx context.Context, client Client, file []byte, itemID ...ID) (*Item, error)           // HTTP POST /api/items/{id}/image
@@ -90,9 +85,9 @@ func (i *Item) IRI() string {
 func (i *Item) List(ctx context.Context, client Client) ([]*Item, error) {
 	var allItems []*Item
 	for page := 1; ; page++ {
-		items, err := client.ListItems(ctx, page)
+		items, err := client.ListItems(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list items on page %d: %w", page, err)
+			return nil, fmt.Errorf("failed to list items on page %d: %w", err)
 		}
 		if len(items) == 0 {
 			break
@@ -107,9 +102,9 @@ func (i *Item) ListData(ctx context.Context, client Client, itemID ...ID) ([]*Da
 	id := i.whichID(itemID...)
 	var allData []*Datum
 	for page := 1; ; page++ {
-		data, err := client.ListItemData(ctx, id, page)
+		data, err := client.ListItemData(ctx, id)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list data for ID %s on page %d: %w", id, page, err)
+			return nil, fmt.Errorf("failed to list data for ID %s: %w", id, err)
 		}
 		if len(data) == 0 {
 			break
@@ -124,7 +119,7 @@ func (i *Item) ListLoans(ctx context.Context, client Client, itemID ...ID) ([]*L
 	id := i.whichID(itemID...)
 	var allLoans []*Loan
 	for page := 1; ; page++ {
-		loans, err := client.ListItemLoans(ctx, id, page)
+		loans, err := client.ListItemLoans(ctx, id)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list loans for ID %s on page %d: %w", id, page, err)
 		}
@@ -134,40 +129,6 @@ func (i *Item) ListLoans(ctx context.Context, client Client, itemID ...ID) ([]*L
 		allLoans = append(allLoans, loans...)
 	}
 	return allLoans, nil
-}
-
-// ListRelatedItems
-func (i *Item) ListRelatedItems(ctx context.Context, client Client, itemID ...ID) ([]*Item, error) {
-	id := i.whichID(itemID...)
-	var allRelatedItems []*Item
-	for page := 1; ; page++ {
-		relatedItems, err := client.ListItemRelatedItems(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list related items for ID %s on page %d: %w", id, page, err)
-		}
-		if len(relatedItems) == 0 {
-			break
-		}
-		allRelatedItems = append(allRelatedItems, relatedItems...)
-	}
-	return allRelatedItems, nil
-}
-
-// ListTags
-func (i *Item) ListTags(ctx context.Context, client Client, itemID ...ID) ([]*Tag, error) {
-	id := i.whichID(itemID...)
-	var allTags []*Tag
-	for page := 1; ; page++ {
-		tags, err := client.ListItemTags(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list tags for ID %s on page %d: %w", id, page, err)
-		}
-		if len(tags) == 0 {
-			break
-		}
-		allTags = append(allTags, tags...)
-	}
-	return allTags, nil
 }
 
 // Patch

@@ -316,25 +316,9 @@ func GetItemAndData(ctx context.Context, client Client, itemID ID) (*Item, []*Da
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get item %s: %w", itemID, err)
 	}
-
 	// Fetch all Datum objects associated with the item
-	data, err := client.ListItemData(ctx, itemID, 1)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get data for item %s: %w", itemID, err)
-	}
-
-	// Handle pagination if more data exists
-	var allData []*Datum
-	allData = append(allData, data...)
-	for page := 2; len(data) > 0; page++ {
-		data, err = client.ListItemData(ctx, itemID, page)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to get data page %d for item %s: %w", page, itemID, err)
-		}
-		allData = append(allData, data...)
-	}
-
-	return item, allData, nil
+	data, err := client.ListItemData(ctx, itemID)
+	return item, data, nil
 }
 
 // PrintItemWithData prints the fields of an Item and all associated Datum objects, indenting Datum fields further.

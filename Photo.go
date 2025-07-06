@@ -81,22 +81,6 @@ func (p *Photo) IRI() string {
 	return fmt.Sprintf("/api/photos/%s", p.ID)
 }
 
-// List
-func (p *Photo) List(ctx context.Context, client Client) ([]*Photo, error) {
-	var allPhotos []*Photo
-	for page := 1; ; page++ {
-		photos, err := client.ListPhotos(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list photos on page %d: %w", page, err)
-		}
-		if len(photos) == 0 {
-			break
-		}
-		allPhotos = append(allPhotos, photos...)
-	}
-	return allPhotos, nil
-}
-
 // Patch
 func (p *Photo) Patch(ctx context.Context, client Client, photoID ...ID) (*Photo, error) {
 	id := p.whichID(photoID...)

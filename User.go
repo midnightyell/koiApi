@@ -67,16 +67,5 @@ func (u *User) IRI() string {
 
 // List
 func (u *User) List(ctx context.Context, client Client) ([]*User, error) {
-	var allUsers []*User
-	for page := 1; ; page++ {
-		users, err := client.ListUsers(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list users on page %d: %w", page, err)
-		}
-		if len(users) == 0 {
-			break
-		}
-		allUsers = append(allUsers, users...)
-	}
-	return allUsers, nil
+	return client.ListUsers(ctx)
 }

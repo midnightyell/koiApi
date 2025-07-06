@@ -84,9 +84,9 @@ func (a *Album) IRI() string {
 func (a *Album) List(ctx context.Context, client Client) ([]*Album, error) {
 	var allAlbums []*Album
 	for page := 1; ; page++ {
-		albums, err := client.ListAlbums(ctx, page)
+		albums, err := client.ListAlbums(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list albums on page %d: %w", page, err)
+			return nil, fmt.Errorf("failed to list albums on page %d: %w", err)
 		}
 		if len(albums) == 0 {
 			break
@@ -101,9 +101,9 @@ func (a *Album) ListChildren(ctx context.Context, client Client, albumID ...ID) 
 	id := a.whichID(albumID...)
 	var allChildren []*Album
 	for page := 1; ; page++ {
-		children, err := client.ListAlbumChildren(ctx, id, page)
+		children, err := client.ListAlbumChildren(ctx, id)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list child albums for ID %s on page %d: %w", id, page, err)
+			return nil, fmt.Errorf("failed to list child albums for ID %s on page %d: %w", id, err)
 		}
 		if len(children) == 0 {
 			break
@@ -118,9 +118,9 @@ func (a *Album) ListPhotos(ctx context.Context, client Client, albumID ...ID) ([
 	id := a.whichID(albumID...)
 	var allPhotos []*Photo
 	for page := 1; ; page++ {
-		photos, err := client.ListAlbumPhotos(ctx, id, page)
+		photos, err := client.ListAlbumPhotos(ctx, id)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list photos for ID %s on page %d: %w", id, page, err)
+			return nil, fmt.Errorf("failed to list photos for ID %s on page %d: %w", id, err)
 		}
 		if len(photos) == 0 {
 			break

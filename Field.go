@@ -39,7 +39,6 @@ type FieldInterface interface {
 	Get(ctx context.Context, client Client, fieldID ...ID) (*Field, error)            // HTTP GET /api/fields/{id}
 	GetTemplate(ctx context.Context, client Client, fieldID ...ID) (*Template, error) // HTTP GET /api/fields/{id}/template
 	IRI() string                                                                      // /api/fields/{id}
-	List(ctx context.Context, client Client) ([]*Field, error)                        // HTTP GET /api/fields
 	Patch(ctx context.Context, client Client, fieldID ...ID) (*Field, error)          // HTTP PATCH /api/fields/{id}
 	Update(ctx context.Context, client Client, fieldID ...ID) (*Field, error)         // HTTP PUT /api/fields/{id}
 }
@@ -93,22 +92,6 @@ func (f *Field) GetTemplate(ctx context.Context, client Client, fieldID ...ID) (
 // IRI
 func (f *Field) IRI() string {
 	return fmt.Sprintf("/api/fields/%s", f.ID)
-}
-
-// List
-func (f *Field) List(ctx context.Context, client Client) ([]*Field, error) {
-	var allFields []*Field
-	for page := 1; ; page++ {
-		fields, err := client.ListFields(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list fields on page %d: %w", page, err)
-		}
-		if len(fields) == 0 {
-			break
-		}
-		allFields = append(allFields, fields...)
-	}
-	return allFields, nil
 }
 
 // Patch

@@ -21,7 +21,7 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	// Delete resources in dependency order: children first, then parents
 
 	// 1. Delete Photos (depend on Albums)
-	photos, err := c.ListPhotos(ctx, 1)
+	photos, err := c.ListPhotos(ctx)
 	addError(err, "photos list", "")
 	for _, photo := range photos {
 		err := c.DeletePhoto(ctx, photo.ID)
@@ -29,7 +29,7 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 2. Delete Wishes (depend on Wishlists)
-	wishes, err := c.ListWishes(ctx, 1)
+	wishes, err := c.ListWishes(ctx)
 	addError(err, "wishes list", "")
 	for _, wish := range wishes {
 		err := c.DeleteWish(ctx, wish.ID)
@@ -37,11 +37,11 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 3. Delete Items (depend on Collections, have Loans, Tags, Data)
-	items, err := c.ListItems(ctx, 1)
+	items, err := c.ListItems(ctx)
 	addError(err, "items list", "")
 	for _, item := range items {
 		// Delete associated Loans
-		loans, err := c.ListItemLoans(ctx, item.ID, 1)
+		loans, err := c.ListItemLoans(ctx, item.ID)
 		addError(err, "loans list for item", string(item.ID))
 		for _, loan := range loans {
 			err := c.DeleteLoan(ctx, loan.ID)
@@ -49,7 +49,7 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 		}
 
 		// Delete associated Data
-		data, err := c.ListItemData(ctx, item.ID, 1)
+		data, err := c.ListItemData(ctx, item.ID)
 		addError(err, "data list for item", string(item.ID))
 		for _, datum := range data {
 			err := c.DeleteDatum(ctx, datum.ID)
@@ -62,11 +62,11 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 4. Delete Albums (have children and photos)
-	albums, err := c.ListAlbums(ctx, 1)
+	albums, err := c.ListAlbums(ctx)
 	addError(err, "albums list", "")
 	for _, album := range albums {
 		// Delete child albums recursively
-		children, err := c.ListAlbumChildren(ctx, album.ID, 1)
+		children, err := c.ListAlbumChildren(ctx, album.ID)
 		addError(err, "album children list", string(album.ID))
 		for _, child := range children {
 			err := c.DeleteAlbum(ctx, child.ID)
@@ -77,11 +77,11 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 5. Delete Wishlists (have children and wishes)
-	wishlists, err := c.ListWishlists(ctx, 1)
+	wishlists, err := c.ListWishlists(ctx)
 	addError(err, "wishlists list", "")
 	for _, wishlist := range wishlists {
 		// Delete child wishlists recursively
-		children, err := c.ListWishlistChildren(ctx, wishlist.ID, 1)
+		children, err := c.ListWishlistChildren(ctx, wishlist.ID)
 		addError(err, "wishlist children list", string(wishlist.ID))
 		for _, child := range children {
 			err := c.DeleteWishlist(ctx, child.ID)
@@ -92,18 +92,18 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 6. Delete Collections (have children, items, data)
-	collections, err := c.ListCollections(ctx, 1)
+	collections, err := c.ListCollections(ctx)
 	addError(err, "collections list", "")
 	for _, collection := range collections {
 		// Delete child collections recursively
-		children, err := c.ListCollectionChildren(ctx, collection.ID, 1)
+		children, err := c.ListCollectionChildren(ctx, collection.ID)
 		addError(err, "collection children list", string(collection.ID))
 		for _, child := range children {
 			err := c.DeleteCollection(ctx, child.ID)
 			addError(err, "child collection", string(child.ID))
 		}
 		// Delete associated Data
-		data, err := c.ListCollectionData(ctx, collection.ID, 1)
+		data, err := c.ListCollectionData(ctx, collection.ID)
 		addError(err, "data list for collection", string(collection.ID))
 		for _, datum := range data {
 			err := c.DeleteDatum(ctx, datum.ID)
@@ -114,11 +114,11 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 7. Delete Templates (have Fields)
-	templates, err := c.ListTemplates(ctx, 1)
+	templates, err := c.ListTemplates(ctx)
 	addError(err, "templates list", "")
 	for _, template := range templates {
 		// Delete associated Fields
-		fields, err := c.ListTemplateFields(ctx, template.ID, 1)
+		fields, err := c.ListTemplateFields(ctx, template.ID)
 		addError(err, "fields list for template", string(template.ID))
 		for _, field := range fields {
 			err := c.DeleteField(ctx, field.ID)
@@ -129,7 +129,7 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 8. Delete Tags (depend on Tag Categories)
-	tags, err := c.ListTags(ctx, 1)
+	tags, err := c.ListTags(ctx)
 	addError(err, "tags list", "")
 	for _, tag := range tags {
 		err := c.DeleteTag(ctx, tag.ID)
@@ -137,7 +137,7 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 9. Delete Tag Categories
-	tagCategories, err := c.ListTagCategories(ctx, 1)
+	tagCategories, err := c.ListTagCategories(ctx)
 	addError(err, "tag categories list", "")
 	for _, category := range tagCategories {
 		err := c.DeleteTagCategory(ctx, category.ID)
@@ -145,7 +145,7 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 10. Delete Choice Lists
-	choiceLists, err := c.ListChoiceLists(ctx, 1)
+	choiceLists, err := c.ListChoiceLists(ctx)
 	addError(err, "choice lists list", "")
 	for _, choiceList := range choiceLists {
 		err := c.DeleteChoiceList(ctx, choiceList.ID)
@@ -153,7 +153,7 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 11. Delete Inventories
-	inventories, err := c.ListInventories(ctx, 1)
+	inventories, err := c.ListInventories(ctx)
 	addError(err, "inventories list", "")
 	for _, inventory := range inventories {
 		err := c.DeleteInventory(ctx, inventory.ID)

@@ -64,35 +64,13 @@ func (tc *TagCategory) IRI() string {
 
 // List
 func (tc *TagCategory) List(ctx context.Context, client Client) ([]*TagCategory, error) {
-	var allTagCategories []*TagCategory
-	for page := 1; ; page++ {
-		tagCategories, err := client.ListTagCategories(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list tag categories on page %d: %w", page, err)
-		}
-		if len(tagCategories) == 0 {
-			break
-		}
-		allTagCategories = append(allTagCategories, tagCategories...)
-	}
-	return allTagCategories, nil
+	return client.ListTagCategories(ctx)
 }
 
 // ListTags
 func (tc *TagCategory) ListTags(ctx context.Context, client Client, tagCategoryID ...ID) ([]*Tag, error) {
 	id := tc.whichID(tagCategoryID...)
-	var allTags []*Tag
-	for page := 1; ; page++ {
-		tags, err := client.ListTagCategoryTags(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list tags for ID %s on page %d: %w", id, page, err)
-		}
-		if len(tags) == 0 {
-			break
-		}
-		allTags = append(allTags, tags...)
-	}
-	return allTags, nil
+	return client.ListTagCategoryTags(ctx, id)
 }
 
 // Patch

@@ -82,52 +82,19 @@ func (w *Wishlist) IRI() string {
 
 // List
 func (w *Wishlist) List(ctx context.Context, client Client) ([]*Wishlist, error) {
-	var allWishlists []*Wishlist
-	for page := 1; ; page++ {
-		wishlists, err := client.ListWishlists(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list wishlists on page %d: %w", page, err)
-		}
-		if len(wishlists) == 0 {
-			break
-		}
-		allWishlists = append(allWishlists, wishlists...)
-	}
-	return allWishlists, nil
+	return client.ListWishlists(ctx)
 }
 
 // ListChildren
 func (w *Wishlist) ListChildren(ctx context.Context, client Client, wishlistID ...ID) ([]*Wishlist, error) {
 	id := w.whichID(wishlistID...)
-	var allChildren []*Wishlist
-	for page := 1; ; page++ {
-		children, err := client.ListWishlistChildren(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list child wishlists for ID %s on page %d: %w", id, page, err)
-		}
-		if len(children) == 0 {
-			break
-		}
-		allChildren = append(allChildren, children...)
-	}
-	return allChildren, nil
+	return client.ListWishlistChildren(ctx, id)
 }
 
 // ListWishes
 func (w *Wishlist) ListWishes(ctx context.Context, client Client, wishlistID ...ID) ([]*Wish, error) {
 	id := w.whichID(wishlistID...)
-	var allWishes []*Wish
-	for page := 1; ; page++ {
-		wishes, err := client.ListWishlistWishes(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list wishes for ID %s on page %d: %w", id, page, err)
-		}
-		if len(wishes) == 0 {
-			break
-		}
-		allWishes = append(allWishes, wishes...)
-	}
-	return allWishes, nil
+	return client.ListWishlistWishes(ctx, id)
 }
 
 // Patch

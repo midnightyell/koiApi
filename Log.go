@@ -49,16 +49,5 @@ func (l *Log) IRI() string {
 
 // List
 func (l *Log) List(ctx context.Context, client Client) ([]*Log, error) {
-	var allLogs []*Log
-	for page := 1; ; page++ {
-		logs, err := client.ListLogs(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list logs on page %d: %w", page, err)
-		}
-		if len(logs) == 0 {
-			break
-		}
-		allLogs = append(allLogs, logs...)
-	}
-	return allLogs, nil
+	return client.ListLogs(ctx)
 }

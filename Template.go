@@ -61,18 +61,7 @@ func (t *Template) IRI() string {
 
 // List
 func (t *Template) List(ctx context.Context, client Client) ([]*Template, error) {
-	var allTemplates []*Template
-	for page := 1; ; page++ {
-		templates, err := client.ListTemplates(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list templates on page %d: %w", page, err)
-		}
-		if len(templates) == 0 {
-			break
-		}
-		allTemplates = append(allTemplates, templates...)
-	}
-	return allTemplates, nil
+	return client.ListTemplates(ctx)
 }
 
 // Patch

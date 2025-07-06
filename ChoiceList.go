@@ -64,9 +64,9 @@ func (cl *ChoiceList) IRI() string {
 func (cl *ChoiceList) List(ctx context.Context, client Client) ([]*ChoiceList, error) {
 	var allChoiceLists []*ChoiceList
 	for page := 1; ; page++ {
-		choiceLists, err := client.ListChoiceLists(ctx, page)
+		choiceLists, err := client.ListChoiceLists(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list choice lists on page %d: %w", page, err)
+			return nil, fmt.Errorf("failed to list choice lists on page %d: %w", err)
 		}
 		if len(choiceLists) == 0 {
 			break

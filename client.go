@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -210,17 +211,23 @@ func (c *httpClient) getResource(ctx context.Context, path string, out interface
 	return json.NewDecoder(resp.Body).Decode(out)
 }
 
-// listResources retrieves a paginated list of resources and decodes the member array.
-func (c *httpClient) listResources(ctx context.Context, path string, page int, out interface{}, queryParams ...string) error {
+// listResources retrieves all resources by looping through all pages and decodes the member array.
+func (c *httpClient) listResources(ctx context.Context, path string, out interface{}, queryParams ...string) error {
+	// Ensure out is a slice to collect all resources
+	outValue := reflect.ValueOf(out)
+	if outValue.Kind() != reflect.Ptr || outValue.Elem().Kind() != reflect.Slice {
+		return fmt.Errorf("out must be a pointer to a slice")
+	}
+	sliceType := outValue.Elem().Type()
+	slice := reflect.New(sliceType).Elem()
+
 	u, err := url.Parse(c.baseURL + path)
 	if err != nil {
 		return fmt.Errorf("parsing URL: %w", err)
 	}
-	q := u.Query()
-	if page > 0 {
-		q.Set("page", strconv.Itoa(page))
-	}
+
 	// Append query parameters
+	q := u.Query()
 	for _, param := range queryParams {
 		if param != "" {
 			parts := strings.SplitN(param, "=", 2)
@@ -229,65 +236,69 @@ func (c *httpClient) listResources(ctx context.Context, path string, page int, o
 			}
 		}
 	}
-	u.RawQuery = q.Encode()
 
-	resp, err := c.doRequest(ctx, http.MethodGet, u.Path+"?"+u.RawQuery, nil, "")
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
+	page := 1
+	for {
+		// Add page to query
+		q.Set("page", strconv.Itoa(page))
+		u.RawQuery = q.Encode()
 
-	// Handle JSON-LD response with "member" array.
-	headerContent := resp.Header.Get("Content-Type")
-	if strings.Contains(headerContent, "application/ld+json") {
-		var wrapper struct {
-			Member json.RawMessage `json:"member"`
+		resp, err := c.doRequest(ctx, http.MethodGet, u.Path+"?"+u.RawQuery, nil, "")
+		if err != nil {
+			return err
 		}
-		if err := json.NewDecoder(resp.Body).Decode(&wrapper); err != nil {
-			return fmt.Errorf("decoding response: %w", err)
+		defer resp.Body.Close()
+
+		// Handle JSON-LD response with "member" array
+		headerContent := resp.Header.Get("Content-Type")
+		if strings.Contains(headerContent, "application/ld+json") {
+			var wrapper struct {
+				Member json.RawMessage `json:"member"`
+			}
+			if err := json.NewDecoder(resp.Body).Decode(&wrapper); err != nil {
+				return fmt.Errorf("decoding response: %w", err)
+			}
+			// Check if member array is empty to break the loop
+			if len(wrapper.Member) == 0 || string(wrapper.Member) == "[]" {
+				break
+			}
+			// Decode the member array into a temporary slice
+			tempSlice := reflect.New(sliceType).Interface()
+			if err := json.Unmarshal(wrapper.Member, tempSlice); err != nil {
+				return fmt.Errorf("unmarshaling member array: %w", err)
+			}
+			// Append temporary slice to the main slice
+			tempValue := reflect.ValueOf(tempSlice).Elem()
+			for i := 0; i < tempValue.Len(); i++ {
+				slice = reflect.Append(slice, tempValue.Index(i))
+			}
+		} else {
+			bodyBytes, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+			// Check if body is empty to break the loop
+			if len(bodyBytes) == 0 || string(bodyBytes) == "[]" {
+				break
+			}
+			// Decode the response into a temporary slice
+			tempSlice := reflect.New(sliceType).Interface()
+			if err := json.Unmarshal(bodyBytes, tempSlice); err != nil {
+				return fmt.Errorf("unmarshaling response: %w", err)
+			}
+			// Append temporary slice to the main slice
+			tempValue := reflect.ValueOf(tempSlice).Elem()
+			for i := 0; i < tempValue.Len(); i++ {
+				slice = reflect.Append(slice, tempValue.Index(i))
+			}
 		}
-		return json.Unmarshal(wrapper.Member, out)
-	}
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(bodyBytes, out)
-}
 
-// postResource creates a resource and decodes the response into the provided struct.
-func (c *httpClient) postResource(ctx context.Context, path string, in, out interface{}) error {
-	body, err := json.Marshal(in)
-	if err != nil {
-		return fmt.Errorf("encoding request body: %w", err)
+		page++
 	}
 
-	resp, err := c.doRequest(ctx, http.MethodPost, path, bytes.NewReader(body), "")
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if out != nil {
-		return json.NewDecoder(resp.Body).Decode(out)
-	}
+	// Set the output slice
+	outValue.Elem().Set(slice)
 	return nil
-}
-
-// putResource updates a resource and decodes the response into the provided struct.
-func (c *httpClient) putResource(ctx context.Context, path string, in, out interface{}) error {
-	body, err := json.Marshal(in)
-	if err != nil {
-		return fmt.Errorf("encoding request body: %w", err)
-	}
-
-	resp, err := c.doRequest(ctx, http.MethodPut, path, bytes.NewReader(body), "")
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	return json.NewDecoder(resp.Body).Decode(out)
 }
 
 // patchResource partially updates a resource and decodes the response into the provided struct.
@@ -367,4 +378,39 @@ func (c *httpClient) CheckLogin(ctx context.Context, username, password string) 
 
 	c.token = result.Token
 	return result.Token, nil
+}
+
+// postResource creates a resource and decodes the response into the provided struct.
+func (c *httpClient) postResource(ctx context.Context, path string, in, out interface{}) error {
+	body, err := json.Marshal(in)
+	if err != nil {
+		return fmt.Errorf("encoding request body: %w", err)
+	}
+
+	resp, err := c.doRequest(ctx, http.MethodPost, path, bytes.NewReader(body), "")
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if out != nil {
+		return json.NewDecoder(resp.Body).Decode(out)
+	}
+	return nil
+}
+
+// putResource updates a resource and decodes the response into the provided struct.
+func (c *httpClient) putResource(ctx context.Context, path string, in, out interface{}) error {
+	body, err := json.Marshal(in)
+	if err != nil {
+		return fmt.Errorf("encoding request body: %w", err)
+	}
+
+	resp, err := c.doRequest(ctx, http.MethodPut, path, bytes.NewReader(body), "")
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return json.NewDecoder(resp.Body).Decode(out)
 }

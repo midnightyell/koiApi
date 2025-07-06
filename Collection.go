@@ -15,7 +15,6 @@ type CollectionInterface interface {
 	GetDefaultTemplate(ctx context.Context, client Client, collectionID ...ID) (*Template, error)                   // HTTP GET /api/collections/{id}/items_default_template
 	GetParent(ctx context.Context, client Client, collectionID ...ID) (*Collection, error)                          // HTTP GET /api/collections/{id}/parent
 	IRI() string                                                                                                    // /api/collections/{id}
-	List(ctx context.Context, client Client) ([]*Collection, error)                                                 // HTTP GET /api/collections
 	ListChildren(ctx context.Context, client Client, collectionID ...ID) ([]*Collection, error)                     // HTTP GET /api/collections/{id}/children
 	ListCollectionData(ctx context.Context, client Client, collectionID ...ID) ([]*Datum, error)                    // HTTP GET /api/collections/{id}/data
 	ListCollectionItems(ctx context.Context, client Client, collectionID ...ID) ([]*Item, error)                    // HTTP GET /api/collections/{id}/items
@@ -88,73 +87,6 @@ func (c *Collection) GetParent(ctx context.Context, client Client, collectionID 
 // IRI
 func (c *Collection) IRI() string {
 	return fmt.Sprintf("/api/collections/%s", c.ID)
-}
-
-// List
-func (c *Collection) List(ctx context.Context, client Client) ([]*Collection, error) {
-	var allCollections []*Collection
-	for page := 1; ; page++ {
-		collections, err := client.ListCollections(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list collections on page %d: %w", page, err)
-		}
-		if len(collections) == 0 {
-			break
-		}
-		allCollections = append(allCollections, collections...)
-	}
-	return allCollections, nil
-}
-
-// ListChildren
-func (c *Collection) ListChildren(ctx context.Context, client Client, collectionID ...ID) ([]*Collection, error) {
-	id := c.whichID(collectionID...)
-	var allChildren []*Collection
-	for page := 1; ; page++ {
-		children, err := client.ListCollectionChildren(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list child collections for ID %s on page %d: %w", id, page, err)
-		}
-		if len(children) == 0 {
-			break
-		}
-		allChildren = append(allChildren, children...)
-	}
-	return allChildren, nil
-}
-
-// ListCollectionData
-func (c *Collection) ListCollectionData(ctx context.Context, client Client, collectionID ...ID) ([]*Datum, error) {
-	id := c.whichID(collectionID...)
-	var allData []*Datum
-	for page := 1; ; page++ {
-		data, err := client.ListCollectionData(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list data for ID %s on page %d: %w", id, page, err)
-		}
-		if len(data) == 0 {
-			break
-		}
-		allData = append(allData, data...)
-	}
-	return allData, nil
-}
-
-// ListCollectionItems
-func (c *Collection) ListCollectionItems(ctx context.Context, client Client, collectionID ...ID) ([]*Item, error) {
-	id := c.whichID(collectionID...)
-	var allItems []*Item
-	for page := 1; ; page++ {
-		items, err := client.ListCollectionItems(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list items for ID %s on page %d: %w", id, page, err)
-		}
-		if len(items) == 0 {
-			break
-		}
-		allItems = append(allItems, items...)
-	}
-	return allItems, nil
 }
 
 // Patch

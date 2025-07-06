@@ -79,35 +79,13 @@ func (t *Tag) IRI() string {
 
 // List
 func (t *Tag) List(ctx context.Context, client Client) ([]*Tag, error) {
-	var allTags []*Tag
-	for page := 1; ; page++ {
-		tags, err := client.ListTags(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list tags on page %d: %w", page, err)
-		}
-		if len(tags) == 0 {
-			break
-		}
-		allTags = append(allTags, tags...)
-	}
-	return allTags, nil
+	return client.ListTags(ctx)
 }
 
 // ListItems
 func (t *Tag) ListItems(ctx context.Context, client Client, tagID ...ID) ([]*Item, error) {
 	id := t.whichID(tagID...)
-	var allItems []*Item
-	for page := 1; ; page++ {
-		items, err := client.ListTagItems(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list items for ID %s on page %d: %w", id, page, err)
-		}
-		if len(items) == 0 {
-			break
-		}
-		allItems = append(allItems, items...)
-	}
-	return allItems, nil
+	return client.ListTagItems(ctx, id)
 }
 
 // Patch

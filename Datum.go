@@ -35,7 +35,6 @@ type DatumInterface interface {
 	GetCollection(ctx context.Context, client Client, datumID ...ID) (*Collection, error)                 // HTTP GET /api/data/{id}/collection
 	GetItem(ctx context.Context, client Client, datumID ...ID) (*Item, error)                             // HTTP GET /api/data/{id}/item
 	IRI() string                                                                                          // /api/data/{id}
-	List(ctx context.Context, client Client) ([]*Datum, error)                                            // HTTP GET /api/data
 	Patch(ctx context.Context, client Client, datumID ...ID) (*Datum, error)                              // HTTP PATCH /api/data/{id}
 	Update(ctx context.Context, client Client, datumID ...ID) (*Datum, error)                             // HTTP PUT /api/data/{id}
 	UploadFile(ctx context.Context, client Client, file []byte, datumID ...ID) (*Datum, error)            // HTTP POST /api/data/{id}/file
@@ -117,22 +116,6 @@ func (d *Datum) GetItem(ctx context.Context, client Client, datumID ...ID) (*Ite
 // IRI
 func (d *Datum) IRI() string {
 	return fmt.Sprintf("/api/data/%s", d.ID)
-}
-
-// List
-func (d *Datum) List(ctx context.Context, client Client) ([]*Datum, error) {
-	var allData []*Datum
-	for page := 1; ; page++ {
-		data, err := client.ListData(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list data on page %d: %w", page, err)
-		}
-		if len(data) == 0 {
-			break
-		}
-		allData = append(allData, data...)
-	}
-	return allData, nil
 }
 
 // Patch

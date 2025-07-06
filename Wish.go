@@ -83,18 +83,7 @@ func (w *Wish) IRI() string {
 
 // List
 func (w *Wish) List(ctx context.Context, client Client) ([]*Wish, error) {
-	var allWishes []*Wish
-	for page := 1; ; page++ {
-		wishes, err := client.ListWishes(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list wishes on page %d: %w", page, err)
-		}
-		if len(wishes) == 0 {
-			break
-		}
-		allWishes = append(allWishes, wishes...)
-	}
-	return allWishes, nil
+	return client.ListWishes(ctx)
 }
 
 // Patch

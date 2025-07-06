@@ -71,9 +71,9 @@ func (l *Loan) IRI() string {
 func (l *Loan) List(ctx context.Context, client Client) ([]*Loan, error) {
 	var allLoans []*Loan
 	for page := 1; ; page++ {
-		loans, err := client.ListLoans(ctx, page)
+		loans, err := client.ListLoans(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list loans on page %d: %w", page, err)
+			return nil, fmt.Errorf("failed to list loans: %w", err)
 		}
 		if len(loans) == 0 {
 			break
