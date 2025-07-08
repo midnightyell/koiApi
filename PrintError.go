@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -102,6 +103,10 @@ func replaceNonPrintableElements(data interface{}) (interface{}, error) {
 // PrintError prints the request headers, request body, response headers, response body, and error struct or raw error text from the httpClient struct to stdout.
 func (c *httpClient) PrintError(ctx context.Context) {
 	const maxFieldSize = 1024 // Threshold for large fields in bytes.
+
+	fmt.Println("Last request URL:\n   ", *c.lastRequestURL)
+	decoded, _ := url.QueryUnescape(*c.lastRequestURL)
+	fmt.Println("    ", decoded)
 
 	// Print request headers.
 	fmt.Println("Request Headers:")
