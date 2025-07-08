@@ -20,7 +20,7 @@ var flagSets []*flag.FlagSet
 var (
 	verbose    bool
 	configFile string = ".koiauth"
-	auth       koiAuth
+	Auth       koiAuth
 	dprefix    string = "koi-"
 )
 
@@ -60,7 +60,7 @@ func init() {
 	// Read config file (if it exists) to set auth fields
 	data, err := os.ReadFile(configPath)
 	if err == nil {
-		if err := json.Unmarshal(data, &auth); err != nil && verbose {
+		if err := json.Unmarshal(data, &Auth); err != nil && verbose {
 			fmt.Printf("Error parsing config %s: %v\n", configPath, err)
 		}
 	} else if verbose && !os.IsNotExist(err) {
@@ -69,27 +69,28 @@ func init() {
 
 	// Override with environment variables (KOI_SERVER, KOI_USER, KOI_PASSWORD)
 	if val, ok := os.LookupEnv("KOI_SERVER"); ok && val != "" {
-		auth.ServerURL = &val
+		Auth.ServerURL = &val
 	}
 	if val, ok := os.LookupEnv("KOI_USER"); ok && val != "" {
-		auth.Username = &val
+		Auth.Username = &val
 	}
 	if val, ok := os.LookupEnv("KOI_PASSWORD"); ok && val != "" {
-		auth.Password = &val
+		Auth.Password = &val
 	}
 
 	// Override with command-line values if provided
 	if serverURL != "" {
-		auth.ServerURL = &serverURL
+		Auth.ServerURL = &serverURL
 	}
 	if username != "" {
-		auth.Username = &username
+		Auth.Username = &username
 	}
 	if password != "" {
-		auth.Password = &password
+		Auth.Password = &password
 	}
+
 	if verbose {
-		fmt.Printf("Koi auth: %s / %s @ %s\n", *auth.Username, *auth.Password, *auth.ServerURL)
+		fmt.Printf("Koi auth: %s / %s @ %s\n", *Auth.Username, *Auth.Password, *Auth.ServerURL)
 	}
 }
 

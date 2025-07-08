@@ -1,3 +1,4 @@
+---- Album.go ----
 package koiApi
 
 import (
@@ -21,6 +22,7 @@ type AlbumInterface interface {
 	Update(ctx context.Context, client Client, albumID ...ID) (*Album, error)                             // HTTP PUT /api/albums/{id}
 	UploadImage(ctx context.Context, client Client, file []byte, albumID ...ID) (*Album, error)           // HTTP POST /api/albums/{id}/image
 	UploadImageByFile(ctx context.Context, client Client, filename string, albumID ...ID) (*Album, error) // HTTP POST /api/albums/{id}/image
+	Summary() string
 }
 
 // Album represents an album in Koillection, combining fields for JSON-LD and API interactions.
@@ -84,9 +86,9 @@ func (a *Album) IRI() string {
 func (a *Album) List(ctx context.Context, client Client) ([]*Album, error) {
 	var allAlbums []*Album
 	for page := 1; ; page++ {
-		albums, err := client.ListAlbums(ctx, page)
+		albums, err := client.ListAlbums(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list albums on page %d: %w", page, err)
+			return nil, fmt.Errorf("failed to list albums on page %d: %w", err)
 		}
 		if len(albums) == 0 {
 			break
@@ -101,9 +103,9 @@ func (a *Album) ListChildren(ctx context.Context, client Client, albumID ...ID) 
 	id := a.whichID(albumID...)
 	var allChildren []*Album
 	for page := 1; ; page++ {
-		children, err := client.ListAlbumChildren(ctx, id, page)
+		children, err := client.ListAlbumChildren(ctx, id)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list child albums for ID %s on page %d: %w", id, page, err)
+			return nil, fmt.Errorf("failed to list child albums for ID %s on page %d: %w", id, err)
 		}
 		if len(children) == 0 {
 			break
@@ -118,9 +120,9 @@ func (a *Album) ListPhotos(ctx context.Context, client Client, albumID ...ID) ([
 	id := a.whichID(albumID...)
 	var allPhotos []*Photo
 	for page := 1; ; page++ {
-		photos, err := client.ListAlbumPhotos(ctx, id, page)
+		photos, err := client.ListAlbumPhotos(ctx, id)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list photos for ID %s on page %d: %w", id, page, err)
+			return nil, fmt.Errorf("failed to list photos for ID %s on page %d: %w", id, err)
 		}
 		if len(photos) == 0 {
 			break
@@ -157,6 +159,7 @@ func (a *Album) UploadImageByFile(ctx context.Context, client Client, filename s
 	}
 	return client.UploadAlbumImage(ctx, id, file)
 }
+---- ChoiceList.go ----
 package koiApi
 
 import (
@@ -174,6 +177,7 @@ type ChoiceListInterface interface {
 	List(ctx context.Context, client Client) ([]*ChoiceList, error)                     // HTTP GET /api/choice_lists
 	Patch(ctx context.Context, client Client, choiceListID ...ID) (*ChoiceList, error)  // HTTP PATCH /api/choice_lists/{id}
 	Update(ctx context.Context, client Client, choiceListID ...ID) (*ChoiceList, error) // HTTP PUT /api/choice_lists/{id}
+	Summary() string
 }
 
 // ChoiceList represents a choice list in Koillection, combining fields for JSON-LD and API interactions.
@@ -223,9 +227,9 @@ func (cl *ChoiceList) IRI() string {
 func (cl *ChoiceList) List(ctx context.Context, client Client) ([]*ChoiceList, error) {
 	var allChoiceLists []*ChoiceList
 	for page := 1; ; page++ {
-		choiceLists, err := client.ListChoiceLists(ctx, page)
+		choiceLists, err := client.ListChoiceLists(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list choice lists on page %d: %w", page, err)
+			return nil, fmt.Errorf("failed to list choice lists on page %d: %w", err)
 		}
 		if len(choiceLists) == 0 {
 			break
@@ -246,135 +250,138 @@ func (cl *ChoiceList) Update(ctx context.Context, client Client, choiceListID ..
 	id := cl.whichID(choiceListID...)
 	return client.UpdateChoiceList(ctx, id, cl)
 }
+---- client-methods.go ----
 package koiApi
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
-// Client defines the interface for interacting with the Koillection REST API.
 type Client interface {
-	CheckLogin(ctx context.Context, username, password string) (string, error)                 // HTTP POST /api/authentication_token
-	GetMetrics(ctx context.Context) (*Metrics, error)                                          // HTTP GET /api/metrics
-	CreateAlbum(ctx context.Context, album *Album) (*Album, error)                             // HTTP POST /api/albums
-	GetAlbum(ctx context.Context, id ID) (*Album, error)                                       // HTTP GET /api/albums/{id}
-	ListAlbums(ctx context.Context, page int) ([]*Album, error)                                // HTTP GET /api/albums
-	UpdateAlbum(ctx context.Context, id ID, album *Album) (*Album, error)                      // HTTP PUT /api/albums/{id}
-	PatchAlbum(ctx context.Context, id ID, album *Album) (*Album, error)                       // HTTP PATCH /api/albums/{id}
-	DeleteAlbum(ctx context.Context, id ID) error                                              // HTTP DELETE /api/albums/{id}
-	ListAlbumChildren(ctx context.Context, id ID, page int) ([]*Album, error)                  // HTTP GET /api/albums/{id}/children
-	UploadAlbumImage(ctx context.Context, id ID, file []byte) (*Album, error)                  // HTTP POST /api/albums/{id}/image
-	GetAlbumParent(ctx context.Context, id ID) (*Album, error)                                 // HTTP GET /api/albums/{id}/parent
-	ListAlbumPhotos(ctx context.Context, id ID, page int) ([]*Photo, error)                    // HTTP GET /api/albums/{id}/photos
-	CreateChoiceList(ctx context.Context, choiceList *ChoiceList) (*ChoiceList, error)         // HTTP POST /api/choice_lists
-	GetChoiceList(ctx context.Context, id ID) (*ChoiceList, error)                             // HTTP GET /api/choice_lists/{id}
-	ListChoiceLists(ctx context.Context, page int) ([]*ChoiceList, error)                      // HTTP GET /api/choice_lists
-	UpdateChoiceList(ctx context.Context, id ID, choiceList *ChoiceList) (*ChoiceList, error)  // HTTP PUT /api/choice_lists/{id}
-	PatchChoiceList(ctx context.Context, id ID, choiceList *ChoiceList) (*ChoiceList, error)   // HTTP PATCH /api/choice_lists/{id}
-	DeleteChoiceList(ctx context.Context, id ID) error                                         // HTTP DELETE /api/choice_lists/{id}
-	CreateCollection(ctx context.Context, collection *Collection) (*Collection, error)         // HTTP POST /api/collections
-	GetCollection(ctx context.Context, id ID) (*Collection, error)                             // HTTP GET /api/collections/{id}
-	ListCollections(ctx context.Context, page int) ([]*Collection, error)                      // HTTP GET /api/collections
-	UpdateCollection(ctx context.Context, id ID, collection *Collection) (*Collection, error)  // HTTP PUT /api/collections/{id}
-	PatchCollection(ctx context.Context, id ID, collection *Collection) (*Collection, error)   // HTTP PATCH /api/collections/{id}
-	DeleteCollection(ctx context.Context, id ID) error                                         // HTTP DELETE /api/collections/{id}
-	ListCollectionChildren(ctx context.Context, id ID, page int) ([]*Collection, error)        // HTTP GET /api/collections/{id}/children
-	UploadCollectionImage(ctx context.Context, id ID, file []byte) (*Collection, error)        // HTTP POST /api/collections/{id}/image
-	GetCollectionParent(ctx context.Context, id ID) (*Collection, error)                       // HTTP GET /api/collections/{id}/parent
-	ListCollectionItems(ctx context.Context, id ID, page int) ([]*Item, error)                 // HTTP GET /api/collections/{id}/items
-	ListCollectionData(ctx context.Context, id ID, page int) ([]*Datum, error)                 // HTTP GET /api/collections/{id}/data
-	GetCollectionDefaultTemplate(ctx context.Context, id ID) (*Template, error)                // HTTP GET /api/collections/{id}/items_default_template
-	CreateDatum(ctx context.Context, datum *Datum) (*Datum, error)                             // HTTP POST /api/data
-	GetDatum(ctx context.Context, id ID) (*Datum, error)                                       // HTTP GET /api/data/{id}
-	ListData(ctx context.Context, page int) ([]*Datum, error)                                  // HTTP GET /api/data
-	UpdateDatum(ctx context.Context, id ID, datum *Datum) (*Datum, error)                      // HTTP PUT /api/data/{id}
-	PatchDatum(ctx context.Context, id ID, datum *Datum) (*Datum, error)                       // HTTP PATCH /api/data/{id}
-	DeleteDatum(ctx context.Context, id ID) error                                              // HTTP DELETE /api/data/{id}
-	UploadDatumFile(ctx context.Context, id ID, file []byte) (*Datum, error)                   // HTTP POST /api/data/{id}/file
-	UploadDatumImage(ctx context.Context, id ID, image []byte) (*Datum, error)                 // HTTP POST /api/data/{id}/image
-	UploadDatumVideo(ctx context.Context, id ID, video []byte) (*Datum, error)                 // HTTP POST /api/data/{id}/video
-	GetDatumItem(ctx context.Context, id ID) (*Item, error)                                    // HTTP GET /api/data/{id}/item
-	GetDatumCollection(ctx context.Context, id ID) (*Collection, error)                        // HTTP GET /api/data/{id}/collection
-	CreateField(ctx context.Context, field *Field) (*Field, error)                             // HTTP POST /api/fields
-	GetField(ctx context.Context, id ID) (*Field, error)                                       // HTTP GET /api/fields/{id}
-	ListFields(ctx context.Context, page int) ([]*Field, error)                                // HTTP GET /api/fields
-	UpdateField(ctx context.Context, id ID, field *Field) (*Field, error)                      // HTTP PUT /api/fields/{id}
-	PatchField(ctx context.Context, id ID, field *Field) (*Field, error)                       // HTTP PATCH /api/fields/{id}
-	DeleteField(ctx context.Context, id ID) error                                              // HTTP DELETE /api/fields/{id}
-	GetFieldTemplate(ctx context.Context, id ID) (*Template, error)                            // HTTP GET /api/fields/{id}/template
-	ListTemplateFields(ctx context.Context, templateid ID, page int) ([]*Field, error)         // HTTP GET /api/templates/{id}/fields
-	ListInventories(ctx context.Context, page int) ([]*Inventory, error)                       // HTTP GET /api/inventories
-	GetInventory(ctx context.Context, id ID) (*Inventory, error)                               // HTTP GET /api/inventories/{id}
-	DeleteInventory(ctx context.Context, id ID) error                                          // HTTP DELETE /api/inventories/{id}
-	CreateItem(ctx context.Context, item *Item) (*Item, error)                                 // HTTP POST /api/items
-	GetItem(ctx context.Context, id ID) (*Item, error)                                         // HTTP GET /api/items/{id}
-	ListItems(ctx context.Context, page int) ([]*Item, error)                                  // HTTP GET /api/items
-	UpdateItem(ctx context.Context, id ID, item *Item) (*Item, error)                          // HTTP PUT /api/items/{id}
-	PatchItem(ctx context.Context, id ID, item *Item) (*Item, error)                           // HTTP PATCH /api/items/{id}
-	DeleteItem(ctx context.Context, id ID) error                                               // HTTP DELETE /api/items/{id}
-	UploadItemImage(ctx context.Context, id ID, file []byte) (*Item, error)                    // HTTP POST /api/items/{id}/image
-	ListItemRelatedItems(ctx context.Context, id ID, page int) ([]*Item, error)                // HTTP GET /api/items/{id}/related_items
-	ListItemLoans(ctx context.Context, id ID, page int) ([]*Loan, error)                       // HTTP GET /api/items/{id}/loans
-	ListItemTags(ctx context.Context, id ID, page int) ([]*Tag, error)                         // HTTP GET /api/items/{id}/tags
-	ListItemData(ctx context.Context, id ID, page int) ([]*Datum, error)                       // HTTP GET /api/items/{id}/data
-	GetItemCollection(ctx context.Context, id ID) (*Collection, error)                         // HTTP GET /api/items/{id}/collection
-	CreateLoan(ctx context.Context, loan *Loan) (*Loan, error)                                 // HTTP POST /api/loans
-	GetLoan(ctx context.Context, id ID) (*Loan, error)                                         // HTTP GET /api/loans/{id}
-	ListLoans(ctx context.Context, page int) ([]*Loan, error)                                  // HTTP GET /api/loans
-	UpdateLoan(ctx context.Context, id ID, loan *Loan) (*Loan, error)                          // HTTP PUT /api/loans/{id}
-	PatchLoan(ctx context.Context, id ID, loan *Loan) (*Loan, error)                           // HTTP PATCH /api/loans/{id}
-	DeleteLoan(ctx context.Context, id ID) error                                               // HTTP DELETE /api/loans/{id}
-	GetLoanItem(ctx context.Context, id ID) (*Item, error)                                     // HTTP GET /api/loans/{id}/item
-	GetLog(ctx context.Context, id ID) (*Log, error)                                           // HTTP GET /api/logs/{id}
-	ListLogs(ctx context.Context, page int) ([]*Log, error)                                    // HTTP GET /api/logs
-	CreatePhoto(ctx context.Context, photo *Photo) (*Photo, error)                             // HTTP POST /api/photos
-	GetPhoto(ctx context.Context, id ID) (*Photo, error)                                       // HTTP GET /api/photos/{id}
-	ListPhotos(ctx context.Context, page int) ([]*Photo, error)                                // HTTP GET /api/photos
-	UpdatePhoto(ctx context.Context, id ID, photo *Photo) (*Photo, error)                      // HTTP PUT /api/photos/{id}
-	PatchPhoto(ctx context.Context, id ID, photo *Photo) (*Photo, error)                       // HTTP PATCH /api/photos/{id}
-	DeletePhoto(ctx context.Context, id ID) error                                              // HTTP DELETE /api/photos/{id}
-	UploadPhotoImage(ctx context.Context, id ID, file []byte) (*Photo, error)                  // HTTP POST /api/photos/{id}/image
-	GetPhotoAlbum(ctx context.Context, id ID) (*Album, error)                                  // HTTP GET /api/photos/{id}/album
-	CreateTag(ctx context.Context, tag *Tag) (*Tag, error)                                     // HTTP POST /api/tags
-	GetTag(ctx context.Context, id ID) (*Tag, error)                                           // HTTP GET /api/tags/{id}
-	ListTags(ctx context.Context, page int) ([]*Tag, error)                                    // HTTP GET /api/tags
-	UpdateTag(ctx context.Context, id ID, tag *Tag) (*Tag, error)                              // HTTP PUT /api/tags/{id}
-	PatchTag(ctx context.Context, id ID, tag *Tag) (*Tag, error)                               // HTTP PATCH /api/tags/{id}
-	DeleteTag(ctx context.Context, id ID) error                                                // HTTP DELETE /api/tags/{id}
-	UploadTagImage(ctx context.Context, id ID, file []byte) (*Tag, error)                      // HTTP POST /api/tags/{id}/image
-	ListTagItems(ctx context.Context, id ID, page int) ([]*Item, error)                        // HTTP GET /api/tags/{id}/items
-	GetCategoryOfTag(ctx context.Context, id ID) (*TagCategory, error)                         // HTTP GET /api/tags/{id}/category
-	CreateTagCategory(ctx context.Context, category *TagCategory) (*TagCategory, error)        // HTTP POST /api/tag_categories
-	GetTagCategory(ctx context.Context, id ID) (*TagCategory, error)                           // HTTP GET /api/tag_categories/{id}
-	ListTagCategories(ctx context.Context, page int) ([]*TagCategory, error)                   // HTTP GET /api/tag_categories
-	UpdateTagCategory(ctx context.Context, id ID, category *TagCategory) (*TagCategory, error) // HTTP PUT /api/tag_categories/{id}
-	PatchTagCategory(ctx context.Context, id ID, category *TagCategory) (*TagCategory, error)  // HTTP PATCH /api/tag_categories/{id}
-	DeleteTagCategory(ctx context.Context, id ID) error                                        // HTTP DELETE /api/tag_categories/{id}
-	ListTagCategoryTags(ctx context.Context, id ID, page int) ([]*Tag, error)                  // HTTP GET /api/tag_categories/{id}/tags
-	CreateTemplate(ctx context.Context, template *Template) (*Template, error)                 // HTTP POST /api/templates
-	GetTemplate(ctx context.Context, id ID) (*Template, error)                                 // HTTP GET /api/templates/{id}
-	ListTemplates(ctx context.Context, page int) ([]*Template, error)                          // HTTP GET /api/templates
-	UpdateTemplate(ctx context.Context, id ID, template *Template) (*Template, error)          // HTTP PUT /api/templates/{id}
-	PatchTemplate(ctx context.Context, id ID, template *Template) (*Template, error)           // HTTP PATCH /api/templates/{id}
-	DeleteTemplate(ctx context.Context, id ID) error                                           // HTTP DELETE /api/templates/{id}
-	GetUser(ctx context.Context, id ID) (*User, error)                                         // HTTP GET /api/users/{id}
-	ListUsers(ctx context.Context, page int) ([]*User, error)                                  // HTTP GET /api/users
-	CreateWish(ctx context.Context, wish *Wish) (*Wish, error)                                 // HTTP POST /api/wishes
-	GetWish(ctx context.Context, id ID) (*Wish, error)                                         // HTTP GET /api/wishes/{id}
-	ListWishes(ctx context.Context, page int) ([]*Wish, error)                                 // HTTP GET /api/wishes
-	UpdateWish(ctx context.Context, id ID, wish *Wish) (*Wish, error)                          // HTTP PUT /api/wishes/{id}
-	PatchWish(ctx context.Context, id ID, wish *Wish) (*Wish, error)                           // HTTP PATCH /api/wishes/{id}
-	DeleteWish(ctx context.Context, id ID) error                                               // HTTP DELETE /api/wishes/{id}
-	UploadWishImage(ctx context.Context, id ID, file []byte) (*Wish, error)                    // HTTP POST /api/wishes/{id}/image
-	GetWishWishlist(ctx context.Context, id ID) (*Wishlist, error)                             // HTTP GET /api/wishes/{id}/wishlist
-	CreateWishlist(ctx context.Context, wishlist *Wishlist) (*Wishlist, error)                 // HTTP POST /api/wishlists
-	GetWishlist(ctx context.Context, id ID) (*Wishlist, error)                                 // HTTP GET /api/wishlists/{id}
-	ListWishlists(ctx context.Context, page int) ([]*Wishlist, error)                          // HTTP GET /api/wishlists
-	UpdateWishlist(ctx context.Context, id ID, wishlist *Wishlist) (*Wishlist, error)          // HTTP PUT /api/wishlists/{id}
-	PatchWishlist(ctx context.Context, id ID, wishlist *Wishlist) (*Wishlist, error)           // HTTP PATCH /api/wishlists/{id}
-	DeleteWishlist(ctx context.Context, id ID) error                                           // HTTP DELETE /api/wishlists/{id}
-	ListWishlistWishes(ctx context.Context, id ID, page int) ([]*Wish, error)                  // HTTP GET /api/wishlists/{id}/wishes
-	ListWishlistChildren(ctx context.Context, id ID, page int) ([]*Wishlist, error)            // HTTP GET /api/wishlists/{id}/children
-	UploadWishlistImage(ctx context.Context, id ID, file []byte) (*Wishlist, error)            // HTTP POST /api/wishlists/{id}/image
-	GetWishlistParent(ctx context.Context, id ID) (*Wishlist, error)                           // HTTP GET /api/wishlists/{id}/parent
+	CheckLogin(ctx context.Context) (string, error)                                                  // HTTP POST /api/authentication_token
+	GetMetrics(ctx context.Context) (*Metrics, error)                                                // HTTP GET /api/metrics
+	CreateAlbum(ctx context.Context, album *Album) (*Album, error)                                   // HTTP POST /api/albums
+	GetAlbum(ctx context.Context, id ID) (*Album, error)                                             // HTTP GET /api/albums/{id}
+	ListAlbums(ctx context.Context, queryParams ...string) ([]*Album, error)                         // HTTP GET /api/albums
+	UpdateAlbum(ctx context.Context, id ID, album *Album) (*Album, error)                            // HTTP PUT /api/albums/{id}
+	PatchAlbum(ctx context.Context, id ID, album *Album) (*Album, error)                             // HTTP PATCH /api/albums/{id}
+	DeleteAlbum(ctx context.Context, id ID) error                                                    // HTTP DELETE /api/albums/{id}
+	ListAlbumChildren(ctx context.Context, id ID, queryParams ...string) ([]*Album, error)           // HTTP GET /api/albums/{id}/children
+	UploadAlbumImage(ctx context.Context, id ID, file []byte) (*Album, error)                        // HTTP POST /api/albums/{id}/image
+	GetAlbumParent(ctx context.Context, id ID) (*Album, error)                                       // HTTP GET /api/albums/{id}/parent
+	ListAlbumPhotos(ctx context.Context, id ID, queryParams ...string) ([]*Photo, error)             // HTTP GET /api/albums/{id}/photos
+	CreateChoiceList(ctx context.Context, choiceList *ChoiceList) (*ChoiceList, error)               // HTTP POST /api/choice_lists
+	GetChoiceList(ctx context.Context, id ID) (*ChoiceList, error)                                   // HTTP GET /api/choice_lists/{id}
+	ListChoiceLists(ctx context.Context, queryParams ...string) ([]*ChoiceList, error)               // HTTP GET /api/choice_lists
+	UpdateChoiceList(ctx context.Context, id ID, choiceList *ChoiceList) (*ChoiceList, error)        // HTTP PUT /api/choice_lists/{id}
+	PatchChoiceList(ctx context.Context, id ID, choiceList *ChoiceList) (*ChoiceList, error)         // HTTP PATCH /api/choice_lists/{id}
+	DeleteChoiceList(ctx context.Context, id ID) error                                               // HTTP DELETE /api/choice_lists/{id}
+	CreateCollection(ctx context.Context, collection *Collection) (*Collection, error)               // HTTP POST /api/collections
+	GetCollection(ctx context.Context, id ID) (*Collection, error)                                   // HTTP GET /api/collections/{id}
+	ListCollections(ctx context.Context, queryParams ...string) ([]*Collection, error)               // HTTP GET /api/collections
+	UpdateCollection(ctx context.Context, id ID, collection *Collection) (*Collection, error)        // HTTP PUT /api/collections/{id}
+	PatchCollection(ctx context.Context, id ID, collection *Collection) (*Collection, error)         // HTTP PATCH /api/collections/{id}
+	DeleteCollection(ctx context.Context, id ID) error                                               // HTTP DELETE /api/collections/{id}
+	ListCollectionChildren(ctx context.Context, id ID, queryParams ...string) ([]*Collection, error) // HTTP GET /api/collections/{id}/children
+	UploadCollectionImage(ctx context.Context, id ID, file []byte) (*Collection, error)              // HTTP POST /api/collections/{id}/image
+	GetCollectionParent(ctx context.Context, id ID) (*Collection, error)                             // HTTP GET /api/collections/{id}/parent
+	ListCollectionItems(ctx context.Context, id ID, queryParams ...string) ([]*Item, error)          // HTTP GET /api/collections/{id}/items
+	ListCollectionData(ctx context.Context, id ID, queryParams ...string) ([]*Datum, error)          // HTTP GET /api/collections/{id}/data
+	GetCollectionDefaultTemplate(ctx context.Context, id ID) (*Template, error)                      // HTTP GET /api/collections/{id}/items_default_template
+	CreateDatum(ctx context.Context, datum *Datum) (*Datum, error)                                   // HTTP POST /api/data
+	GetDatum(ctx context.Context, id ID) (*Datum, error)                                             // HTTP GET /api/data/{id}
+	ListData(ctx context.Context, queryParams ...string) ([]*Datum, error)                           // HTTP GET /api/data
+	UpdateDatum(ctx context.Context, id ID, datum *Datum) (*Datum, error)                            // HTTP PUT /api/data/{id}
+	PatchDatum(ctx context.Context, id ID, datum *Datum) (*Datum, error)                             // HTTP PATCH /api/data/{id}
+	DeleteDatum(ctx context.Context, id ID) error                                                    // HTTP DELETE /api/data/{id}
+	UploadDatumFile(ctx context.Context, id ID, file []byte) (*Datum, error)                         // HTTP POST /api/data/{id}/file
+	UploadDatumImage(ctx context.Context, id ID, image []byte) (*Datum, error)                       // HTTP POST /api/data/{id}/image
+	UploadDatumVideo(ctx context.Context, id ID, video []byte) (*Datum, error)                       // HTTP POST /api/data/{id}/video
+	GetDatumItem(ctx context.Context, id ID) (*Item, error)                                          // HTTP GET /api/data/{id}/item
+	GetDatumCollection(ctx context.Context, id ID) (*Collection, error)                              // HTTP GET /api/data/{id}/collection
+	CreateField(ctx context.Context, field *Field) (*Field, error)                                   // HTTP POST /api/fields
+	GetField(ctx context.Context, id ID) (*Field, error)                                             // HTTP GET /api/fields/{id}
+	ListFields(ctx context.Context, queryParams ...string) ([]*Field, error)                         // HTTP GET /api/fields
+	UpdateField(ctx context.Context, id ID, field *Field) (*Field, error)                            // HTTP PUT /api/fields/{id}
+	PatchField(ctx context.Context, id ID, field *Field) (*Field, error)                             // HTTP PATCH /api/fields/{id}
+	DeleteField(ctx context.Context, id ID) error                                                    // HTTP DELETE /api/fields/{id}
+	GetFieldTemplate(ctx context.Context, id ID) (*Template, error)                                  // HTTP GET /api/fields/{id}/template
+	ListTemplateFields(ctx context.Context, templateid ID, queryParams ...string) ([]*Field, error)  // HTTP GET /api/templates/{id}/fields
+	ListInventories(ctx context.Context, queryParams ...string) ([]*Inventory, error)                // HTTP GET /api/inventories
+	GetInventory(ctx context.Context, id ID) (*Inventory, error)                                     // HTTP GET /api/inventories/{id}
+	DeleteInventory(ctx context.Context, id ID) error                                                // HTTP DELETE /api/inventories/{id}
+	CreateItem(ctx context.Context, item *Item) (*Item, error)                                       // HTTP POST /api/items
+	GetItem(ctx context.Context, id ID) (*Item, error)                                               // HTTP GET /api/items/{id}
+	ListItems(ctx context.Context, queryParams ...string) ([]*Item, error)                           // HTTP GET /api/items
+	UpdateItem(ctx context.Context, id ID, item *Item) (*Item, error)                                // HTTP PUT /api/items/{id}
+	PatchItem(ctx context.Context, id ID, item *Item) (*Item, error)                                 // HTTP PATCH /api/items/{id}
+	DeleteItem(ctx context.Context, id ID) error                                                     // HTTP DELETE /api/items/{id}
+	UploadItemImage(ctx context.Context, id ID, file []byte) (*Item, error)                          // HTTP POST /api/items/{id}/image
+	ListItemRelatedItems(ctx context.Context, id ID, queryParams ...string) ([]*Item, error)         // HTTP GET /api/items/{id}/related_items
+	ListItemLoans(ctx context.Context, id ID, queryParams ...string) ([]*Loan, error)                // HTTP GET /api/items/{id}/loans
+	ListItemTags(ctx context.Context, id ID, queryParams ...string) ([]*Tag, error)                  // HTTP GET /api/items/{id}/tags
+	ListItemData(ctx context.Context, id ID, queryParams ...string) ([]*Datum, error)                // HTTP GET /api/items/{id}/data
+	GetItemCollection(ctx context.Context, id ID) (*Collection, error)                               // HTTP GET /api/items/{id}/collection
+	CreateLoan(ctx context.Context, loan *Loan) (*Loan, error)                                       // HTTP POST /api/loans
+	GetLoan(ctx context.Context, id ID) (*Loan, error)                                               // HTTP GET /api/loans/{id}
+	ListLoans(ctx context.Context, queryParams ...string) ([]*Loan, error)                           // HTTP GET /api/loans
+	UpdateLoan(ctx context.Context, id ID, loan *Loan) (*Loan, error)                                // HTTP PUT /api/loans/{id}
+	PatchLoan(ctx context.Context, id ID, loan *Loan) (*Loan, error)                                 // HTTP PATCH /api/loans/{id}
+	DeleteLoan(ctx context.Context, id ID) error                                                     // HTTP DELETE /api/loans/{id}
+	GetLoanItem(ctx context.Context, id ID) (*Item, error)                                           // HTTP GET /api/loans/{id}/item
+	GetLog(ctx context.Context, id ID) (*Log, error)                                                 // HTTP GET /api/logs/{id}
+	ListLogs(ctx context.Context, queryParams ...string) ([]*Log, error)                             // HTTP GET /api/logs
+	CreatePhoto(ctx context.Context, photo *Photo) (*Photo, error)                                   // HTTP POST /api/photos
+	GetPhoto(ctx context.Context, id ID) (*Photo, error)                                             // HTTP GET /api/photos/{id}
+	ListPhotos(ctx context.Context, queryParams ...string) ([]*Photo, error)                         // HTTP GET /api/photos
+	UpdatePhoto(ctx context.Context, id ID, photo *Photo) (*Photo, error)                            // HTTP PUT /api/photos/{id}
+	PatchPhoto(ctx context.Context, id ID, photo *Photo) (*Photo, error)                             // HTTP PATCH /api/photos/{id}
+	DeletePhoto(ctx context.Context, id ID) error                                                    // HTTP DELETE /api/photos/{id}
+	UploadPhotoImage(ctx context.Context, id ID, file []byte) (*Photo, error)                        // HTTP POST /api/photos/{id}/image
+	GetPhotoAlbum(ctx context.Context, id ID) (*Album, error)                                        // HTTP GET /api/photos/{id}/album
+	CreateTag(ctx context.Context, tag *Tag) (*Tag, error)                                           // HTTP POST /api/tags
+	GetTag(ctx context.Context, id ID) (*Tag, error)                                                 // HTTP GET /api/tags/{id}
+	ListTags(ctx context.Context, queryParams ...string) ([]*Tag, error)                             // HTTP GET /api/tags
+	UpdateTag(ctx context.Context, id ID, tag *Tag) (*Tag, error)                                    // HTTP PUT /api/tags/{id}
+	PatchTag(ctx context.Context, id ID, tag *Tag) (*Tag, error)                                     // HTTP PATCH /api/tags/{id}
+	DeleteTag(ctx context.Context, id ID) error                                                      // HTTP DELETE /api/tags/{id}
+	UploadTagImage(ctx context.Context, id ID, file []byte) (*Tag, error)                            // HTTP POST /api/tags/{id}/image
+	ListTagItems(ctx context.Context, id ID, queryParams ...string) ([]*Item, error)                 // HTTP GET /api/tags/{id}/items
+	GetCategoryOfTag(ctx context.Context, id ID) (*TagCategory, error)                               // HTTP GET /api/tags/{id}/category
+	CreateTagCategory(ctx context.Context, category *TagCategory) (*TagCategory, error)              // HTTP POST /api/tag_categories
+	GetTagCategory(ctx context.Context, id ID) (*TagCategory, error)                                 // HTTP GET /api/tag_categories/{id}
+	ListTagCategories(ctx context.Context, queryParams ...string) ([]*TagCategory, error)            // HTTP GET /api/tag_categories
+	UpdateTagCategory(ctx context.Context, id ID, category *TagCategory) (*TagCategory, error)       // HTTP PUT /api/tag_categories/{id}
+	PatchTagCategory(ctx context.Context, id ID, category *TagCategory) (*TagCategory, error)        // HTTP PATCH /api/tag_categories/{id}
+	DeleteTagCategory(ctx context.Context, id ID) error                                              // HTTP DELETE /api/tag_categories/{id}
+	ListTagCategoryTags(ctx context.Context, id ID, queryParams ...string) ([]*Tag, error)           // HTTP GET /api/tag_categories/{id}/tags
+	CreateTemplate(ctx context.Context, template *Template) (*Template, error)                       // HTTP POST /api/templates
+	GetTemplate(ctx context.Context, id ID) (*Template, error)                                       // HTTP GET /api/templates/{id}
+	ListTemplates(ctx context.Context, queryParams ...string) ([]*Template, error)                   // HTTP GET /api/templates
+	UpdateTemplate(ctx context.Context, id ID, template *Template) (*Template, error)                // HTTP PUT /api/templates/{id}
+	PatchTemplate(ctx context.Context, id ID, template *Template) (*Template, error)                 // HTTP PATCH /api/templates/{id}
+	DeleteTemplate(ctx context.Context, id ID) error                                                 // HTTP DELETE /api/templates/{id}
+	GetUser(ctx context.Context, id ID) (*User, error)                                               // HTTP GET /api/users/{id}
+	ListUsers(ctx context.Context, queryParams ...string) ([]*User, error)                           // HTTP GET /api/users
+	CreateWish(ctx context.Context, wish *Wish) (*Wish, error)                                       // HTTP POST /api/wishes
+	GetWish(ctx context.Context, id ID) (*Wish, error)                                               // HTTP GET /api/wishes/{id}
+	ListWishes(ctx context.Context, queryParams ...string) ([]*Wish, error)                          // HTTP GET /api/wishes
+	UpdateWish(ctx context.Context, id ID, wish *Wish) (*Wish, error)                                // HTTP PUT /api/wishes/{id}
+	PatchWish(ctx context.Context, id ID, wish *Wish) (*Wish, error)                                 // HTTP PATCH /api/wishes/{id}
+	DeleteWish(ctx context.Context, id ID) error                                                     // HTTP DELETE /api/wishes/{id}
+	UploadWishImage(ctx context.Context, id ID, file []byte) (*Wish, error)                          // HTTP POST /api/wishes/{id}/image
+	GetWishWishlist(ctx context.Context, id ID) (*Wishlist, error)                                   // HTTP GET /api/wishes/{id}/wishlist
+	CreateWishlist(ctx context.Context, wishlist *Wishlist) (*Wishlist, error)                       // HTTP POST /api/wishlists
+	GetWishlist(ctx context.Context, id ID) (*Wishlist, error)                                       // HTTP GET /api/wishlists/{id}
+	ListWishlists(ctx context.Context, queryParams ...string) ([]*Wishlist, error)                   // HTTP GET /api/wishlists
+	UpdateWishlist(ctx context.Context, id ID, wishlist *Wishlist) (*Wishlist, error)                // HTTP PUT /api/wishlists/{id}
+	PatchWishlist(ctx context.Context, id ID, wishlist *Wishlist) (*Wishlist, error)                 // HTTP PATCH /api/wishlists/{id}
+	DeleteWishlist(ctx context.Context, id ID) error                                                 // HTTP DELETE /api/wishlists/{id}
+	ListWishlistWishes(ctx context.Context, id ID, queryParams ...string) ([]*Wish, error)           // HTTP GET /api/wishlists/{id}/wishes
+	ListWishlistChildren(ctx context.Context, id ID, queryParams ...string) ([]*Wishlist, error)     // HTTP GET /api/wishlists/{id}/children
+	UploadWishlistImage(ctx context.Context, id ID, file []byte) (*Wishlist, error)                  // HTTP POST /api/wishlists/{id}/image
+	GetWishlistParent(ctx context.Context, id ID) (*Wishlist, error)                                 // HTTP GET /api/wishlists/{id}/parent
 	GetResponse(ctx context.Context) string
 	PrintError(ctx context.Context)
 	DeleteAllData(ctx context.Context) error
@@ -389,8 +396,11 @@ func (c *httpClient) GetMetrics(ctx context.Context) (*Metrics, error) {
 	return &metrics, nil
 }
 
-// CreateAlbum creates a new album.
+// CreateAlbum creates a new album with schema validation.
 func (c *httpClient) CreateAlbum(ctx context.Context, album *Album) (*Album, error) {
+	if err := c.validateAlbum(album); err != nil {
+		return nil, err
+	}
 	var result Album
 	if err := c.postResource(ctx, "/api/albums", album, &result); err != nil {
 		return nil, err
@@ -408,9 +418,9 @@ func (c *httpClient) GetAlbum(ctx context.Context, id ID) (*Album, error) {
 }
 
 // ListAlbums retrieves a list of albums.
-func (c *httpClient) ListAlbums(ctx context.Context, page int) ([]*Album, error) {
+func (c *httpClient) ListAlbums(ctx context.Context, queryParams ...string) ([]*Album, error) {
 	var albums []*Album
-	if err := c.listResources(ctx, "/api/albums", page, &albums); err != nil {
+	if err := c.listResources(ctx, "/api/albums", &albums, queryParams...); err != nil {
 		return nil, err
 	}
 	return albums, nil
@@ -439,10 +449,11 @@ func (c *httpClient) DeleteAlbum(ctx context.Context, id ID) error {
 	return c.deleteResource(ctx, "/api/albums/"+string(id))
 }
 
-// ListAlbumChildren retrieves child albums of an album.
-func (c *httpClient) ListAlbumChildren(ctx context.Context, id ID, page int) ([]*Album, error) {
+// ListAlbumChildren retrieves the children of an album.
+func (c *httpClient) ListAlbumChildren(ctx context.Context, id ID, queryParams ...string) ([]*Album, error) {
 	var albums []*Album
-	if err := c.listResources(ctx, "/api/albums/"+string(id)+"/children", page, &albums); err != nil {
+	path := fmt.Sprintf("/api/albums/%s/children", id)
+	if err := c.listResources(ctx, path, &albums, queryParams...); err != nil {
 		return nil, err
 	}
 	return albums, nil
@@ -466,17 +477,21 @@ func (c *httpClient) GetAlbumParent(ctx context.Context, id ID) (*Album, error) 
 	return &album, nil
 }
 
-// ListAlbumPhotos retrieves photos in an album.
-func (c *httpClient) ListAlbumPhotos(ctx context.Context, id ID, page int) ([]*Photo, error) {
+// ListAlbumPhotos retrieves the photos in an album.
+func (c *httpClient) ListAlbumPhotos(ctx context.Context, id ID, queryParams ...string) ([]*Photo, error) {
 	var photos []*Photo
-	if err := c.listResources(ctx, "/api/albums/"+string(id)+"/photos", page, &photos); err != nil {
+	path := fmt.Sprintf("/api/albums/%s/photos", id)
+	if err := c.listResources(ctx, path, &photos, queryParams...); err != nil {
 		return nil, err
 	}
 	return photos, nil
 }
 
-// CreateChoiceList creates a new choice list.
+// CreateChoiceList creates a new choice list with schema validation.
 func (c *httpClient) CreateChoiceList(ctx context.Context, choiceList *ChoiceList) (*ChoiceList, error) {
+	if err := c.validateChoiceList(choiceList); err != nil {
+		return nil, err
+	}
 	var result ChoiceList
 	if err := c.postResource(ctx, "/api/choice_lists", choiceList, &result); err != nil {
 		return nil, err
@@ -494,9 +509,9 @@ func (c *httpClient) GetChoiceList(ctx context.Context, id ID) (*ChoiceList, err
 }
 
 // ListChoiceLists retrieves a list of choice lists.
-func (c *httpClient) ListChoiceLists(ctx context.Context, page int) ([]*ChoiceList, error) {
+func (c *httpClient) ListChoiceLists(ctx context.Context, queryParams ...string) ([]*ChoiceList, error) {
 	var choiceLists []*ChoiceList
-	if err := c.listResources(ctx, "/api/choice_lists", page, &choiceLists); err != nil {
+	if err := c.listResources(ctx, "/api/choice_lists", &choiceLists, queryParams...); err != nil {
 		return nil, err
 	}
 	return choiceLists, nil
@@ -525,8 +540,11 @@ func (c *httpClient) DeleteChoiceList(ctx context.Context, id ID) error {
 	return c.deleteResource(ctx, "/api/choice_lists/"+string(id))
 }
 
-// CreateCollection creates a new collection.
+// CreateCollection creates a new collection with schema validation.
 func (c *httpClient) CreateCollection(ctx context.Context, collection *Collection) (*Collection, error) {
+	if err := c.validateCollection(collection); err != nil {
+		return nil, err
+	}
 	var result Collection
 	if err := c.postResource(ctx, "/api/collections", collection, &result); err != nil {
 		return nil, err
@@ -544,9 +562,9 @@ func (c *httpClient) GetCollection(ctx context.Context, id ID) (*Collection, err
 }
 
 // ListCollections retrieves a list of collections.
-func (c *httpClient) ListCollections(ctx context.Context, page int) ([]*Collection, error) {
+func (c *httpClient) ListCollections(ctx context.Context, queryParams ...string) ([]*Collection, error) {
 	var collections []*Collection
-	if err := c.listResources(ctx, "/api/collections", page, &collections); err != nil {
+	if err := c.listResources(ctx, "/api/collections", &collections, queryParams...); err != nil {
 		return nil, err
 	}
 	return collections, nil
@@ -575,10 +593,11 @@ func (c *httpClient) DeleteCollection(ctx context.Context, id ID) error {
 	return c.deleteResource(ctx, "/api/collections/"+string(id))
 }
 
-// ListCollectionChildren retrieves child collections of a collection.
-func (c *httpClient) ListCollectionChildren(ctx context.Context, id ID, page int) ([]*Collection, error) {
+// ListCollectionChildren retrieves the children of a collection.
+func (c *httpClient) ListCollectionChildren(ctx context.Context, id ID, queryParams ...string) ([]*Collection, error) {
 	var collections []*Collection
-	if err := c.listResources(ctx, "/api/collections/"+string(id)+"/children", page, &collections); err != nil {
+	path := fmt.Sprintf("/api/collections/%s/children", id)
+	if err := c.listResources(ctx, path, &collections, queryParams...); err != nil {
 		return nil, err
 	}
 	return collections, nil
@@ -602,19 +621,21 @@ func (c *httpClient) GetCollectionParent(ctx context.Context, id ID) (*Collectio
 	return &collection, nil
 }
 
-// ListCollectionItems retrieves items in a collection.
-func (c *httpClient) ListCollectionItems(ctx context.Context, id ID, page int) ([]*Item, error) {
+// ListCollectionItems retrieves the items in a collection.
+func (c *httpClient) ListCollectionItems(ctx context.Context, id ID, queryParams ...string) ([]*Item, error) {
 	var items []*Item
-	if err := c.listResources(ctx, "/api/collections/"+string(id)+"/items", page, &items); err != nil {
+	path := fmt.Sprintf("/api/collections/%s/items", id)
+	if err := c.listResources(ctx, path, &items, queryParams...); err != nil {
 		return nil, err
 	}
 	return items, nil
 }
 
-// ListCollectionData retrieves data fields in a collection.
-func (c *httpClient) ListCollectionData(ctx context.Context, id ID, page int) ([]*Datum, error) {
+// ListCollectionData retrieves the data in a collection.
+func (c *httpClient) ListCollectionData(ctx context.Context, id ID, queryParams ...string) ([]*Datum, error) {
 	var data []*Datum
-	if err := c.listResources(ctx, "/api/collections/"+string(id)+"/data", page, &data); err != nil {
+	path := fmt.Sprintf("/api/collections/%s/data", id)
+	if err := c.listResources(ctx, path, &data, queryParams...); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -629,8 +650,11 @@ func (c *httpClient) GetCollectionDefaultTemplate(ctx context.Context, id ID) (*
 	return &template, nil
 }
 
-// CreateDatum creates a new datum.
+// CreateDatum creates a new datum with schema validation.
 func (c *httpClient) CreateDatum(ctx context.Context, datum *Datum) (*Datum, error) {
+	if err := c.validateDatum(datum); err != nil {
+		return nil, err
+	}
 	var result Datum
 	if err := c.postResource(ctx, "/api/data", datum, &result); err != nil {
 		return nil, err
@@ -647,10 +671,10 @@ func (c *httpClient) GetDatum(ctx context.Context, id ID) (*Datum, error) {
 	return &datum, nil
 }
 
-// ListData retrieves a list of data fields.
-func (c *httpClient) ListData(ctx context.Context, page int) ([]*Datum, error) {
+// ListData retrieves a list of data.
+func (c *httpClient) ListData(ctx context.Context, queryParams ...string) ([]*Datum, error) {
 	var data []*Datum
-	if err := c.listResources(ctx, "/api/data", page, &data); err != nil {
+	if err := c.listResources(ctx, "/api/data", &data, queryParams...); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -724,8 +748,11 @@ func (c *httpClient) GetDatumCollection(ctx context.Context, id ID) (*Collection
 	return &collection, nil
 }
 
-// CreateField creates a new field.
+// CreateField creates a new field with schema validation.
 func (c *httpClient) CreateField(ctx context.Context, field *Field) (*Field, error) {
+	if err := c.validateField(field); err != nil {
+		return nil, err
+	}
 	var result Field
 	if err := c.postResource(ctx, "/api/fields", field, &result); err != nil {
 		return nil, err
@@ -743,9 +770,9 @@ func (c *httpClient) GetField(ctx context.Context, id ID) (*Field, error) {
 }
 
 // ListFields retrieves a list of fields.
-func (c *httpClient) ListFields(ctx context.Context, page int) ([]*Field, error) {
+func (c *httpClient) ListFields(ctx context.Context, queryParams ...string) ([]*Field, error) {
 	var fields []*Field
-	if err := c.listResources(ctx, "/api/fields", page, &fields); err != nil {
+	if err := c.listResources(ctx, "/api/fields", &fields, queryParams...); err != nil {
 		return nil, err
 	}
 	return fields, nil
@@ -783,19 +810,20 @@ func (c *httpClient) GetFieldTemplate(ctx context.Context, id ID) (*Template, er
 	return &template, nil
 }
 
-// ListTemplateFields retrieves fields associated with a template.
-func (c *httpClient) ListTemplateFields(ctx context.Context, templateid ID, page int) ([]*Field, error) {
+// ListTemplateFields retrieves the fields of a template.
+func (c *httpClient) ListTemplateFields(ctx context.Context, templateid ID, queryParams ...string) ([]*Field, error) {
 	var fields []*Field
-	if err := c.listResources(ctx, "/api/templates/"+string(templateid)+"/fields", page, &fields); err != nil {
+	path := fmt.Sprintf("/api/templates/%s/fields", templateid)
+	if err := c.listResources(ctx, path, &fields, queryParams...); err != nil {
 		return nil, err
 	}
 	return fields, nil
 }
 
 // ListInventories retrieves a list of inventories.
-func (c *httpClient) ListInventories(ctx context.Context, page int) ([]*Inventory, error) {
+func (c *httpClient) ListInventories(ctx context.Context, queryParams ...string) ([]*Inventory, error) {
 	var inventories []*Inventory
-	if err := c.listResources(ctx, "/api/inventories", page, &inventories); err != nil {
+	if err := c.listResources(ctx, "/api/inventories", &inventories, queryParams...); err != nil {
 		return nil, err
 	}
 	return inventories, nil
@@ -817,6 +845,9 @@ func (c *httpClient) DeleteInventory(ctx context.Context, id ID) error {
 
 // CreateItem creates a new item.
 func (c *httpClient) CreateItem(ctx context.Context, item *Item) (*Item, error) {
+	if err := c.validateItem(item); err != nil {
+		return nil, err
+	}
 	var result Item
 	if err := c.postResource(ctx, "/api/items", item, &result); err != nil {
 		return nil, err
@@ -834,9 +865,9 @@ func (c *httpClient) GetItem(ctx context.Context, id ID) (*Item, error) {
 }
 
 // ListItems retrieves a list of items.
-func (c *httpClient) ListItems(ctx context.Context, page int) ([]*Item, error) {
+func (c *httpClient) ListItems(ctx context.Context, queryParams ...string) ([]*Item, error) {
 	var items []*Item
-	if err := c.listResources(ctx, "/api/items", page, &items); err != nil {
+	if err := c.listResources(ctx, "/api/items", &items, queryParams...); err != nil {
 		return nil, err
 	}
 	return items, nil
@@ -874,37 +905,41 @@ func (c *httpClient) UploadItemImage(ctx context.Context, id ID, file []byte) (*
 	return &item, nil
 }
 
-// ListItemRelatedItems retrieves related items for an item.
-func (c *httpClient) ListItemRelatedItems(ctx context.Context, id ID, page int) ([]*Item, error) {
+// ListItemRelatedItems retrieves the related items of an item.
+func (c *httpClient) ListItemRelatedItems(ctx context.Context, id ID, queryParams ...string) ([]*Item, error) {
 	var items []*Item
-	if err := c.listResources(ctx, "/api/items/"+string(id)+"/related_items", page, &items); err != nil {
+	path := fmt.Sprintf("/api/items/%s/related_items", id)
+	if err := c.listResources(ctx, path, &items, queryParams...); err != nil {
 		return nil, err
 	}
 	return items, nil
 }
 
-// ListItemLoans retrieves loans for an item.
-func (c *httpClient) ListItemLoans(ctx context.Context, id ID, page int) ([]*Loan, error) {
+// ListItemLoans retrieves the loans of an item.
+func (c *httpClient) ListItemLoans(ctx context.Context, id ID, queryParams ...string) ([]*Loan, error) {
 	var loans []*Loan
-	if err := c.listResources(ctx, "/api/items/"+string(id)+"/loans", page, &loans); err != nil {
+	path := fmt.Sprintf("/api/items/%s/loans", id)
+	if err := c.listResources(ctx, path, &loans, queryParams...); err != nil {
 		return nil, err
 	}
 	return loans, nil
 }
 
-// ListItemTags retrieves tags for an item.
-func (c *httpClient) ListItemTags(ctx context.Context, id ID, page int) ([]*Tag, error) {
+// ListItemTags retrieves the tags of an item.
+func (c *httpClient) ListItemTags(ctx context.Context, id ID, queryParams ...string) ([]*Tag, error) {
 	var tags []*Tag
-	if err := c.listResources(ctx, "/api/items/"+string(id)+"/tags", page, &tags); err != nil {
+	path := fmt.Sprintf("/api/items/%s/tags", id)
+	if err := c.listResources(ctx, path, &tags, queryParams...); err != nil {
 		return nil, err
 	}
 	return tags, nil
 }
 
-// ListItemData retrieves data fields for an item.
-func (c *httpClient) ListItemData(ctx context.Context, id ID, page int) ([]*Datum, error) {
+// ListItemData retrieves the data of an item.
+func (c *httpClient) ListItemData(ctx context.Context, id ID, queryParams ...string) ([]*Datum, error) {
 	var data []*Datum
-	if err := c.listResources(ctx, "/api/items/"+string(id)+"/data", page, &data); err != nil {
+	path := fmt.Sprintf("/api/items/%s/data", id)
+	if err := c.listResources(ctx, path, &data, queryParams...); err != nil {
 		return nil, err
 	}
 	return data, nil
@@ -919,8 +954,11 @@ func (c *httpClient) GetItemCollection(ctx context.Context, id ID) (*Collection,
 	return &collection, nil
 }
 
-// CreateLoan creates a new loan.
+// / CreateLoan creates a new loan with schema validation.
 func (c *httpClient) CreateLoan(ctx context.Context, loan *Loan) (*Loan, error) {
+	if err := c.validateLoan(loan); err != nil {
+		return nil, err
+	}
 	var result Loan
 	if err := c.postResource(ctx, "/api/loans", loan, &result); err != nil {
 		return nil, err
@@ -938,9 +976,9 @@ func (c *httpClient) GetLoan(ctx context.Context, id ID) (*Loan, error) {
 }
 
 // ListLoans retrieves a list of loans.
-func (c *httpClient) ListLoans(ctx context.Context, page int) ([]*Loan, error) {
+func (c *httpClient) ListLoans(ctx context.Context, queryParams ...string) ([]*Loan, error) {
 	var loans []*Loan
-	if err := c.listResources(ctx, "/api/loans", page, &loans); err != nil {
+	if err := c.listResources(ctx, "/api/loans", &loans, queryParams...); err != nil {
 		return nil, err
 	}
 	return loans, nil
@@ -988,16 +1026,19 @@ func (c *httpClient) GetLog(ctx context.Context, id ID) (*Log, error) {
 }
 
 // ListLogs retrieves a list of logs.
-func (c *httpClient) ListLogs(ctx context.Context, page int) ([]*Log, error) {
+func (c *httpClient) ListLogs(ctx context.Context, queryParams ...string) ([]*Log, error) {
 	var logs []*Log
-	if err := c.listResources(ctx, "/api/logs", page, &logs); err != nil {
+	if err := c.listResources(ctx, "/api/logs", &logs, queryParams...); err != nil {
 		return nil, err
 	}
 	return logs, nil
 }
 
-// CreatePhoto creates a new photo.
+// CreatePhoto creates a new photo with schema validation.
 func (c *httpClient) CreatePhoto(ctx context.Context, photo *Photo) (*Photo, error) {
+	if err := c.validatePhoto(photo); err != nil {
+		return nil, err
+	}
 	var result Photo
 	if err := c.postResource(ctx, "/api/photos", photo, &result); err != nil {
 		return nil, err
@@ -1015,9 +1056,9 @@ func (c *httpClient) GetPhoto(ctx context.Context, id ID) (*Photo, error) {
 }
 
 // ListPhotos retrieves a list of photos.
-func (c *httpClient) ListPhotos(ctx context.Context, page int) ([]*Photo, error) {
+func (c *httpClient) ListPhotos(ctx context.Context, queryParams ...string) ([]*Photo, error) {
 	var photos []*Photo
-	if err := c.listResources(ctx, "/api/photos", page, &photos); err != nil {
+	if err := c.listResources(ctx, "/api/photos", &photos, queryParams...); err != nil {
 		return nil, err
 	}
 	return photos, nil
@@ -1064,8 +1105,11 @@ func (c *httpClient) GetPhotoAlbum(ctx context.Context, id ID) (*Album, error) {
 	return &album, nil
 }
 
-// CreateTag creates a new tag.
+// CreateTag creates a new tag with schema validation.
 func (c *httpClient) CreateTag(ctx context.Context, tag *Tag) (*Tag, error) {
+	if err := c.validateTag(tag); err != nil {
+		return nil, err
+	}
 	var result Tag
 	if err := c.postResource(ctx, "/api/tags", tag, &result); err != nil {
 		return nil, err
@@ -1083,9 +1127,9 @@ func (c *httpClient) GetTag(ctx context.Context, id ID) (*Tag, error) {
 }
 
 // ListTags retrieves a list of tags.
-func (c *httpClient) ListTags(ctx context.Context, page int) ([]*Tag, error) {
+func (c *httpClient) ListTags(ctx context.Context, queryParams ...string) ([]*Tag, error) {
 	var tags []*Tag
-	if err := c.listResources(ctx, "/api/tags", page, &tags); err != nil {
+	if err := c.listResources(ctx, "/api/tags", &tags, queryParams...); err != nil {
 		return nil, err
 	}
 	return tags, nil
@@ -1123,10 +1167,11 @@ func (c *httpClient) UploadTagImage(ctx context.Context, id ID, file []byte) (*T
 	return &tag, nil
 }
 
-// ListTagItems retrieves items associated with a tag.
-func (c *httpClient) ListTagItems(ctx context.Context, id ID, page int) ([]*Item, error) {
+// ListTagItems retrieves the items of a tag.
+func (c *httpClient) ListTagItems(ctx context.Context, id ID, queryParams ...string) ([]*Item, error) {
 	var items []*Item
-	if err := c.listResources(ctx, "/api/tags/"+string(id)+"/items", page, &items); err != nil {
+	path := fmt.Sprintf("/api/tags/%s/items", id)
+	if err := c.listResources(ctx, path, &items, queryParams...); err != nil {
 		return nil, err
 	}
 	return items, nil
@@ -1141,8 +1186,11 @@ func (c *httpClient) GetCategoryOfTag(ctx context.Context, id ID) (*TagCategory,
 	return &category, nil
 }
 
-// CreateTagCategory creates a new tag category.
+// CreateTagCategory creates a new tag category with schema validation.
 func (c *httpClient) CreateTagCategory(ctx context.Context, category *TagCategory) (*TagCategory, error) {
+	if err := c.validateTagCategory(category); err != nil {
+		return nil, err
+	}
 	var result TagCategory
 	if err := c.postResource(ctx, "/api/tag_categories", category, &result); err != nil {
 		return nil, err
@@ -1160,9 +1208,9 @@ func (c *httpClient) GetTagCategory(ctx context.Context, id ID) (*TagCategory, e
 }
 
 // ListTagCategories retrieves a list of tag categories.
-func (c *httpClient) ListTagCategories(ctx context.Context, page int) ([]*TagCategory, error) {
+func (c *httpClient) ListTagCategories(ctx context.Context, queryParams ...string) ([]*TagCategory, error) {
 	var categories []*TagCategory
-	if err := c.listResources(ctx, "/api/tag_categories", page, &categories); err != nil {
+	if err := c.listResources(ctx, "/api/tag_categories", &categories, queryParams...); err != nil {
 		return nil, err
 	}
 	return categories, nil
@@ -1191,17 +1239,21 @@ func (c *httpClient) DeleteTagCategory(ctx context.Context, id ID) error {
 	return c.deleteResource(ctx, "/api/tag_categories/"+string(id))
 }
 
-// ListTagCategoryTags retrieves tags in a tag category.
-func (c *httpClient) ListTagCategoryTags(ctx context.Context, id ID, page int) ([]*Tag, error) {
+// ListTagCategoryTags retrieves the tags of a tag category.
+func (c *httpClient) ListTagCategoryTags(ctx context.Context, id ID, queryParams ...string) ([]*Tag, error) {
 	var tags []*Tag
-	if err := c.listResources(ctx, "/api/tag_categories/"+string(id)+"/tags", page, &tags); err != nil {
+	path := fmt.Sprintf("/api/tag_categories/%s/tags", id)
+	if err := c.listResources(ctx, path, &tags, queryParams...); err != nil {
 		return nil, err
 	}
 	return tags, nil
 }
 
-// CreateTemplate creates a new template.
+// CreateTemplate creates a new template with schema validation.
 func (c *httpClient) CreateTemplate(ctx context.Context, template *Template) (*Template, error) {
+	if err := c.validateTemplate(template); err != nil {
+		return nil, err
+	}
 	var result Template
 	if err := c.postResource(ctx, "/api/templates", template, &result); err != nil {
 		return nil, err
@@ -1219,9 +1271,9 @@ func (c *httpClient) GetTemplate(ctx context.Context, id ID) (*Template, error) 
 }
 
 // ListTemplates retrieves a list of templates.
-func (c *httpClient) ListTemplates(ctx context.Context, page int) ([]*Template, error) {
+func (c *httpClient) ListTemplates(ctx context.Context, queryParams ...string) ([]*Template, error) {
 	var templates []*Template
-	if err := c.listResources(ctx, "/api/templates", page, &templates); err != nil {
+	if err := c.listResources(ctx, "/api/templates", &templates, queryParams...); err != nil {
 		return nil, err
 	}
 	return templates, nil
@@ -1260,16 +1312,19 @@ func (c *httpClient) GetUser(ctx context.Context, id ID) (*User, error) {
 }
 
 // ListUsers retrieves a list of users.
-func (c *httpClient) ListUsers(ctx context.Context, page int) ([]*User, error) {
+func (c *httpClient) ListUsers(ctx context.Context, queryParams ...string) ([]*User, error) {
 	var users []*User
-	if err := c.listResources(ctx, "/api/users", page, &users); err != nil {
+	if err := c.listResources(ctx, "/api/users", &users, queryParams...); err != nil {
 		return nil, err
 	}
 	return users, nil
 }
 
-// CreateWish creates a new wish.
+// CreateWish creates a new wish with schema validation.
 func (c *httpClient) CreateWish(ctx context.Context, wish *Wish) (*Wish, error) {
+	if err := c.validateWish(wish); err != nil {
+		return nil, err
+	}
 	var result Wish
 	if err := c.postResource(ctx, "/api/wishes", wish, &result); err != nil {
 		return nil, err
@@ -1287,9 +1342,9 @@ func (c *httpClient) GetWish(ctx context.Context, id ID) (*Wish, error) {
 }
 
 // ListWishes retrieves a list of wishes.
-func (c *httpClient) ListWishes(ctx context.Context, page int) ([]*Wish, error) {
+func (c *httpClient) ListWishes(ctx context.Context, queryParams ...string) ([]*Wish, error) {
 	var wishes []*Wish
-	if err := c.listResources(ctx, "/api/wishes", page, &wishes); err != nil {
+	if err := c.listResources(ctx, "/api/wishes", &wishes, queryParams...); err != nil {
 		return nil, err
 	}
 	return wishes, nil
@@ -1336,8 +1391,11 @@ func (c *httpClient) GetWishWishlist(ctx context.Context, id ID) (*Wishlist, err
 	return &wishlist, nil
 }
 
-// CreateWishlist creates a new wishlist.
+// CreateWishlist creates a new wishlist with schema validation.
 func (c *httpClient) CreateWishlist(ctx context.Context, wishlist *Wishlist) (*Wishlist, error) {
+	if err := c.validateWishlist(wishlist); err != nil {
+		return nil, err
+	}
 	var result Wishlist
 	if err := c.postResource(ctx, "/api/wishlists", wishlist, &result); err != nil {
 		return nil, err
@@ -1355,9 +1413,9 @@ func (c *httpClient) GetWishlist(ctx context.Context, id ID) (*Wishlist, error) 
 }
 
 // ListWishlists retrieves a list of wishlists.
-func (c *httpClient) ListWishlists(ctx context.Context, page int) ([]*Wishlist, error) {
+func (c *httpClient) ListWishlists(ctx context.Context, queryParams ...string) ([]*Wishlist, error) {
 	var wishlists []*Wishlist
-	if err := c.listResources(ctx, "/api/wishlists", page, &wishlists); err != nil {
+	if err := c.listResources(ctx, "/api/wishlists", &wishlists, queryParams...); err != nil {
 		return nil, err
 	}
 	return wishlists, nil
@@ -1386,19 +1444,21 @@ func (c *httpClient) DeleteWishlist(ctx context.Context, id ID) error {
 	return c.deleteResource(ctx, "/api/wishlists/"+string(id))
 }
 
-// ListWishlistWishes retrieves wishes in a wishlist.
-func (c *httpClient) ListWishlistWishes(ctx context.Context, id ID, page int) ([]*Wish, error) {
+// ListWishlistWishes retrieves the wishes in a wishlist.
+func (c *httpClient) ListWishlistWishes(ctx context.Context, id ID, queryParams ...string) ([]*Wish, error) {
 	var wishes []*Wish
-	if err := c.listResources(ctx, "/api/wishlists/"+string(id)+"/wishes", page, &wishes); err != nil {
+	path := fmt.Sprintf("/api/wishlists/%s/wishes", id)
+	if err := c.listResources(ctx, path, &wishes, queryParams...); err != nil {
 		return nil, err
 	}
 	return wishes, nil
 }
 
-// ListWishlistChildren retrieves child wishlists of a wishlist.
-func (c *httpClient) ListWishlistChildren(ctx context.Context, id ID, page int) ([]*Wishlist, error) {
+// ListWishlistChildren retrieves the children of a wishlist.
+func (c *httpClient) ListWishlistChildren(ctx context.Context, id ID, queryParams ...string) ([]*Wishlist, error) {
 	var wishlists []*Wishlist
-	if err := c.listResources(ctx, "/api/wishlists/"+string(id)+"/children", page, &wishlists); err != nil {
+	path := fmt.Sprintf("/api/wishlists/%s/children", id)
+	if err := c.listResources(ctx, path, &wishlists, queryParams...); err != nil {
 		return nil, err
 	}
 	return wishlists, nil
@@ -1421,6 +1481,7 @@ func (c *httpClient) GetWishlistParent(ctx context.Context, id ID) (*Wishlist, e
 	}
 	return &wishlist, nil
 }
+---- client.go ----
 package koiApi
 
 import (
@@ -1434,6 +1495,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -1481,6 +1543,9 @@ type httpClient struct {
 
 // NewHTTPClient creates a new HTTP client for the Koillection API.
 func NewHTTPClient(baseURL string, timeout time.Duration) Client {
+	//if baseURL == "" {
+	//	baseURL = auth.ServerURL
+	//}
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		fmt.Println("Error creating cookie jar:", err)
@@ -1633,42 +1698,6 @@ func (c *httpClient) getResource(ctx context.Context, path string, out interface
 	return json.NewDecoder(resp.Body).Decode(out)
 }
 
-// listResources retrieves a paginated list of resources and decodes the member array.
-func (c *httpClient) listResources(ctx context.Context, path string, page int, out interface{}) error {
-	u, err := url.Parse(c.baseURL + path)
-	if err != nil {
-		return fmt.Errorf("parsing URL: %w", err)
-	}
-	q := u.Query()
-	if page > 0 {
-		q.Set("page", strconv.Itoa(page))
-	}
-	u.RawQuery = q.Encode()
-
-	resp, err := c.doRequest(ctx, http.MethodGet, u.Path+"?"+u.RawQuery, nil, "")
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Handle JSON-LD response with "member" array.
-	headerContent := resp.Header.Get("Content-Type")
-	if strings.Contains(headerContent, "application/ld+json") {
-		var wrapper struct {
-			Member json.RawMessage `json:"member"`
-		}
-		if err := json.NewDecoder(resp.Body).Decode(&wrapper); err != nil {
-			return fmt.Errorf("decoding response: %w", err)
-		}
-		return json.Unmarshal(wrapper.Member, out)
-	}
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(bodyBytes, out)
-}
-
 // listResources retrieves all resources by looping through all pages and decodes the member array.
 func (c *httpClient) listResources(ctx context.Context, path string, out interface{}, queryParams ...string) error {
 	// Ensure out is a slice to collect all resources
@@ -1759,41 +1788,6 @@ func (c *httpClient) listResources(ctx context.Context, path string, out interfa
 	return nil
 }
 
-// postResource creates a resource and decodes the response into the provided struct.
-func (c *httpClient) postResource(ctx context.Context, path string, in, out interface{}) error {
-	body, err := json.Marshal(in)
-	if err != nil {
-		return fmt.Errorf("encoding request body: %w", err)
-	}
-
-	resp, err := c.doRequest(ctx, http.MethodPost, path, bytes.NewReader(body), "")
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if out != nil {
-		return json.NewDecoder(resp.Body).Decode(out)
-	}
-	return nil
-}
-
-// putResource updates a resource and decodes the response into the provided struct.
-func (c *httpClient) putResource(ctx context.Context, path string, in, out interface{}) error {
-	body, err := json.Marshal(in)
-	if err != nil {
-		return fmt.Errorf("encoding request body: %w", err)
-	}
-
-	resp, err := c.doRequest(ctx, http.MethodPut, path, bytes.NewReader(body), "")
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	return json.NewDecoder(resp.Body).Decode(out)
-}
-
 // patchResource partially updates a resource and decodes the response into the provided struct.
 func (c *httpClient) patchResource(ctx context.Context, path string, in, out interface{}) error {
 	body, err := json.Marshal(in)
@@ -1846,10 +1840,13 @@ func (c *httpClient) uploadFile(ctx context.Context, path string, file []byte, f
 }
 
 // CheckLogin authenticates a user and returns a JWT token.
-func (c *httpClient) CheckLogin(ctx context.Context, username, password string) (string, error) {
+func (c *httpClient) CheckLogin(ctx context.Context) (string, error) {
+
 	reqBody := map[string]string{
-		"username": username,
-		"password": password,
+		u := Auth.Username
+		p := Auth.Password
+		"username": u,
+		"password": p,
 	}
 	body, err := json.Marshal(reqBody)
 	if err != nil {
@@ -1872,6 +1869,42 @@ func (c *httpClient) CheckLogin(ctx context.Context, username, password string) 
 	c.token = result.Token
 	return result.Token, nil
 }
+
+// postResource creates a resource and decodes the response into the provided struct.
+func (c *httpClient) postResource(ctx context.Context, path string, in, out interface{}) error {
+	body, err := json.Marshal(in)
+	if err != nil {
+		return fmt.Errorf("encoding request body: %w", err)
+	}
+
+	resp, err := c.doRequest(ctx, http.MethodPost, path, bytes.NewReader(body), "")
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if out != nil {
+		return json.NewDecoder(resp.Body).Decode(out)
+	}
+	return nil
+}
+
+// putResource updates a resource and decodes the response into the provided struct.
+func (c *httpClient) putResource(ctx context.Context, path string, in, out interface{}) error {
+	body, err := json.Marshal(in)
+	if err != nil {
+		return fmt.Errorf("encoding request body: %w", err)
+	}
+
+	resp, err := c.doRequest(ctx, http.MethodPut, path, bytes.NewReader(body), "")
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return json.NewDecoder(resp.Body).Decode(out)
+}
+---- Collection.go ----
 package koiApi
 
 import (
@@ -1889,7 +1922,6 @@ type CollectionInterface interface {
 	GetDefaultTemplate(ctx context.Context, client Client, collectionID ...ID) (*Template, error)                   // HTTP GET /api/collections/{id}/items_default_template
 	GetParent(ctx context.Context, client Client, collectionID ...ID) (*Collection, error)                          // HTTP GET /api/collections/{id}/parent
 	IRI() string                                                                                                    // /api/collections/{id}
-	List(ctx context.Context, client Client) ([]*Collection, error)                                                 // HTTP GET /api/collections
 	ListChildren(ctx context.Context, client Client, collectionID ...ID) ([]*Collection, error)                     // HTTP GET /api/collections/{id}/children
 	ListCollectionData(ctx context.Context, client Client, collectionID ...ID) ([]*Datum, error)                    // HTTP GET /api/collections/{id}/data
 	ListCollectionItems(ctx context.Context, client Client, collectionID ...ID) ([]*Item, error)                    // HTTP GET /api/collections/{id}/items
@@ -1897,6 +1929,8 @@ type CollectionInterface interface {
 	Update(ctx context.Context, client Client, collectionID ...ID) (*Collection, error)                             // HTTP PUT /api/collections/{id}
 	UploadImage(ctx context.Context, client Client, file []byte, collectionID ...ID) (*Collection, error)           // HTTP POST /api/collections/{id}/image
 	UploadImageByFile(ctx context.Context, client Client, filename string, collectionID ...ID) (*Collection, error) // HTTP POST /api/collections/{id}/image
+	Summary() string
+	Exists()
 }
 
 // Collection represents a collection in Koillection, combining fields for JSON-LD and API interactions.
@@ -1964,73 +1998,6 @@ func (c *Collection) IRI() string {
 	return fmt.Sprintf("/api/collections/%s", c.ID)
 }
 
-// List
-func (c *Collection) List(ctx context.Context, client Client) ([]*Collection, error) {
-	var allCollections []*Collection
-	for page := 1; ; page++ {
-		collections, err := client.ListCollections(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list collections on page %d: %w", page, err)
-		}
-		if len(collections) == 0 {
-			break
-		}
-		allCollections = append(allCollections, collections...)
-	}
-	return allCollections, nil
-}
-
-// ListChildren
-func (c *Collection) ListChildren(ctx context.Context, client Client, collectionID ...ID) ([]*Collection, error) {
-	id := c.whichID(collectionID...)
-	var allChildren []*Collection
-	for page := 1; ; page++ {
-		children, err := client.ListCollectionChildren(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list child collections for ID %s on page %d: %w", id, page, err)
-		}
-		if len(children) == 0 {
-			break
-		}
-		allChildren = append(allChildren, children...)
-	}
-	return allChildren, nil
-}
-
-// ListCollectionData
-func (c *Collection) ListCollectionData(ctx context.Context, client Client, collectionID ...ID) ([]*Datum, error) {
-	id := c.whichID(collectionID...)
-	var allData []*Datum
-	for page := 1; ; page++ {
-		data, err := client.ListCollectionData(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list data for ID %s on page %d: %w", id, page, err)
-		}
-		if len(data) == 0 {
-			break
-		}
-		allData = append(allData, data...)
-	}
-	return allData, nil
-}
-
-// ListCollectionItems
-func (c *Collection) ListCollectionItems(ctx context.Context, client Client, collectionID ...ID) ([]*Item, error) {
-	id := c.whichID(collectionID...)
-	var allItems []*Item
-	for page := 1; ; page++ {
-		items, err := client.ListCollectionItems(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list items for ID %s on page %d: %w", id, page, err)
-		}
-		if len(items) == 0 {
-			break
-		}
-		allItems = append(allItems, items...)
-	}
-	return allItems, nil
-}
-
 // Patch
 func (c *Collection) Patch(ctx context.Context, client Client, collectionID ...ID) (*Collection, error) {
 	id := c.whichID(collectionID...)
@@ -2058,10 +2025,12 @@ func (c *Collection) UploadImageByFile(ctx context.Context, client Client, filen
 	}
 	return c.UploadImage(ctx, client, file, id)
 }
+---- Context.go ----
 package koiApi
 
 // Context represents the JSON-LD @context field.
 type Context string // JSON-LD only
+---- DateFormat.go ----
 package koiApi
 
 // DateFormat represents the date format preference for a user.
@@ -2079,6 +2048,7 @@ const (
 func (df DateFormat) String() string {
 	return string(df)
 }
+---- Datum.go ----
 package koiApi
 
 import (
@@ -2088,31 +2058,25 @@ import (
 	"time"
 )
 
-type DatumType string
-
 const (
-	DatumTypeText       DatumType = "text"
-	DatumTypeTextarea   DatumType = "textarea"
-	DatumTypeCountry    DatumType = "country"
-	DatumTypeDate       DatumType = "date"
-	DatumTypeRating     DatumType = "rating"
-	DatumTypeNumber     DatumType = "number"
-	DatumTypePrice      DatumType = "price"
-	DatumTypeLink       DatumType = "link"
-	DatumTypeList       DatumType = "list"
-	DatumTypeChoiceList DatumType = "choice-list"
-	DatumTypeCheckbox   DatumType = "checkbox"
-	DatumTypeImage      DatumType = "image"
-	DatumTypeFile       DatumType = "file"
-	DatumTypeSign       DatumType = "sign"
-	DatumTypeVideo      DatumType = "video"
-	DatumTypeBlankLine  DatumType = "blank-line"
-	DatumTypeSection    DatumType = "section"
+	DatumTypeText       string = "text"
+	DatumTypeTextarea   string = "textarea"
+	DatumTypeCountry    string = "country"
+	DatumTypeDate       string = "date"
+	DatumTypeRating     string = "rating"
+	DatumTypeNumber     string = "number"
+	DatumTypePrice      string = "price"
+	DatumTypeLink       string = "link"
+	DatumTypeList       string = "list"
+	DatumTypeChoiceList string = "choice-list"
+	DatumTypeCheckbox   string = "checkbox"
+	DatumTypeImage      string = "image"
+	DatumTypeFile       string = "file"
+	DatumTypeSign       string = "sign"
+	DatumTypeVideo      string = "video"
+	DatumTypeBlankLine  string = "blank-line"
+	DatumTypeSection    string = "section"
 )
-
-func (dt DatumType) String() string {
-	return string(dt)
-}
 
 // DatumInterface defines methods for interacting with Datum resources.
 type DatumInterface interface {
@@ -2122,7 +2086,6 @@ type DatumInterface interface {
 	GetCollection(ctx context.Context, client Client, datumID ...ID) (*Collection, error)                 // HTTP GET /api/data/{id}/collection
 	GetItem(ctx context.Context, client Client, datumID ...ID) (*Item, error)                             // HTTP GET /api/data/{id}/item
 	IRI() string                                                                                          // /api/data/{id}
-	List(ctx context.Context, client Client) ([]*Datum, error)                                            // HTTP GET /api/data
 	Patch(ctx context.Context, client Client, datumID ...ID) (*Datum, error)                              // HTTP PATCH /api/data/{id}
 	Update(ctx context.Context, client Client, datumID ...ID) (*Datum, error)                             // HTTP PUT /api/data/{id}
 	UploadFile(ctx context.Context, client Client, file []byte, datumID ...ID) (*Datum, error)            // HTTP POST /api/data/{id}/file
@@ -2131,6 +2094,7 @@ type DatumInterface interface {
 	UploadImageByFile(ctx context.Context, client Client, filename string, datumID ...ID) (*Datum, error) // HTTP POST /api/data/{id}/image
 	UploadVideo(ctx context.Context, client Client, video []byte, datumID ...ID) (*Datum, error)          // HTTP POST /api/data/{id}/video
 	UploadVideoByFile(ctx context.Context, client Client, filename string, datumID ...ID) (*Datum, error) // HTTP POST /api/data/{id}/video
+	Summary() string
 }
 
 // Datum represents a custom data field in Koillection, combining fields for JSON-LD and API interactions.
@@ -2141,7 +2105,7 @@ type Datum struct {
 	ID                  ID         `json:"id,omitempty" access:"ro"`                  // Identifier
 	Item                *string    `json:"item,omitempty" access:"rw"`                // Item IRI
 	Collection          *string    `json:"collection,omitempty" access:"rw"`          // Collection IRI
-	DatumType           DatumType  `json:"type" access:"rw"`                          // Custom data field type
+	DatumType           string     `json:"type" access:"rw"`                          // Custom data field type
 	Label               string     `json:"label" access:"rw"`                         // Field label
 	Value               *string    `json:"value,omitempty" access:"rw"`               // Field value
 	Position            *int       `json:"position,omitempty" access:"rw"`            // Field position
@@ -2206,22 +2170,6 @@ func (d *Datum) IRI() string {
 	return fmt.Sprintf("/api/data/%s", d.ID)
 }
 
-// List
-func (d *Datum) List(ctx context.Context, client Client) ([]*Datum, error) {
-	var allData []*Datum
-	for page := 1; ; page++ {
-		data, err := client.ListData(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list data on page %d: %w", page, err)
-		}
-		if len(data) == 0 {
-			break
-		}
-		allData = append(allData, data...)
-	}
-	return allData, nil
-}
-
 // Patch
 func (d *Datum) Patch(ctx context.Context, client Client, datumID ...ID) (*Datum, error) {
 	id := d.whichID(datumID...)
@@ -2281,6 +2229,7 @@ func (d *Datum) UploadVideoByFile(ctx context.Context, client Client, filename s
 	}
 	return client.UploadDatumVideo(ctx, id, file)
 }
+---- DeleteAll.go ----
 package koiApi
 
 import (
@@ -2304,7 +2253,7 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	// Delete resources in dependency order: children first, then parents
 
 	// 1. Delete Photos (depend on Albums)
-	photos, err := c.ListPhotos(ctx, 1)
+	photos, err := c.ListPhotos(ctx)
 	addError(err, "photos list", "")
 	for _, photo := range photos {
 		err := c.DeletePhoto(ctx, photo.ID)
@@ -2312,7 +2261,7 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 2. Delete Wishes (depend on Wishlists)
-	wishes, err := c.ListWishes(ctx, 1)
+	wishes, err := c.ListWishes(ctx)
 	addError(err, "wishes list", "")
 	for _, wish := range wishes {
 		err := c.DeleteWish(ctx, wish.ID)
@@ -2320,11 +2269,11 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 3. Delete Items (depend on Collections, have Loans, Tags, Data)
-	items, err := c.ListItems(ctx, 1)
+	items, err := c.ListItems(ctx)
 	addError(err, "items list", "")
 	for _, item := range items {
 		// Delete associated Loans
-		loans, err := c.ListItemLoans(ctx, item.ID, 1)
+		loans, err := c.ListItemLoans(ctx, item.ID)
 		addError(err, "loans list for item", string(item.ID))
 		for _, loan := range loans {
 			err := c.DeleteLoan(ctx, loan.ID)
@@ -2332,7 +2281,7 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 		}
 
 		// Delete associated Data
-		data, err := c.ListItemData(ctx, item.ID, 1)
+		data, err := c.ListItemData(ctx, item.ID)
 		addError(err, "data list for item", string(item.ID))
 		for _, datum := range data {
 			err := c.DeleteDatum(ctx, datum.ID)
@@ -2345,11 +2294,11 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 4. Delete Albums (have children and photos)
-	albums, err := c.ListAlbums(ctx, 1)
+	albums, err := c.ListAlbums(ctx)
 	addError(err, "albums list", "")
 	for _, album := range albums {
 		// Delete child albums recursively
-		children, err := c.ListAlbumChildren(ctx, album.ID, 1)
+		children, err := c.ListAlbumChildren(ctx, album.ID)
 		addError(err, "album children list", string(album.ID))
 		for _, child := range children {
 			err := c.DeleteAlbum(ctx, child.ID)
@@ -2360,11 +2309,11 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 5. Delete Wishlists (have children and wishes)
-	wishlists, err := c.ListWishlists(ctx, 1)
+	wishlists, err := c.ListWishlists(ctx)
 	addError(err, "wishlists list", "")
 	for _, wishlist := range wishlists {
 		// Delete child wishlists recursively
-		children, err := c.ListWishlistChildren(ctx, wishlist.ID, 1)
+		children, err := c.ListWishlistChildren(ctx, wishlist.ID)
 		addError(err, "wishlist children list", string(wishlist.ID))
 		for _, child := range children {
 			err := c.DeleteWishlist(ctx, child.ID)
@@ -2375,18 +2324,18 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 6. Delete Collections (have children, items, data)
-	collections, err := c.ListCollections(ctx, 1)
+	collections, err := c.ListCollections(ctx)
 	addError(err, "collections list", "")
 	for _, collection := range collections {
 		// Delete child collections recursively
-		children, err := c.ListCollectionChildren(ctx, collection.ID, 1)
+		children, err := c.ListCollectionChildren(ctx, collection.ID)
 		addError(err, "collection children list", string(collection.ID))
 		for _, child := range children {
 			err := c.DeleteCollection(ctx, child.ID)
 			addError(err, "child collection", string(child.ID))
 		}
 		// Delete associated Data
-		data, err := c.ListCollectionData(ctx, collection.ID, 1)
+		data, err := c.ListCollectionData(ctx, collection.ID)
 		addError(err, "data list for collection", string(collection.ID))
 		for _, datum := range data {
 			err := c.DeleteDatum(ctx, datum.ID)
@@ -2397,11 +2346,11 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 7. Delete Templates (have Fields)
-	templates, err := c.ListTemplates(ctx, 1)
+	templates, err := c.ListTemplates(ctx)
 	addError(err, "templates list", "")
 	for _, template := range templates {
 		// Delete associated Fields
-		fields, err := c.ListTemplateFields(ctx, template.ID, 1)
+		fields, err := c.ListTemplateFields(ctx, template.ID)
 		addError(err, "fields list for template", string(template.ID))
 		for _, field := range fields {
 			err := c.DeleteField(ctx, field.ID)
@@ -2412,7 +2361,7 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 8. Delete Tags (depend on Tag Categories)
-	tags, err := c.ListTags(ctx, 1)
+	tags, err := c.ListTags(ctx)
 	addError(err, "tags list", "")
 	for _, tag := range tags {
 		err := c.DeleteTag(ctx, tag.ID)
@@ -2420,7 +2369,7 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 9. Delete Tag Categories
-	tagCategories, err := c.ListTagCategories(ctx, 1)
+	tagCategories, err := c.ListTagCategories(ctx)
 	addError(err, "tag categories list", "")
 	for _, category := range tagCategories {
 		err := c.DeleteTagCategory(ctx, category.ID)
@@ -2428,7 +2377,7 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 10. Delete Choice Lists
-	choiceLists, err := c.ListChoiceLists(ctx, 1)
+	choiceLists, err := c.ListChoiceLists(ctx)
 	addError(err, "choice lists list", "")
 	for _, choiceList := range choiceLists {
 		err := c.DeleteChoiceList(ctx, choiceList.ID)
@@ -2436,7 +2385,7 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 	}
 
 	// 11. Delete Inventories
-	inventories, err := c.ListInventories(ctx, 1)
+	inventories, err := c.ListInventories(ctx)
 	addError(err, "inventories list", "")
 	for _, inventory := range inventories {
 		err := c.DeleteInventory(ctx, inventory.ID)
@@ -2460,6 +2409,7 @@ func (c *httpClient) DeleteAllData(ctx context.Context) error {
 
 	return nil
 }
+---- Field.go ----
 package koiApi
 
 import (
@@ -2501,9 +2451,9 @@ type FieldInterface interface {
 	Get(ctx context.Context, client Client, fieldID ...ID) (*Field, error)            // HTTP GET /api/fields/{id}
 	GetTemplate(ctx context.Context, client Client, fieldID ...ID) (*Template, error) // HTTP GET /api/fields/{id}/template
 	IRI() string                                                                      // /api/fields/{id}
-	List(ctx context.Context, client Client) ([]*Field, error)                        // HTTP GET /api/fields
 	Patch(ctx context.Context, client Client, fieldID ...ID) (*Field, error)          // HTTP PATCH /api/fields/{id}
 	Update(ctx context.Context, client Client, fieldID ...ID) (*Field, error)         // HTTP PUT /api/fields/{id}
+	Summary() string
 }
 
 // Field represents a template field in Koillection, combining fields for JSON-LD and API interactions.
@@ -2519,6 +2469,7 @@ type Field struct {
 	Template   *string    `json:"template" access:"rw"`             // Template IRI
 	Visibility Visibility `json:"visibility,omitempty" access:"rw"` // Visibility level
 	Owner      *string    `json:"owner,omitempty" access:"ro"`      // Owner IRI
+
 }
 
 // whichID
@@ -2557,22 +2508,6 @@ func (f *Field) IRI() string {
 	return fmt.Sprintf("/api/fields/%s", f.ID)
 }
 
-// List
-func (f *Field) List(ctx context.Context, client Client) ([]*Field, error) {
-	var allFields []*Field
-	for page := 1; ; page++ {
-		fields, err := client.ListFields(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list fields on page %d: %w", page, err)
-		}
-		if len(fields) == 0 {
-			break
-		}
-		allFields = append(allFields, fields...)
-	}
-	return allFields, nil
-}
-
 // Patch
 func (f *Field) Patch(ctx context.Context, client Client, fieldID ...ID) (*Field, error) {
 	id := f.whichID(fieldID...)
@@ -2584,9 +2519,11 @@ func (f *Field) Update(ctx context.Context, client Client, fieldID ...ID) (*Fiel
 	id := f.whichID(fieldID...)
 	return client.UpdateField(ctx, id, f)
 }
+---- ID.go ----
 package koiApi
 
 type ID string
+---- Inventory.go ----
 package koiApi
 
 import (
@@ -2600,7 +2537,7 @@ type InventoryInterface interface {
 	Delete(ctx context.Context, client Client, inventoryID ...ID) error            // HTTP DELETE /api/inventories/{id}
 	Get(ctx context.Context, client Client, inventoryID ...ID) (*Inventory, error) // HTTP GET /api/inventories/{id}
 	IRI() string                                                                   // /api/inventories/{id}
-	List(ctx context.Context, client Client) ([]*Inventory, error)                 // HTTP GET /api/inventories
+	Summary() string
 }
 
 // Inventory represents an inventory record in Koillection, combining fields for JSON-LD and API interactions.
@@ -2614,6 +2551,7 @@ type Inventory struct {
 	Owner     *string    `json:"owner,omitempty" access:"ro"`     // Owner IRI
 	CreatedAt time.Time  `json:"createdAt" access:"ro"`           // Creation timestamp
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" access:"ro"` // Update timestamp
+
 }
 
 // whichID
@@ -2640,22 +2578,7 @@ func (i *Inventory) Get(ctx context.Context, client Client, inventoryID ...ID) (
 func (i *Inventory) IRI() string {
 	return fmt.Sprintf("/api/inventories/%s", i.ID)
 }
-
-// List
-func (i *Inventory) List(ctx context.Context, client Client) ([]*Inventory, error) {
-	var allInventories []*Inventory
-	for page := 1; ; page++ {
-		inventories, err := client.ListInventories(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list inventories on page %d: %w", page, err)
-		}
-		if len(inventories) == 0 {
-			break
-		}
-		allInventories = append(allInventories, inventories...)
-	}
-	return allInventories, nil
-}
+---- Item.go ----
 package koiApi
 
 import (
@@ -2672,15 +2595,11 @@ type ItemInterface interface {
 	Get(ctx context.Context, client Client, itemID ...ID) (*Item, error)                                // HTTP GET /api/items/{id}
 	GetCollection(ctx context.Context, client Client, itemID ...ID) (*Collection, error)                // HTTP GET /api/items/{id}/collection
 	IRI() string                                                                                        // /api/items/{id}
-	List(ctx context.Context, client Client) ([]*Item, error)                                           // HTTP GET /api/items
-	ListData(ctx context.Context, client Client, itemID ...ID) ([]*Datum, error)                        // HTTP GET /api/items/{id}/data
-	ListLoans(ctx context.Context, client Client, itemID ...ID) ([]*Loan, error)                        // HTTP GET /api/items/{id}/loans
-	ListRelatedItems(ctx context.Context, client Client, itemID ...ID) ([]*Item, error)                 // HTTP GET /api/items/{id}/related_items
-	ListTags(ctx context.Context, client Client, itemID ...ID) ([]*Tag, error)                          // HTTP GET /api/items/{id}/tags
 	Patch(ctx context.Context, client Client, itemID ...ID) (*Item, error)                              // HTTP PATCH /api/items/{id}
 	Update(ctx context.Context, client Client, itemID ...ID) (*Item, error)                             // HTTP PUT /api/items/{id}
 	UploadImage(ctx context.Context, client Client, file []byte, itemID ...ID) (*Item, error)           // HTTP POST /api/items/{id}/image
 	UploadImageByFile(ctx context.Context, client Client, filename string, itemID ...ID) (*Item, error) // HTTP POST /api/items/{id}/image
+	Summary() string
 }
 
 // Item represents an item within a collection, combining fields for JSON-LD and API interactions.
@@ -2706,6 +2625,7 @@ type Item struct {
 	Tags                []string   `json:"tags,omitempty" access:"wo"`                // Tag IRIs
 	RelatedItems        []string   `json:"relatedItems,omitempty" access:"wo"`        // Related item IRIs
 	File                *string    `json:"file,omitempty" access:"wo"`                // Image file data
+
 }
 
 // whichID
@@ -2748,9 +2668,9 @@ func (i *Item) IRI() string {
 func (i *Item) List(ctx context.Context, client Client) ([]*Item, error) {
 	var allItems []*Item
 	for page := 1; ; page++ {
-		items, err := client.ListItems(ctx, page)
+		items, err := client.ListItems(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list items on page %d: %w", page, err)
+			return nil, fmt.Errorf("failed to list items on page %d: %w", err)
 		}
 		if len(items) == 0 {
 			break
@@ -2765,9 +2685,9 @@ func (i *Item) ListData(ctx context.Context, client Client, itemID ...ID) ([]*Da
 	id := i.whichID(itemID...)
 	var allData []*Datum
 	for page := 1; ; page++ {
-		data, err := client.ListItemData(ctx, id, page)
+		data, err := client.ListItemData(ctx, id)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list data for ID %s on page %d: %w", id, page, err)
+			return nil, fmt.Errorf("failed to list data for ID %s: %w", id, err)
 		}
 		if len(data) == 0 {
 			break
@@ -2782,7 +2702,7 @@ func (i *Item) ListLoans(ctx context.Context, client Client, itemID ...ID) ([]*L
 	id := i.whichID(itemID...)
 	var allLoans []*Loan
 	for page := 1; ; page++ {
-		loans, err := client.ListItemLoans(ctx, id, page)
+		loans, err := client.ListItemLoans(ctx, id)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list loans for ID %s on page %d: %w", id, page, err)
 		}
@@ -2792,40 +2712,6 @@ func (i *Item) ListLoans(ctx context.Context, client Client, itemID ...ID) ([]*L
 		allLoans = append(allLoans, loans...)
 	}
 	return allLoans, nil
-}
-
-// ListRelatedItems
-func (i *Item) ListRelatedItems(ctx context.Context, client Client, itemID ...ID) ([]*Item, error) {
-	id := i.whichID(itemID...)
-	var allRelatedItems []*Item
-	for page := 1; ; page++ {
-		relatedItems, err := client.ListItemRelatedItems(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list related items for ID %s on page %d: %w", id, page, err)
-		}
-		if len(relatedItems) == 0 {
-			break
-		}
-		allRelatedItems = append(allRelatedItems, relatedItems...)
-	}
-	return allRelatedItems, nil
-}
-
-// ListTags
-func (i *Item) ListTags(ctx context.Context, client Client, itemID ...ID) ([]*Tag, error) {
-	id := i.whichID(itemID...)
-	var allTags []*Tag
-	for page := 1; ; page++ {
-		tags, err := client.ListItemTags(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list tags for ID %s on page %d: %w", id, page, err)
-		}
-		if len(tags) == 0 {
-			break
-		}
-		allTags = append(allTags, tags...)
-	}
-	return allTags, nil
 }
 
 // Patch
@@ -2855,6 +2741,7 @@ func (i *Item) UploadImageByFile(ctx context.Context, client Client, filename st
 	}
 	return client.UploadItemImage(ctx, id, file)
 }
+---- koi-server_test.go ----
 package koiApi
 
 import (
@@ -3139,6 +3026,195 @@ func RemoveAllCollections(t *testing.T, client Client, ctx context.Context) {
 		}
 	}
 }
+---- KoiAuth.go ----
+package koiApi
+
+import (
+	"encoding/json"
+	"flag"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+type koiAuth struct {
+	ServerURL *string `json:"server"`
+	Username  *string `json:"user"`
+	Password  *string `json:"password"`
+}
+
+var flagSets []*flag.FlagSet
+
+var (
+	verbose    bool
+	configFile string = ".koiauth"
+	Auth       koiAuth
+	dprefix    string = "koi-"
+)
+
+func init() {
+	// Temporary variables for flag parsing
+	var serverURL, username, password string
+
+	// Define flags
+	fs := flag.NewFlagSet("koiAuth", flag.ContinueOnError)
+	flagSets = append(flagSets, fs)
+	fs.BoolVar(&verbose, dprefix+"verbose", false, "Enable verbose output")
+	fs.StringVar(&configFile, dprefix+"config", configFile, "Path to config file")
+	fs.StringVar(&serverURL, dprefix+"server", "", "Server URL")
+	fs.StringVar(&username, dprefix+"user", "", "Username")
+	fs.StringVar(&password, dprefix+"password", "", "Password")
+
+	myArgs := filterArgs(fs, os.Args[1:])
+
+	newArgs := os.Args[:]
+	newArgs = removeFlagSetArgs(fs, newArgs[:])
+	os.Args = newArgs
+
+	// Parse os.Args
+	fs.Parse(myArgs)
+
+	// Resolve config file path: use home directory if no '/' in path
+	configPath := configFile
+	if configPath != "" && !strings.Contains(configPath, "/") {
+		home, err := os.UserHomeDir()
+		if err != nil && verbose {
+			fmt.Printf("Error getting home directory: %v\n", err)
+		} else {
+			configPath = filepath.Join(home, configPath)
+		}
+	}
+
+	// Read config file (if it exists) to set auth fields
+	data, err := os.ReadFile(configPath)
+	if err == nil {
+		if err := json.Unmarshal(data, &Auth); err != nil && verbose {
+			fmt.Printf("Error parsing config %s: %v\n", configPath, err)
+		}
+	} else if verbose && !os.IsNotExist(err) {
+		fmt.Printf("Error reading config %s: %v\n", configPath, err)
+	}
+
+	// Override with environment variables (KOI_SERVER, KOI_USER, KOI_PASSWORD)
+	if val, ok := os.LookupEnv("KOI_SERVER"); ok && val != "" {
+		Auth.ServerURL = &val
+	}
+	if val, ok := os.LookupEnv("KOI_USER"); ok && val != "" {
+		Auth.Username = &val
+	}
+	if val, ok := os.LookupEnv("KOI_PASSWORD"); ok && val != "" {
+		Auth.Password = &val
+	}
+
+	// Override with command-line values if provided
+	if serverURL != "" {
+		Auth.ServerURL = &serverURL
+	}
+	if username != "" {
+		Auth.Username = &username
+	}
+	if password != "" {
+		Auth.Password = &password
+	}
+	if verbose {
+		fmt.Printf("Koi auth: %s / %s @ %s\n", *Auth.Username, *Auth.Password, *Auth.ServerURL)
+	}
+}
+
+// Usage prints configuration options for koiAuth
+func KoiAuthUsage() {
+	fmt.Fprintf(os.Stderr, "Configuration options for koiAuth:\n")
+	fmt.Fprintf(os.Stderr, "\nConfig file:\n")
+	fmt.Fprintf(os.Stderr, "  - %s (default: %s in home directory if no '/')\n", dprefix+"config", configFile)
+	fmt.Fprintf(os.Stderr, "    JSON file with fields: server, user, password\n")
+	fmt.Fprintf(os.Stderr, "    Example: ~/.koiauth with {\"server\": \"http://example.com\", \"user\": \"user\", \"password\": \"pass\"}\n")
+	fmt.Fprintf(os.Stderr, "\nEnvironment variables (override config file):\n")
+	fmt.Fprintf(os.Stderr, "  - KOI_SERVER: Server URL\n")
+	fmt.Fprintf(os.Stderr, "  - KOI_USER: Username\n")
+	fmt.Fprintf(os.Stderr, "  - KOI_PASSWORD: Password\n")
+	fmt.Fprintf(os.Stderr, "\nCommand-line flags (override config file and env vars):\n")
+	fmt.Fprintf(os.Stderr, "  - %s: Enable verbose error logging\n", dprefix+"verbose")
+	fmt.Fprintf(os.Stderr, "  - %s: Server URL\n", dprefix+"server")
+	fmt.Fprintf(os.Stderr, "  - %s: Username\n", dprefix+"user")
+	fmt.Fprintf(os.Stderr, "  - %s: Password\n", dprefix+"password")
+	fmt.Fprintf(os.Stderr, "\nPrecedence: config file < environment variables < command-line flags\n")
+}
+
+// filterArgs removes arguments from myArgs whose flag names are not defined in fs.
+// Returns a new slice with only valid flags and non-flag arguments.
+func filterArgs(fs *flag.FlagSet, myArgs []string) []string {
+	// Map of valid flag names in fs
+	validFlags := make(map[string]bool)
+	fs.VisitAll(func(f *flag.Flag) {
+		validFlags[f.Name] = true
+	})
+
+	var filtered []string
+	skipNext := false
+	for i, arg := range myArgs {
+		if skipNext {
+			skipNext = false
+			continue
+		}
+		// Check if arg is a flag (starts with - or --)
+		if strings.HasPrefix(arg, "-") || strings.HasPrefix(arg, "--") {
+			// Extract flag name (strip - or --, handle --flag=value)
+			flagName := strings.TrimPrefix(strings.TrimPrefix(arg, "--"), "-")
+			flagName = strings.Split(flagName, "=")[0]
+			if !validFlags[flagName] {
+				// Skip unrecognized flag and its value if separate (e.g., -flag value)
+				if i+1 < len(myArgs) && !strings.HasPrefix(myArgs[i+1], "-") && !strings.Contains(arg, "=") {
+					skipNext = true
+				}
+				continue
+			}
+		}
+		filtered = append(filtered, arg)
+	}
+	return filtered
+}
+
+// removeFlagSetArgs removes arguments from args that are defined in fs, including their values.
+// Returns a new slice with only unrecognized flags and non-flag arguments.
+func removeFlagSetArgs(fs *flag.FlagSet, args []string) []string {
+	// Map of valid flag names in fs
+	validFlags := make(map[string]bool)
+	fs.VisitAll(func(f *flag.Flag) {
+		validFlags[f.Name] = true
+	})
+
+	var filtered []string
+	skipNext := false
+	for i, arg := range args {
+		if skipNext {
+			skipNext = false
+			continue
+		}
+		// Check if arg is a flag (starts with - or --)
+		if strings.HasPrefix(arg, "-") || strings.HasPrefix(arg, "--") {
+			// Extract flag name (strip - or --, handle --flag=value)
+			flagName := strings.TrimPrefix(strings.TrimPrefix(arg, "--"), "-")
+			flagName = strings.Split(flagName, "=")[0]
+			if validFlags[flagName] {
+				// Skip recognized flag and its value if separate (e.g., -flag value)
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") && !strings.Contains(arg, "=") {
+					skipNext = true
+				}
+				continue
+			}
+		}
+		filtered = append(filtered, arg)
+	}
+	return filtered
+}
+
+func Usage() {
+	for _, f := range flagSets {
+		f.PrintDefaults()
+	}
+}
+---- Loan.go ----
 package koiApi
 
 import (
@@ -3157,6 +3233,7 @@ type LoanInterface interface {
 	List(ctx context.Context, client Client) ([]*Loan, error)                // HTTP GET /api/loans
 	Patch(ctx context.Context, client Client, loanID ...ID) (*Loan, error)   // HTTP PATCH /api/loans/{id}
 	Update(ctx context.Context, client Client, loanID ...ID) (*Loan, error)  // HTTP PUT /api/loans/{id}
+	Summary() string
 }
 
 // Loan represents a loan record in Koillection, combining fields for JSON-LD and API interactions.
@@ -3170,6 +3247,7 @@ type Loan struct {
 	LentAt     time.Time  `json:"lentAt" access:"rw"`               // Loan start date
 	ReturnedAt *time.Time `json:"returnedAt,omitempty" access:"rw"` // Loan return date
 	Owner      *string    `json:"owner,omitempty" access:"ro"`      // Owner IRI
+
 }
 
 // whichID
@@ -3212,9 +3290,9 @@ func (l *Loan) IRI() string {
 func (l *Loan) List(ctx context.Context, client Client) ([]*Loan, error) {
 	var allLoans []*Loan
 	for page := 1; ; page++ {
-		loans, err := client.ListLoans(ctx, page)
+		loans, err := client.ListLoans(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to list loans on page %d: %w", page, err)
+			return nil, fmt.Errorf("failed to list loans: %w", err)
 		}
 		if len(loans) == 0 {
 			break
@@ -3235,6 +3313,7 @@ func (l *Loan) Update(ctx context.Context, client Client, loanID ...ID) (*Loan, 
 	id := l.whichID(loanID...)
 	return client.UpdateLoan(ctx, id, l)
 }
+---- Log.go ----
 package koiApi
 
 import (
@@ -3248,6 +3327,7 @@ type LogInterface interface {
 	Get(ctx context.Context, client Client, logID ...ID) (*Log, error) // HTTP GET /api/logs/{id}
 	IRI() string                                                       // /api/logs/{id}
 	List(ctx context.Context, client Client) ([]*Log, error)           // HTTP GET /api/logs
+	Summary() string
 }
 
 // Log represents an action or event in Koillection, combining fields for JSON-LD and API interactions.
@@ -3263,6 +3343,7 @@ type Log struct {
 	ObjectClass   string    `json:"objectClass" access:"rw"`        // Object class
 	ObjectDeleted bool      `json:"objectDeleted" access:"ro"`      // Deletion status
 	Owner         *string   `json:"owner,omitempty" access:"ro"`    // Owner IRI
+
 }
 
 // whichID
@@ -3286,23 +3367,14 @@ func (l *Log) IRI() string {
 
 // List
 func (l *Log) List(ctx context.Context, client Client) ([]*Log, error) {
-	var allLogs []*Log
-	for page := 1; ; page++ {
-		logs, err := client.ListLogs(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list logs on page %d: %w", page, err)
-		}
-		if len(logs) == 0 {
-			break
-		}
-		allLogs = append(allLogs, logs...)
-	}
-	return allLogs, nil
+	return client.ListLogs(ctx)
 }
+---- Metrics.go ----
 package koiApi
 
 // Metrics represents a map of metrics data.
 type Metrics string // Read-only
+---- Photo.go ----
 package koiApi
 
 import (
@@ -3326,6 +3398,7 @@ type PhotoInterface interface {
 	Update(ctx context.Context, client Client, photoID ...ID) (*Photo, error)                             // HTTP PUT /api/photos/{id}
 	UploadImage(ctx context.Context, client Client, file []byte, photoID ...ID) (*Photo, error)           // HTTP POST /api/photos/{id}/image
 	UploadImageByFile(ctx context.Context, client Client, filename string, photoID ...ID) (*Photo, error) // HTTP POST /api/photos/{id}/image
+	Summary() string
 }
 
 // Photo represents a photo in Koillection, combining fields for JSON-LD and API interactions.
@@ -3348,6 +3421,7 @@ type Photo struct {
 	CreatedAt           time.Time  `json:"createdAt" access:"ro"`                     // Creation timestamp
 	UpdatedAt           *time.Time `json:"updatedAt,omitempty" access:"ro"`           // Update timestamp
 	File                *string    `json:"file,omitempty" access:"wo"`                // Image file data
+
 }
 
 // whichID
@@ -3386,22 +3460,6 @@ func (p *Photo) IRI() string {
 	return fmt.Sprintf("/api/photos/%s", p.ID)
 }
 
-// List
-func (p *Photo) List(ctx context.Context, client Client) ([]*Photo, error) {
-	var allPhotos []*Photo
-	for page := 1; ; page++ {
-		photos, err := client.ListPhotos(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list photos on page %d: %w", page, err)
-		}
-		if len(photos) == 0 {
-			break
-		}
-		allPhotos = append(allPhotos, photos...)
-	}
-	return allPhotos, nil
-}
-
 // Patch
 func (p *Photo) Patch(ctx context.Context, client Client, photoID ...ID) (*Photo, error) {
 	id := p.whichID(photoID...)
@@ -3429,6 +3487,7 @@ func (p *Photo) UploadImageByFile(ctx context.Context, client Client, filename s
 	}
 	return client.UploadPhotoImage(ctx, id, file)
 }
+---- PrintError.go ----
 package koiApi
 
 import (
@@ -3652,6 +3711,7 @@ func (c *httpClient) PrintError(ctx context.Context) {
 	}
 	fmt.Println("Error Response: No error data available")
 }
+---- printStruct.go ----
 package koiApi
 
 import (
@@ -3970,25 +4030,9 @@ func GetItemAndData(ctx context.Context, client Client, itemID ID) (*Item, []*Da
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get item %s: %w", itemID, err)
 	}
-
 	// Fetch all Datum objects associated with the item
-	data, err := client.ListItemData(ctx, itemID, 1)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get data for item %s: %w", itemID, err)
-	}
-
-	// Handle pagination if more data exists
-	var allData []*Datum
-	allData = append(allData, data...)
-	for page := 2; len(data) > 0; page++ {
-		data, err = client.ListItemData(ctx, itemID, page)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to get data page %d for item %s: %w", page, itemID, err)
-		}
-		allData = append(allData, data...)
-	}
-
-	return item, allData, nil
+	data, err := client.ListItemData(ctx, itemID)
+	return item, data, nil
 }
 
 // PrintItemWithData prints the fields of an Item and all associated Datum objects, indenting Datum fields further.
@@ -4109,6 +4153,7 @@ func (w Wish) Print(format string, args ...interface{}) (int, error) {
 func (w Wishlist) Print(format string, args ...interface{}) (int, error) {
 	return printStruct(&w, 4, true, format, args...)
 }
+---- Tag.go ----
 package koiApi
 
 import (
@@ -4131,6 +4176,7 @@ type TagInterface interface {
 	Update(ctx context.Context, client Client, tagID ...ID) (*Tag, error)                             // HTTP PUT /api/tags/{id}
 	UploadImage(ctx context.Context, client Client, file []byte, tagID ...ID) (*Tag, error)           // HTTP POST /api/tags/{id}/image
 	UploadImageByFile(ctx context.Context, client Client, filename string, tagID ...ID) (*Tag, error) // HTTP POST /api/tags/{id}/image
+	Summary() string
 }
 
 // Tag represents a tag in Koillection, combining fields for JSON-LD and API interactions.
@@ -4150,6 +4196,7 @@ type Tag struct {
 	CreatedAt           time.Time  `json:"createdAt" access:"ro"`                     // Creation timestamp
 	UpdatedAt           *time.Time `json:"updatedAt,omitempty" access:"ro"`           // Update timestamp
 	File                *string    `json:"file,omitempty" access:"wo"`                // Image file data
+
 }
 
 // whichID
@@ -4190,35 +4237,13 @@ func (t *Tag) IRI() string {
 
 // List
 func (t *Tag) List(ctx context.Context, client Client) ([]*Tag, error) {
-	var allTags []*Tag
-	for page := 1; ; page++ {
-		tags, err := client.ListTags(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list tags on page %d: %w", page, err)
-		}
-		if len(tags) == 0 {
-			break
-		}
-		allTags = append(allTags, tags...)
-	}
-	return allTags, nil
+	return client.ListTags(ctx)
 }
 
 // ListItems
 func (t *Tag) ListItems(ctx context.Context, client Client, tagID ...ID) ([]*Item, error) {
 	id := t.whichID(tagID...)
-	var allItems []*Item
-	for page := 1; ; page++ {
-		items, err := client.ListTagItems(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list items for ID %s on page %d: %w", id, page, err)
-		}
-		if len(items) == 0 {
-			break
-		}
-		allItems = append(allItems, items...)
-	}
-	return allItems, nil
+	return client.ListTagItems(ctx, id)
 }
 
 // Patch
@@ -4248,6 +4273,7 @@ func (t *Tag) UploadImageByFile(ctx context.Context, client Client, filename str
 	}
 	return client.UploadTagImage(ctx, id, file)
 }
+---- TagCategory.go ----
 package koiApi
 
 import (
@@ -4266,6 +4292,7 @@ type TagCategoryInterface interface {
 	ListTags(ctx context.Context, client Client, tagCategoryID ...ID) ([]*Tag, error)     // HTTP GET /api/tag_categories/{id}/tags
 	Patch(ctx context.Context, client Client, tagCategoryID ...ID) (*TagCategory, error)  // HTTP PATCH /api/tag_categories/{id}
 	Update(ctx context.Context, client Client, tagCategoryID ...ID) (*TagCategory, error) // HTTP PUT /api/tag_categories/{id}
+	Summary() string
 }
 
 // TagCategory represents a tag category in Koillection, combining fields for JSON-LD and API interactions.
@@ -4280,6 +4307,7 @@ type TagCategory struct {
 	Owner       *string    `json:"owner,omitempty" access:"ro"`       // Owner IRI
 	CreatedAt   time.Time  `json:"createdAt" access:"ro"`             // Creation timestamp
 	UpdatedAt   *time.Time `json:"updatedAt,omitempty" access:"ro"`   // Update timestamp
+
 }
 
 // whichID
@@ -4314,35 +4342,13 @@ func (tc *TagCategory) IRI() string {
 
 // List
 func (tc *TagCategory) List(ctx context.Context, client Client) ([]*TagCategory, error) {
-	var allTagCategories []*TagCategory
-	for page := 1; ; page++ {
-		tagCategories, err := client.ListTagCategories(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list tag categories on page %d: %w", page, err)
-		}
-		if len(tagCategories) == 0 {
-			break
-		}
-		allTagCategories = append(allTagCategories, tagCategories...)
-	}
-	return allTagCategories, nil
+	return client.ListTagCategories(ctx)
 }
 
 // ListTags
 func (tc *TagCategory) ListTags(ctx context.Context, client Client, tagCategoryID ...ID) ([]*Tag, error) {
 	id := tc.whichID(tagCategoryID...)
-	var allTags []*Tag
-	for page := 1; ; page++ {
-		tags, err := client.ListTagCategoryTags(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list tags for ID %s on page %d: %w", id, page, err)
-		}
-		if len(tags) == 0 {
-			break
-		}
-		allTags = append(allTags, tags...)
-	}
-	return allTags, nil
+	return client.ListTagCategoryTags(ctx, id)
 }
 
 // Patch
@@ -4356,6 +4362,7 @@ func (tc *TagCategory) Update(ctx context.Context, client Client, tagCategoryID 
 	id := tc.whichID(tagCategoryID...)
 	return client.UpdateTagCategory(ctx, id, tc)
 }
+---- Template.go ----
 package koiApi
 
 import (
@@ -4373,6 +4380,7 @@ type TemplateInterface interface {
 	List(ctx context.Context, client Client) ([]*Template, error)                   // HTTP GET /api/templates
 	Patch(ctx context.Context, client Client, templateID ...ID) (*Template, error)  // HTTP PATCH /api/templates/{id}
 	Update(ctx context.Context, client Client, templateID ...ID) (*Template, error) // HTTP PUT /api/templates/{id}
+	Summary() string
 }
 
 // Template represents a template in Koillection, combining fields for JSON-LD and API interactions.
@@ -4385,6 +4393,7 @@ type Template struct {
 	Owner     *string    `json:"owner,omitempty" access:"ro"`     // Owner IRI
 	CreatedAt time.Time  `json:"createdAt" access:"ro"`           // Creation timestamp
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" access:"ro"` // Update timestamp
+
 }
 
 // whichID
@@ -4419,18 +4428,7 @@ func (t *Template) IRI() string {
 
 // List
 func (t *Template) List(ctx context.Context, client Client) ([]*Template, error) {
-	var allTemplates []*Template
-	for page := 1; ; page++ {
-		templates, err := client.ListTemplates(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list templates on page %d: %w", page, err)
-		}
-		if len(templates) == 0 {
-			break
-		}
-		allTemplates = append(allTemplates, templates...)
-	}
-	return allTemplates, nil
+	return client.ListTemplates(ctx)
 }
 
 // Patch
@@ -4444,6 +4442,7 @@ func (t *Template) Update(ctx context.Context, client Client, templateID ...ID) 
 	id := t.whichID(templateID...)
 	return client.UpdateTemplate(ctx, id, t)
 }
+---- User.go ----
 package koiApi
 
 import (
@@ -4457,6 +4456,7 @@ type UserInterface interface {
 	Get(ctx context.Context, client Client, userID ...ID) (*User, error) // HTTP GET /api/users/{id}
 	IRI() string                                                         // /api/users/{id}
 	List(ctx context.Context, client Client) ([]*User, error)            // HTTP GET /api/users
+	Summary() string
 }
 
 // User represents a user in Koillection, combining fields for JSON-LD and API interactions.
@@ -4490,6 +4490,7 @@ type User struct {
 	SearchResultsDisplayMode     string     `json:"searchResultsDisplayMode" access:"rw"`     // Search display mode
 	CreatedAt                    time.Time  `json:"createdAt" access:"ro"`                    // Creation timestamp
 	UpdatedAt                    *time.Time `json:"updatedAt,omitempty" access:"ro"`          // Update timestamp
+
 }
 
 // whichID
@@ -4513,19 +4514,419 @@ func (u *User) IRI() string {
 
 // List
 func (u *User) List(ctx context.Context, client Client) ([]*User, error) {
-	var allUsers []*User
-	for page := 1; ; page++ {
-		users, err := client.ListUsers(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list users on page %d: %w", page, err)
-		}
-		if len(users) == 0 {
-			break
-		}
-		allUsers = append(allUsers, users...)
-	}
-	return allUsers, nil
+	return client.ListUsers(ctx)
 }
+---- utils.go ----
+package koiApi
+
+import "fmt"
+
+func (a *Album) Summary() string {
+	return fmt.Sprintf("%-40s %s", a.Title, a.ID)
+}
+
+func (cl *ChoiceList) Summary() string {
+	return fmt.Sprintf("%-40s %s", cl.Name, cl.ID)
+}
+
+func (c *Collection) Summary() string {
+	return fmt.Sprintf("%-40s %s", c.Title, c.ID)
+}
+
+func (d *Datum) Summary() string {
+	return fmt.Sprintf("%-40s %s", d.Label, d.ID)
+}
+
+func (f *Field) Summary() string {
+	return fmt.Sprintf("%-40s %s", f.Name, f.ID)
+}
+
+func (i *Inventory) Summary() string {
+	return fmt.Sprintf("%-40s %s", i.Name, i.ID)
+}
+
+func (i *Item) Summary() string {
+	return fmt.Sprintf("%-40s %s", i.Name, i.ID)
+}
+
+func (l *Loan) Summary() string {
+	return fmt.Sprintf("%-40s %s", l.LentTo, l.ID)
+}
+
+func (l *Log) Summary() string {
+	return fmt.Sprintf("%-40s %s", l.ObjectLabel, l.ID)
+}
+
+func (m *Metrics) Summary() string {
+	return fmt.Sprintf("%-40s %s", string(*m), "")
+}
+
+func (p *Photo) Summary() string {
+	return fmt.Sprintf("%-40s %s", p.Title, p.ID)
+}
+
+func (t *Tag) Summary() string {
+	return fmt.Sprintf("%-40s %s", t.Label, t.ID)
+}
+
+func (tc *TagCategory) Summary() string {
+	return fmt.Sprintf("%-40s %s", tc.Label, tc.ID)
+}
+
+func (t *Template) Summary() string {
+	return fmt.Sprintf("%-40s %s", t.Name, t.ID)
+}
+
+func (u *User) Summary() string {
+	return fmt.Sprintf("%-40s %s", u.Username, u.ID)
+}
+
+func (w *Wish) Summary() string {
+	return fmt.Sprintf("%-40s %s", w.Name, w.ID)
+}
+
+func (w *Wishlist) Summary() string {
+	return fmt.Sprintf("%-40s %s", w.Name, w.ID)
+}
+---- Validate.go ----
+package koiApi
+
+import (
+	"fmt"
+	"strings"
+)
+
+// validateItem enforces schema restrictions for Item creation, collecting all validation errors.
+func (c *httpClient) validateItem(item *Item) error {
+	var errs []string
+
+	// name is required, type string; see components.schemas.Item-item.write.required
+	if item.Name == "" {
+		errs = append(errs, "item name is required")
+	}
+	// collection is required, type string or null (IRI); see components.schemas.Item-item.write.required
+	if item.Collection == nil || *item.Collection == "" {
+		errs = append(errs, "item collection IRI is required")
+	}
+	// quantity minimum 1, type integer; see components.schemas.Item-item.write.properties.quantity
+	if item.Quantity < 1 {
+		item.Quantity = 1 // The API says it should use a default of 1, but errors out instead
+		//errs = append(errs, "item quantity must be at least 1")
+	}
+	// visibility enum ["public", "internal", "private"]; see components.schemas.Item-item.write.properties.visibility
+	if item.Visibility != "" {
+		switch item.Visibility {
+		case VisibilityPublic, VisibilityInternal, VisibilityPrivate:
+			// Valid
+		default:
+			errs = append(errs, fmt.Sprintf("invalid visibility: %s; must be public, internal, or private", item.Visibility))
+		}
+	}
+
+	if len(errs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
+	}
+	return nil
+}
+
+// validateAlbum enforces schema restrictions for Album creation, collecting all validation errors.
+func (c *httpClient) validateAlbum(album *Album) error {
+	var errs []string
+	// title is required, type string; see components.schemas.Album-album.write.required
+	if album.Title == "" {
+		errs = append(errs, "album title is required")
+	}
+	// visibility enum ["public", "internal", "private"]; see components.schemas.Album-album.write.properties.visibility
+	if album.Visibility != "" {
+		switch album.Visibility {
+		case VisibilityPublic, VisibilityInternal, VisibilityPrivate:
+		default:
+			errs = append(errs, fmt.Sprintf("invalid visibility: %s; must be public, internal, or private", album.Visibility))
+		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
+	}
+	return nil
+}
+
+// validateChoiceList enforces schema restrictions for ChoiceList creation, collecting all validation errors.
+func (c *httpClient) validateChoiceList(choiceList *ChoiceList) error {
+	var errs []string
+	// choices array of unique strings; see components.schemas.ChoiceList-choiceList.write.properties.choices
+	if len(choiceList.Choices) > 0 {
+		seen := make(map[string]struct{})
+		for _, choice := range choiceList.Choices {
+			if _, exists := seen[choice]; exists {
+				errs = append(errs, fmt.Sprintf("duplicate choice found: %s", choice))
+			}
+			seen[choice] = struct{}{}
+		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
+	}
+	return nil
+}
+
+// validateCollection enforces schema restrictions for Collection creation, collecting all validation errors.
+func (c *httpClient) validateCollection(collection *Collection) error {
+	var errs []string
+	// title is required, type string; see components.schemas.Collection-collection.write.required
+	if collection.Title == "" {
+		errs = append(errs, "collection title is required")
+	}
+	// visibility enum ["public", "internal", "private"]; see components.schemas.Collection-collection.write.properties.visibility
+	if collection.Visibility != "" {
+		switch collection.Visibility {
+		case VisibilityPublic, VisibilityInternal, VisibilityPrivate:
+		default:
+			errs = append(errs, fmt.Sprintf("invalid visibility: %s; must be public, internal, or private", collection.Visibility))
+		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
+	}
+	return nil
+}
+
+// validateDatum enforces schema restrictions for Datum creation, collecting all validation errors.
+func (c *httpClient) validateDatum(datum *Datum) error {
+	var errs []string
+	// type is required, enum; see components.schemas.Datum-datum.write.required
+	if datum.DatumType == "" {
+		errs = append(errs, "datum type is required")
+	} else {
+		validTypes := []string{"text", "textarea", "country", "date", "rating", "number", "price", "link", "list", "choice-list", "checkbox", "image", "file", "sign", "video", "blank-line", "section"}
+		valid := false
+		for _, t := range validTypes {
+			if string(datum.DatumType) == t {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			errs = append(errs, fmt.Sprintf("invalid datum type: %s; must be one of %v", datum.DatumType, validTypes))
+		}
+	}
+	// label is required, type string; see components.schemas.Datum-datum.write.required
+	if datum.Label == "" {
+		errs = append(errs, "datum label is required")
+	}
+	// visibility enum ["public", "internal", "private"]; see components.schemas.Datum-datum.write.properties.visibility
+	if datum.Visibility != "" {
+		switch datum.Visibility {
+		case VisibilityPublic, VisibilityInternal, VisibilityPrivate:
+		default:
+			errs = append(errs, fmt.Sprintf("invalid visibility: %s; must be public, internal, or private", datum.Visibility))
+		}
+	}
+	// currency follows https://schema.org/priceCurrency; see components.schemas.Datum-datum.write.properties.currency
+	if datum.Currency != nil && *datum.Currency != "" {
+		if !validateCurrency(*datum.Currency) {
+			errs = append(errs, fmt.Sprintf("invalid currency code: %s", *datum.Currency))
+		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
+	}
+	return nil
+}
+
+// validateField enforces schema restrictions for Field creation, collecting all validation errors.
+func (c *httpClient) validateField(field *Field) error {
+	var errs []string
+	// name is required, type string; see components.schemas.Field-field.write.required
+	if field.Name == "" {
+		errs = append(errs, "field name is required")
+	}
+	// position is required, type integer; see components.schemas.Field-field.write.required
+	//if field.Position == nil {
+	//	errs = append(errs, "field position is required")
+	//}
+	// type is required, enum; see components.schemas.Field-field.write.required
+	if field.FieldType == "" {
+		errs = append(errs, "field type is required")
+	} else {
+		validTypes := []string{"text", "textarea", "country", "date", "rating", "number", "price", "link", "list", "choice-list", "checkbox", "image", "file", "sign", "video", "blank-line", "section"}
+		valid := false
+		for _, t := range validTypes {
+			if string(field.FieldType) == t {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			errs = append(errs, fmt.Sprintf("invalid field type: %s; must be one of %v", field.FieldType, validTypes))
+		}
+	}
+	// template is required, type string or null (IRI); see components.schemas.Field-field.write.required
+	if field.Template == nil {
+		errs = append(errs, "field template IRI is required")
+	}
+	// visibility enum ["public", "internal", "private"]; see components.schemas.Field-field.write.properties.visibility
+	if field.Visibility != "" {
+		switch field.Visibility {
+		case VisibilityPublic, VisibilityInternal, VisibilityPrivate:
+		default:
+			errs = append(errs, fmt.Sprintf("invalid visibility: %s; must be public, internal, or private", field.Visibility))
+		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
+	}
+	return nil
+}
+
+// validateLoan enforces schema restrictions for Loan creation, collecting all validation errors.
+func (c *httpClient) validateLoan(loan *Loan) error {
+	var errs []string
+	// item is required, type string or null (IRI); see components.schemas.Loan-loan.write.required
+	if loan.Item == nil {
+		errs = append(errs, "loan item IRI is required")
+	}
+	// lentTo is required, type string; see components.schemas.Loan-loan.write.required
+	if loan.LentTo == "" {
+		errs = append(errs, "loan lentTo is required")
+	}
+	// lentAt is required, type string, format date-time; see components.schemas.Loan-loan.write.required
+	if loan.LentAt.IsZero() {
+		errs = append(errs, "loan lentAt is required")
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
+	}
+	return nil
+}
+
+// validatePhoto enforces schema restrictions for Photo creation, collecting all validation errors.
+func (c *httpClient) validatePhoto(photo *Photo) error {
+	var errs []string
+	// title is required, type string; see components.schemas.Photo-photo.write.required
+	if photo.Title == "" {
+		errs = append(errs, "photo title is required")
+	}
+	// album is required, type string or null (IRI); see components.schemas.Photo-photo.write.required
+	if photo.Album == nil {
+		errs = append(errs, "photo album IRI is required")
+	}
+	// visibility enum ["public", "internal", "private"]; see components.schemas.Photo-photo.write.properties.visibility
+	if photo.Visibility != "" {
+		switch photo.Visibility {
+		case VisibilityPublic, VisibilityInternal, VisibilityPrivate:
+		default:
+			errs = append(errs, fmt.Sprintf("invalid visibility: %s; must be public, internal, or private", photo.Visibility))
+		}
+	}
+	// takenAt type string or null, format date-time; see components.schemas.Photo-photo.write.properties.takenAt
+	if photo.TakenAt != nil && photo.TakenAt.IsZero() {
+		errs = append(errs, "invalid takenAt: must be a valid date-time or null")
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
+	}
+	return nil
+}
+
+// validateTag enforces schema restrictions for Tag creation, collecting all validation errors.
+func (c *httpClient) validateTag(tag *Tag) error {
+	var errs []string
+	// label is required, type string; see components.schemas.Tag-tag.write.required
+	if tag.Label == "" {
+		errs = append(errs, "tag label is required")
+	}
+	// visibility enum ["public", "internal", "private"]; see components.schemas.Tag-tag.write.properties.visibility
+	if tag.Visibility != "" {
+		switch tag.Visibility {
+		case VisibilityPublic, VisibilityInternal, VisibilityPrivate:
+		default:
+			errs = append(errs, fmt.Sprintf("invalid visibility: %s; must be public, internal, or private", tag.Visibility))
+		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
+	}
+	return nil
+}
+
+// validateTagCategory enforces schema restrictions for TagCategory creation, collecting all validation errors.
+func (c *httpClient) validateTagCategory(category *TagCategory) error {
+	var errs []string
+	// label is required, type string; see components.schemas.TagCategory-tagCategory.write.required
+	if category.Label == "" {
+		errs = append(errs, "tag category label is required")
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
+	}
+	return nil
+}
+
+// validateTemplate enforces schema restrictions for Template creation, collecting all validation errors.
+func (c *httpClient) validateTemplate(template *Template) error {
+	var errs []string
+	// name is required, type string; see components.schemas.Template-template.write.required
+	if template.Name == "" {
+		errs = append(errs, "template name is required")
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
+	}
+	return nil
+}
+
+// validateWish enforces schema restrictions for Wish creation, collecting all validation errors.
+func (c *httpClient) validateWish(wish *Wish) error {
+	var errs []string
+	// name is required, type string; see components.schemas.Wish-wish.write.required
+	if wish.Name == "" {
+		errs = append(errs, "wish name is required")
+	}
+	// wishlist is required, type string or null (IRI); see components.schemas.Wish-wish.write.required
+	if wish.Wishlist == nil {
+		errs = append(errs, "wish wishlist IRI is required")
+	}
+	// visibility enum ["public", "internal", "private"]; see components.schemas.Wish-wish.write.properties.visibility
+	if wish.Visibility != "" {
+		switch wish.Visibility {
+		case VisibilityPublic, VisibilityInternal, VisibilityPrivate:
+		default:
+			errs = append(errs, fmt.Sprintf("invalid visibility: %s; must be public, internal, or private", wish.Visibility))
+		}
+	}
+	// currency follows https://schema.org/priceCurrency; see components.schemas.Wish-wish.write.properties.currency
+	if wish.Currency != nil && *wish.Currency != "" {
+		if !validateCurrency(*wish.Currency) {
+			errs = append(errs, fmt.Sprintf("invalid currency code: %s", *wish.Currency))
+		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
+	}
+	return nil
+}
+
+// validateWishlist enforces schema restrictions for Wishlist creation, collecting all validation errors.
+func (c *httpClient) validateWishlist(wishlist *Wishlist) error {
+	var errs []string
+	// name is required, type string; see components.schemas.Wishlist-wishlist.write.required
+	if wishlist.Name == "" {
+		errs = append(errs, "wishlist name is required")
+	}
+	// visibility enum ["public", "internal", "private"]; see components.schemas.Wishlist-wishlist.write.properties.visibility
+	if wishlist.Visibility != "" {
+		switch wishlist.Visibility {
+		case VisibilityPublic, VisibilityInternal, VisibilityPrivate:
+		default:
+			errs = append(errs, fmt.Sprintf("invalid visibility: %s; must be public, internal, or private", wishlist.Visibility))
+		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("validation failed: %s", strings.Join(errs, "; "))
+	}
+	return nil
+}
+---- Visibility.go ----
 package koiApi
 
 // Visibility represents the visibility level of a resource.
@@ -4540,6 +4941,7 @@ const (
 func (v Visibility) String() string {
 	return string(v)
 }
+---- Wish.go ----
 package koiApi
 
 import (
@@ -4561,6 +4963,7 @@ type WishInterface interface {
 	Update(ctx context.Context, client Client, wishID ...ID) (*Wish, error)                             // HTTP PUT /api/wishes/{id}
 	UploadImage(ctx context.Context, client Client, file []byte, wishID ...ID) (*Wish, error)           // HTTP POST /api/wishes/{id}/image
 	UploadImageByFile(ctx context.Context, client Client, filename string, wishID ...ID) (*Wish, error) // HTTP POST /api/wishes/{id}/image
+	Summary() string
 }
 
 // Wish represents a wish in Koillection, combining fields for JSON-LD and API interactions.
@@ -4585,6 +4988,7 @@ type Wish struct {
 	CreatedAt           time.Time  `json:"createdAt" access:"ro"`                     // Creation timestamp
 	UpdatedAt           *time.Time `json:"updatedAt,omitempty" access:"ro"`           // Update timestamp
 	File                *string    `json:"file,omitempty" access:"wo"`                // Image file data
+
 }
 
 // whichID
@@ -4625,18 +5029,7 @@ func (w *Wish) IRI() string {
 
 // List
 func (w *Wish) List(ctx context.Context, client Client) ([]*Wish, error) {
-	var allWishes []*Wish
-	for page := 1; ; page++ {
-		wishes, err := client.ListWishes(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list wishes on page %d: %w", page, err)
-		}
-		if len(wishes) == 0 {
-			break
-		}
-		allWishes = append(allWishes, wishes...)
-	}
-	return allWishes, nil
+	return client.ListWishes(ctx)
 }
 
 // Patch
@@ -4666,6 +5059,7 @@ func (w *Wish) UploadImageByFile(ctx context.Context, client Client, filename st
 	}
 	return client.UploadWishImage(ctx, id, file)
 }
+---- Wishlist.go ----
 package koiApi
 
 import (
@@ -4689,6 +5083,7 @@ type WishlistInterface interface {
 	Update(ctx context.Context, client Client, wishlistID ...ID) (*Wishlist, error)                             // HTTP PUT /api/wishlists/{id}
 	UploadImage(ctx context.Context, client Client, file []byte, wishlistID ...ID) (*Wishlist, error)           // HTTP POST /api/wishlists/{id}/image
 	UploadImageByFile(ctx context.Context, client Client, filename string, wishlistID ...ID) (*Wishlist, error) // HTTP POST /api/wishlists/{id}/image
+	Summary() string
 }
 
 // Wishlist represents a wishlist in Koillection, combining fields for JSON-LD and API interactions.
@@ -4710,6 +5105,7 @@ type Wishlist struct {
 	UpdatedAt        *time.Time `json:"updatedAt,omitempty" access:"ro"`        // Update timestamp
 	File             *string    `json:"file,omitempty" access:"wo"`             // Image file data
 	DeleteImage      *bool      `json:"deleteImage,omitempty" access:"wo"`      // Flag to delete image
+
 }
 
 // whichID
@@ -4750,52 +5146,19 @@ func (w *Wishlist) IRI() string {
 
 // List
 func (w *Wishlist) List(ctx context.Context, client Client) ([]*Wishlist, error) {
-	var allWishlists []*Wishlist
-	for page := 1; ; page++ {
-		wishlists, err := client.ListWishlists(ctx, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list wishlists on page %d: %w", page, err)
-		}
-		if len(wishlists) == 0 {
-			break
-		}
-		allWishlists = append(allWishlists, wishlists...)
-	}
-	return allWishlists, nil
+	return client.ListWishlists(ctx)
 }
 
 // ListChildren
 func (w *Wishlist) ListChildren(ctx context.Context, client Client, wishlistID ...ID) ([]*Wishlist, error) {
 	id := w.whichID(wishlistID...)
-	var allChildren []*Wishlist
-	for page := 1; ; page++ {
-		children, err := client.ListWishlistChildren(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list child wishlists for ID %s on page %d: %w", id, page, err)
-		}
-		if len(children) == 0 {
-			break
-		}
-		allChildren = append(allChildren, children...)
-	}
-	return allChildren, nil
+	return client.ListWishlistChildren(ctx, id)
 }
 
 // ListWishes
 func (w *Wishlist) ListWishes(ctx context.Context, client Client, wishlistID ...ID) ([]*Wish, error) {
 	id := w.whichID(wishlistID...)
-	var allWishes []*Wish
-	for page := 1; ; page++ {
-		wishes, err := client.ListWishlistWishes(ctx, id, page)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list wishes for ID %s on page %d: %w", id, page, err)
-		}
-		if len(wishes) == 0 {
-			break
-		}
-		allWishes = append(allWishes, wishes...)
-	}
-	return allWishes, nil
+	return client.ListWishlistWishes(ctx, id)
 }
 
 // Patch
