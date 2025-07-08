@@ -6,7 +6,7 @@ import (
 )
 
 type Client interface {
-	CheckLogin(ctx context.Context, username, password string) (string, error)                       // HTTP POST /api/authentication_token
+	CheckLogin(ctx context.Context) (string, error)                                                  // HTTP POST /api/authentication_token
 	GetMetrics(ctx context.Context) (*Metrics, error)                                                // HTTP GET /api/metrics
 	CreateAlbum(ctx context.Context, album *Album) (*Album, error)                                   // HTTP POST /api/albums
 	GetAlbum(ctx context.Context, id ID) (*Album, error)                                             // HTTP GET /api/albums/{id}
@@ -64,6 +64,7 @@ type Client interface {
 	UpdateItem(ctx context.Context, id ID, item *Item) (*Item, error)                                // HTTP PUT /api/items/{id}
 	PatchItem(ctx context.Context, id ID, item *Item) (*Item, error)                                 // HTTP PATCH /api/items/{id}
 	DeleteItem(ctx context.Context, id ID) error                                                     // HTTP DELETE /api/items/{id}
+	SearchItems(ctx context.Context, queryParams ...string) ([]*Item, error)                         // HTTP GET /search
 	UploadItemImage(ctx context.Context, id ID, file []byte) (*Item, error)                          // HTTP POST /api/items/{id}/image
 	ListItemRelatedItems(ctx context.Context, id ID, queryParams ...string) ([]*Item, error)         // HTTP GET /api/items/{id}/related_items
 	ListItemLoans(ctx context.Context, id ID, queryParams ...string) ([]*Loan, error)                // HTTP GET /api/items/{id}/loans
@@ -615,6 +616,15 @@ func (c *httpClient) GetItem(ctx context.Context, id ID) (*Item, error) {
 func (c *httpClient) ListItems(ctx context.Context, queryParams ...string) ([]*Item, error) {
 	var items []*Item
 	if err := c.listResources(ctx, "/api/items", &items, queryParams...); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+// SearchItems retrieves a list of items that match a query
+func (c *httpClient) SearchItems(ctx context.Context, queryParams ...string) ([]*Item, error) {
+	var items []*Item
+	if err := c.listResources(ctx, "/search", &items, queryParams...); err != nil {
 		return nil, err
 	}
 	return items, nil
