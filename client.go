@@ -52,6 +52,7 @@ type httpClient struct {
 	lastError       error
 	lastRequest     *http.Request
 	lastRequestBody []byte
+	lastRequestURL  *string
 	lastResponse    *http.Response
 	koiError        *KoiError
 	rawError        string
@@ -156,6 +157,8 @@ func (c *httpClient) doRequest(ctx context.Context, method, path string, body io
 	c.lastError = err
 	c.lastRequest = req
 	c.lastRequestBody = bodyBytes
+	s := fmt.Sprintf("%s%s", c.baseURL, path)
+	c.lastRequestURL = &s
 	c.lastResponse = resp
 	c.koiError = nil
 	c.rawError = ""
