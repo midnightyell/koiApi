@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -84,16 +85,57 @@ func NewHTTPClient(baseURL string, timeout time.Duration) Client {
 
 // GetResponse retrieves the response from the httpClient struct.
 func (c *httpClient) GetResponse(ctx context.Context) string {
+	if verbose {
+		fmt.Fprintln(os.Stderr, "--------------------------------------------------------")
+		// Print request headers
+		if c.lastRequest != nil {
+			fmt.Fprintf(os.Stderr, "Request URL: %s\n", c.lastRequest.URL.String())
+			fmt.Fprintf(os.Stderr, "Request Method: %s\n", c.lastRequest.Method)
+			for key, values := range c.lastRequest.Header {
+				for _, value := range values {
+					fmt.Fprintf(os.Stderr, "Request Header: %s: %s\n", key, value)
+				}
+			}
+			if len(c.lastRequestBody) > 0 {
+				fmt.Fprintf(os.Stderr, "Request Body: %s\n", string(c.lastRequestBody))
+			}
+		}
+	}
+
 	if c.koiError != nil {
 		// Return the structured error if available.
 		errBytes, err := json.MarshalIndent(c.koiError, "", "  ")
 		if err != nil {
 			return fmt.Sprintf("Error marshaling KoiError: %v\nRaw Error: %s", err, c.rawError)
 		}
+		if verbose {
+			// Print response headers
+			if c.lastResponse != nil {
+				fmt.Fprintf(os.Stderr, "Response Status: %s\n", c.lastResponse.Status)
+				for key, values := range c.lastResponse.Header {
+					for _, value := range values {
+						fmt.Fprintf(os.Stderr, "Response Header: %s: %s\n", key, value)
+					}
+				}
+				fmt.Fprintf(os.Stderr, "Response Body: %s\n", string(errBytes))
+				fmt.Fprintln(os.Stderr, "----------")
+			}
+		}
 		return fmt.Sprintf("Response Status: %s\nBody: %s", c.lastResponse.Status, string(errBytes))
 	}
 	if c.rawError != "" {
 		// Return the raw error text.
+		if verbose && c.lastResponse != nil {
+			// Print response headers
+			fmt.Fprintf(os.Stderr, "Response Status: %s\n", c.lastResponse.Status)
+			for key, values := range c.lastResponse.Header {
+				for _, value := range values {
+					fmt.Fprintf(os.Stderr, "Response Header: %s: %s\n", key, value)
+				}
+			}
+			fmt.Fprintf(os.Stderr, "Response Body: %s\n", c.rawError)
+			fmt.Fprintln(os.Stderr, "----------")
+		}
 		return fmt.Sprintf("Response Status: %s\nBody: %s", c.lastResponse.Status, c.rawError)
 	}
 	if c.lastResponse == nil {
@@ -104,6 +146,17 @@ func (c *httpClient) GetResponse(ctx context.Context) string {
 	c.lastResponse.Body = io.NopCloser(bytes.NewReader(body))
 	if err != nil {
 		return fmt.Sprintf("Error reading response body: %v\nRaw Error: %s", err, c.rawError)
+	}
+	if verbose {
+		// Print response headers
+		fmt.Fprintf(os.Stderr, "Response Status: %s\n", c.lastResponse.Status)
+		for key, values := range c.lastResponse.Header {
+			for _, value := range values {
+				fmt.Fprintf(os.Stderr, "Response Header: %s: %s\n", key, value)
+			}
+		}
+		fmt.Fprintf(os.Stderr, "Response Body: %s\n", string(body))
+		fmt.Fprintln(os.Stderr, "---------------------------------------------------")
 	}
 	return fmt.Sprintf("Response Status: %s\nBody: %s", c.lastResponse.Status, string(body))
 }

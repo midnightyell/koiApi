@@ -615,7 +615,7 @@ func (c *httpClient) GetItem(ctx context.Context, id ID) (*Item, error) {
 // ListItems retrieves a list of items.
 func (c *httpClient) ListItems(ctx context.Context, queryParams ...string) ([]*Item, error) {
 	var items []*Item
-	if err := c.listResources(ctx, "/api/items/search", &items, queryParams...); err != nil {
+	if err := c.listResources(ctx, "/api/items", &items, queryParams...); err != nil {
 		return nil, err
 	}
 	return items, nil

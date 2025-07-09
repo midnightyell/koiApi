@@ -102,8 +102,6 @@ func replaceNonPrintableElements(data interface{}) (interface{}, error) {
 
 // PrintError prints the request headers, request body, response headers, response body, and error struct or raw error text from the httpClient struct to stdout.
 func (c *httpClient) PrintError(ctx context.Context) {
-	const maxFieldSize = 1024 // Threshold for large fields in bytes.
-
 	fmt.Println("Last request URL:\n   ", *c.lastRequestURL)
 	decoded, _ := url.QueryUnescape(*c.lastRequestURL)
 	fmt.Println("    ", decoded)
@@ -115,15 +113,22 @@ func (c *httpClient) PrintError(ctx context.Context) {
 	} else {
 		for key, values := range c.lastRequest.Header {
 			joinedValue := strings.Join(values, ", ")
-			prefix, remaining, nonPrintable := hasNonPrintable(joinedValue)
-			if len(joinedValue) > maxFieldSize || nonPrintable {
-				if prefix == "" {
-					fmt.Printf("  %s: <%d bytes of data>\n", key, len(joinedValue))
-				} else {
-					fmt.Printf("  %s: %s<%d bytes of data>\n", key, prefix, remaining)
-				}
-			} else {
+			if verbose {
+				// Print full header value when verbose is true
 				fmt.Printf("  %s: %s\n", key, joinedValue)
+			} else {
+				// Original logic with truncation and non-printable handling
+				const maxFieldSize = 1024 // Threshold for large fields in bytes.
+				prefix, remaining, nonPrintable := hasNonPrintable(joinedValue)
+				if len(joinedValue) > maxFieldSize || nonPrintable {
+					if prefix == "" {
+						fmt.Printf("  %s: <%d bytes of data>\n", key, len(joinedValue))
+					} else {
+						fmt.Printf("  %s: %s<%d bytes of data>\n", key, prefix, remaining)
+					}
+				} else {
+					fmt.Printf("  %s: %s\n", key, joinedValue)
+				}
 			}
 		}
 	}
@@ -133,19 +138,33 @@ func (c *httpClient) PrintError(ctx context.Context) {
 	if c.lastRequestBody == nil {
 		fmt.Println("  No body")
 	} else {
-		var jsonData interface{}
-		if err := json.Unmarshal(c.lastRequestBody, &jsonData); err == nil {
-			// If body is valid JSON, replace elements with non-printable characters and limit arrays.
-			modifiedData, _ := replaceNonPrintableElements(jsonData)
-			prettyJSON, err := json.MarshalIndent(modifiedData, "  ", "  ")
-			if err == nil {
-				fmt.Printf("  %s\n", string(prettyJSON))
+		if verbose {
+			// Print full body, attempting JSON formatting if possible
+			var jsonData interface{}
+			if err := json.Unmarshal(c.lastRequestBody, &jsonData); err == nil {
+				prettyJSON, err := json.MarshalIndent(jsonData, "  ", "  ")
+				if err == nil {
+					fmt.Printf("  %s\n", string(prettyJSON))
+				} else {
+					fmt.Printf("  %s\n", string(c.lastRequestBody))
+				}
+			} else {
+				fmt.Printf("  %s\n", string(c.lastRequestBody))
+			}
+		} else {
+			// Original logic with non-printable handling
+			var jsonData interface{}
+			if err := json.Unmarshal(c.lastRequestBody, &jsonData); err == nil {
+				modifiedData, _ := replaceNonPrintableElements(jsonData)
+				prettyJSON, err := json.MarshalIndent(modifiedData, "  ", "  ")
+				if err == nil {
+					fmt.Printf("  %s\n", string(prettyJSON))
+				} else {
+					fmt.Printf("  %s\n", sanitizeNonJSONBody(string(c.lastRequestBody)))
+				}
 			} else {
 				fmt.Printf("  %s\n", sanitizeNonJSONBody(string(c.lastRequestBody)))
 			}
-		} else {
-			// If not JSON, use printable prefix and placeholder.
-			fmt.Printf("  %s\n", sanitizeNonJSONBody(string(c.lastRequestBody)))
 		}
 	}
 
@@ -156,15 +175,22 @@ func (c *httpClient) PrintError(ctx context.Context) {
 	} else {
 		for key, values := range c.lastResponse.Header {
 			joinedValue := strings.Join(values, ", ")
-			prefix, remaining, nonPrintable := hasNonPrintable(joinedValue)
-			if len(joinedValue) > maxFieldSize || nonPrintable {
-				if prefix == "" {
-					fmt.Printf("  %s: <%d bytes of data>\n", key, len(joinedValue))
-				} else {
-					fmt.Printf("  %s: %s<%d bytes of data>\n", key, prefix, remaining)
-				}
-			} else {
+			if verbose {
+				// Print full header value when verbose is true
 				fmt.Printf("  %s: %s\n", key, joinedValue)
+			} else {
+				// Original logic with truncation and non-printable handling
+				const maxFieldSize = 1024 // Threshold for large fields in bytes.
+				prefix, remaining, nonPrintable := hasNonPrintable(joinedValue)
+				if len(joinedValue) > maxFieldSize || nonPrintable {
+					if prefix == "" {
+						fmt.Printf("  %s: <%d bytes of data>\n", key, len(joinedValue))
+					} else {
+						fmt.Printf("  %s: %s<%d bytes of data>\n", key, prefix, remaining)
+					}
+				} else {
+					fmt.Printf("  %s: %s\n", key, joinedValue)
+				}
 			}
 		}
 	}
@@ -174,19 +200,33 @@ func (c *httpClient) PrintError(ctx context.Context) {
 	if c.rawError == "" {
 		fmt.Println("  No body")
 	} else {
-		var jsonData interface{}
-		if err := json.Unmarshal([]byte(c.rawError), &jsonData); err == nil {
-			// If rawError is valid JSON, replace elements with non-printable characters and limit arrays.
-			modifiedData, _ := replaceNonPrintableElements(jsonData)
-			prettyJSON, err := json.MarshalIndent(modifiedData, "  ", "  ")
-			if err == nil {
-				fmt.Printf("  %s\n", string(prettyJSON))
+		if verbose {
+			// Print full body, attempting JSON formatting if possible
+			var jsonData interface{}
+			if err := json.Unmarshal([]byte(c.rawError), &jsonData); err == nil {
+				prettyJSON, err := json.MarshalIndent(jsonData, "  ", "  ")
+				if err == nil {
+					fmt.Printf("  %s\n", string(prettyJSON))
+				} else {
+					fmt.Printf("  %s\n", c.rawError)
+				}
+			} else {
+				fmt.Printf("  %s\n", c.rawError)
+			}
+		} else {
+			// Original logic with non-printable handling
+			var jsonData interface{}
+			if err := json.Unmarshal([]byte(c.rawError), &jsonData); err == nil {
+				modifiedData, _ := replaceNonPrintableElements(jsonData)
+				prettyJSON, err := json.MarshalIndent(modifiedData, "  ", "  ")
+				if err == nil {
+					fmt.Printf("  %s\n", string(prettyJSON))
+				} else {
+					fmt.Printf("  %s\n", sanitizeNonJSONBody(c.rawError))
+				}
 			} else {
 				fmt.Printf("  %s\n", sanitizeNonJSONBody(c.rawError))
 			}
-		} else {
-			// If not JSON, use printable prefix and placeholder.
-			fmt.Printf("  %s\n", sanitizeNonJSONBody(c.rawError))
 		}
 	}
 
