@@ -47,6 +47,16 @@ type Item struct {
 
 }
 
+type ItemWithData struct {
+	Item
+	Data  *[]Datum
+	Loans *[]Loan
+}
+
+//func (iwd *ItemWithData) Get ( ctx context.Context, client Client, itemID  ) error {
+//*iwd, err :=
+//}
+
 // whichID
 func (i *Item) whichID(itemID ...ID) ID {
 	if len(itemID) > 0 {
