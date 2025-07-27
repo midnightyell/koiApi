@@ -1,7 +1,6 @@
 package koiApi
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -101,7 +100,7 @@ func replaceNonPrintableElements(data interface{}) (interface{}, error) {
 }
 
 // PrintError prints the request headers, request body, response headers, response body, and error struct or raw error text from the httpClient struct to stdout.
-func (c *httpClient) PrintError(ctx context.Context) {
+func (c *httpClient) PrintError() {
 	fmt.Println("Last request URL:\n   ", *c.lastRequestURL)
 	decoded, _ := url.QueryUnescape(*c.lastRequestURL)
 	fmt.Println("    ", decoded)

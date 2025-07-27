@@ -1,21 +1,20 @@
 package koiApi
 
 import (
-	"context"
 	"fmt"
 	"time"
 )
 
 // TagCategoryInterface defines methods for interacting with TagCategory resources.
 type TagCategoryInterface interface {
-	Create(ctx context.Context, client Client) (*TagCategory, error)                      // HTTP POST /api/tag_categories
-	Delete(ctx context.Context, client Client, tagCategoryID ...ID) error                 // HTTP DELETE /api/tag_categories/{id}
-	Get(ctx context.Context, client Client, tagCategoryID ...ID) (*TagCategory, error)    // HTTP GET /api/tag_categories/{id}
-	IRI() string                                                                          // /api/tag_categories/{id}
-	List(ctx context.Context, client Client) ([]*TagCategory, error)                      // HTTP GET /api/tag_categories
-	ListTags(ctx context.Context, client Client, tagCategoryID ...ID) ([]*Tag, error)     // HTTP GET /api/tag_categories/{id}/tags
-	Patch(ctx context.Context, client Client, tagCategoryID ...ID) (*TagCategory, error)  // HTTP PATCH /api/tag_categories/{id}
-	Update(ctx context.Context, client Client, tagCategoryID ...ID) (*TagCategory, error) // HTTP PUT /api/tag_categories/{id}
+	Create(client Client) (*TagCategory, error)                      // HTTP POST /api/tag_categories
+	Delete(client Client, tagCategoryID ...ID) error                 // HTTP DELETE /api/tag_categories/{id}
+	Get(client Client, tagCategoryID ...ID) (*TagCategory, error)    // HTTP GET /api/tag_categories/{id}
+	IRI() string                                                     // /api/tag_categories/{id}
+	List(client Client) ([]*TagCategory, error)                      // HTTP GET /api/tag_categories
+	ListTags(client Client, tagCategoryID ...ID) ([]*Tag, error)     // HTTP GET /api/tag_categories/{id}/tags
+	Patch(client Client, tagCategoryID ...ID) (*TagCategory, error)  // HTTP PATCH /api/tag_categories/{id}
+	Update(client Client, tagCategoryID ...ID) (*TagCategory, error) // HTTP PUT /api/tag_categories/{id}
 	Summary() string
 }
 
@@ -43,20 +42,20 @@ func (tc *TagCategory) whichID(tagCategoryID ...ID) ID {
 }
 
 // Create
-func (tc *TagCategory) Create(ctx context.Context, client Client) (*TagCategory, error) {
-	return client.CreateTagCategory(ctx, tc)
+func (tc *TagCategory) Create(client Client) (*TagCategory, error) {
+	return client.CreateTagCategory(tc)
 }
 
 // Delete
-func (tc *TagCategory) Delete(ctx context.Context, client Client, tagCategoryID ...ID) error {
+func (tc *TagCategory) Delete(client Client, tagCategoryID ...ID) error {
 	id := tc.whichID(tagCategoryID...)
-	return client.DeleteTagCategory(ctx, id)
+	return client.DeleteTagCategory(id)
 }
 
 // Get
-func (tc *TagCategory) Get(ctx context.Context, client Client, tagCategoryID ...ID) (*TagCategory, error) {
+func (tc *TagCategory) Get(client Client, tagCategoryID ...ID) (*TagCategory, error) {
 	id := tc.whichID(tagCategoryID...)
-	return client.GetTagCategory(ctx, id)
+	return client.GetTagCategory(id)
 }
 
 // IRI
@@ -65,24 +64,24 @@ func (tc *TagCategory) IRI() string {
 }
 
 // List
-func (tc *TagCategory) List(ctx context.Context, client Client) ([]*TagCategory, error) {
-	return client.ListTagCategories(ctx)
+func (tc *TagCategory) List(client Client) ([]*TagCategory, error) {
+	return client.ListTagCategories()
 }
 
 // ListTags
-func (tc *TagCategory) ListTags(ctx context.Context, client Client, tagCategoryID ...ID) ([]*Tag, error) {
+func (tc *TagCategory) ListTags(client Client, tagCategoryID ...ID) ([]*Tag, error) {
 	id := tc.whichID(tagCategoryID...)
-	return client.ListTagCategoryTags(ctx, id)
+	return client.ListTagCategoryTags(id)
 }
 
 // Patch
-func (tc *TagCategory) Patch(ctx context.Context, client Client, tagCategoryID ...ID) (*TagCategory, error) {
+func (tc *TagCategory) Patch(client Client, tagCategoryID ...ID) (*TagCategory, error) {
 	id := tc.whichID(tagCategoryID...)
-	return client.PatchTagCategory(ctx, id, tc)
+	return client.PatchTagCategory(id, tc)
 }
 
 // Update
-func (tc *TagCategory) Update(ctx context.Context, client Client, tagCategoryID ...ID) (*TagCategory, error) {
+func (tc *TagCategory) Update(client Client, tagCategoryID ...ID) (*TagCategory, error) {
 	id := tc.whichID(tagCategoryID...)
-	return client.UpdateTagCategory(ctx, id, tc)
+	return client.UpdateTagCategory(id, tc)
 }

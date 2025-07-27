@@ -1,7 +1,6 @@
 package koiApi
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"time"
@@ -29,20 +28,20 @@ const (
 
 // DatumInterface defines methods for interacting with Datum resources.
 type DatumInterface interface {
-	Create(ctx context.Context, client Client) (*Datum, error)                                            // HTTP POST /api/data
-	Delete(ctx context.Context, client Client, datumID ...ID) error                                       // HTTP DELETE /api/data/{id}
-	Get(ctx context.Context, client Client, datumID ...ID) (*Datum, error)                                // HTTP GET /api/data/{id}
-	GetCollection(ctx context.Context, client Client, datumID ...ID) (*Collection, error)                 // HTTP GET /api/data/{id}/collection
-	GetItem(ctx context.Context, client Client, datumID ...ID) (*Item, error)                             // HTTP GET /api/data/{id}/item
-	IRI() string                                                                                          // /api/data/{id}
-	Patch(ctx context.Context, client Client, datumID ...ID) (*Datum, error)                              // HTTP PATCH /api/data/{id}
-	Update(ctx context.Context, client Client, datumID ...ID) (*Datum, error)                             // HTTP PUT /api/data/{id}
-	UploadFile(ctx context.Context, client Client, file []byte, datumID ...ID) (*Datum, error)            // HTTP POST /api/data/{id}/file
-	UploadFileByFile(ctx context.Context, client Client, filename string, datumID ...ID) (*Datum, error)  // HTTP POST /api/data/{id}/file
-	UploadImage(ctx context.Context, client Client, image []byte, datumID ...ID) (*Datum, error)          // HTTP POST /api/data/{id}/image
-	UploadImageByFile(ctx context.Context, client Client, filename string, datumID ...ID) (*Datum, error) // HTTP POST /api/data/{id}/image
-	UploadVideo(ctx context.Context, client Client, video []byte, datumID ...ID) (*Datum, error)          // HTTP POST /api/data/{id}/video
-	UploadVideoByFile(ctx context.Context, client Client, filename string, datumID ...ID) (*Datum, error) // HTTP POST /api/data/{id}/video
+	Create(client Client) (*Datum, error)                                            // HTTP POST /api/data
+	Delete(client Client, datumID ...ID) error                                       // HTTP DELETE /api/data/{id}
+	Get(client Client, datumID ...ID) (*Datum, error)                                // HTTP GET /api/data/{id}
+	GetCollection(client Client, datumID ...ID) (*Collection, error)                 // HTTP GET /api/data/{id}/collection
+	GetItem(client Client, datumID ...ID) (*Item, error)                             // HTTP GET /api/data/{id}/item
+	IRI() string                                                                     // /api/data/{id}
+	Patch(client Client, datumID ...ID) (*Datum, error)                              // HTTP PATCH /api/data/{id}
+	Update(client Client, datumID ...ID) (*Datum, error)                             // HTTP PUT /api/data/{id}
+	UploadFile(client Client, file []byte, datumID ...ID) (*Datum, error)            // HTTP POST /api/data/{id}/file
+	UploadFileByFile(client Client, filename string, datumID ...ID) (*Datum, error)  // HTTP POST /api/data/{id}/file
+	UploadImage(client Client, image []byte, datumID ...ID) (*Datum, error)          // HTTP POST /api/data/{id}/image
+	UploadImageByFile(client Client, filename string, datumID ...ID) (*Datum, error) // HTTP POST /api/data/{id}/image
+	UploadVideo(client Client, video []byte, datumID ...ID) (*Datum, error)          // HTTP POST /api/data/{id}/video
+	UploadVideoByFile(client Client, filename string, datumID ...ID) (*Datum, error) // HTTP POST /api/data/{id}/video
 	Summary() string
 }
 
@@ -86,32 +85,32 @@ func (d *Datum) whichID(datumID ...ID) ID {
 }
 
 // Create
-func (d *Datum) Create(ctx context.Context, client Client) (*Datum, error) {
-	return client.CreateDatum(ctx, d)
+func (d *Datum) Create(client Client) (*Datum, error) {
+	return client.CreateDatum(d)
 }
 
 // Delete
-func (d *Datum) Delete(ctx context.Context, client Client, datumID ...ID) error {
+func (d *Datum) Delete(client Client, datumID ...ID) error {
 	id := d.whichID(datumID...)
-	return client.DeleteDatum(ctx, id)
+	return client.DeleteDatum(id)
 }
 
 // Get
-func (d *Datum) Get(ctx context.Context, client Client, datumID ...ID) (*Datum, error) {
+func (d *Datum) Get(client Client, datumID ...ID) (*Datum, error) {
 	id := d.whichID(datumID...)
-	return client.GetDatum(ctx, id)
+	return client.GetDatum(id)
 }
 
 // GetCollection
-func (d *Datum) GetCollection(ctx context.Context, client Client, datumID ...ID) (*Collection, error) {
+func (d *Datum) GetCollection(client Client, datumID ...ID) (*Collection, error) {
 	id := d.whichID(datumID...)
-	return client.GetDatumCollection(ctx, id)
+	return client.GetDatumCollection(id)
 }
 
 // GetItem
-func (d *Datum) GetItem(ctx context.Context, client Client, datumID ...ID) (*Item, error) {
+func (d *Datum) GetItem(client Client, datumID ...ID) (*Item, error) {
 	id := d.whichID(datumID...)
-	return client.GetDatumItem(ctx, id)
+	return client.GetDatumItem(id)
 }
 
 // IRI
@@ -120,61 +119,61 @@ func (d *Datum) IRI() string {
 }
 
 // Patch
-func (d *Datum) Patch(ctx context.Context, client Client, datumID ...ID) (*Datum, error) {
+func (d *Datum) Patch(client Client, datumID ...ID) (*Datum, error) {
 	id := d.whichID(datumID...)
-	return client.PatchDatum(ctx, id, d)
+	return client.PatchDatum(id, d)
 }
 
 // Update
-func (d *Datum) Update(ctx context.Context, client Client, datumID ...ID) (*Datum, error) {
+func (d *Datum) Update(client Client, datumID ...ID) (*Datum, error) {
 	id := d.whichID(datumID...)
-	return client.UpdateDatum(ctx, id, d)
+	return client.UpdateDatum(id, d)
 }
 
 // UploadFile
-func (d *Datum) UploadFile(ctx context.Context, client Client, file []byte, datumID ...ID) (*Datum, error) {
+func (d *Datum) UploadFile(client Client, file []byte, datumID ...ID) (*Datum, error) {
 	id := d.whichID(datumID...)
-	return client.UploadDatumFile(ctx, id, file)
+	return client.UploadDatumFile(id, file)
 }
 
 // UploadFileByFile
-func (d *Datum) UploadFileByFile(ctx context.Context, client Client, filename string, datumID ...ID) (*Datum, error) {
+func (d *Datum) UploadFileByFile(client Client, filename string, datumID ...ID) (*Datum, error) {
 	id := d.whichID(datumID...)
 	file, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
 	}
-	return client.UploadDatumFile(ctx, id, file)
+	return client.UploadDatumFile(id, file)
 }
 
 // UploadImage
-func (d *Datum) UploadImage(ctx context.Context, client Client, image []byte, datumID ...ID) (*Datum, error) {
+func (d *Datum) UploadImage(client Client, image []byte, datumID ...ID) (*Datum, error) {
 	id := d.whichID(datumID...)
-	return client.UploadDatumImage(ctx, id, image)
+	return client.UploadDatumImage(id, image)
 }
 
 // UploadImageByFile
-func (d *Datum) UploadImageByFile(ctx context.Context, client Client, filename string, datumID ...ID) (*Datum, error) {
+func (d *Datum) UploadImageByFile(client Client, filename string, datumID ...ID) (*Datum, error) {
 	id := d.whichID(datumID...)
 	file, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
 	}
-	return client.UploadDatumImage(ctx, id, file)
+	return client.UploadDatumImage(id, file)
 }
 
 // UploadVideo
-func (d *Datum) UploadVideo(ctx context.Context, client Client, video []byte, datumID ...ID) (*Datum, error) {
+func (d *Datum) UploadVideo(client Client, video []byte, datumID ...ID) (*Datum, error) {
 	id := d.whichID(datumID...)
-	return client.UploadDatumVideo(ctx, id, video)
+	return client.UploadDatumVideo(id, video)
 }
 
 // UploadVideoByFile
-func (d *Datum) UploadVideoByFile(ctx context.Context, client Client, filename string, datumID ...ID) (*Datum, error) {
+func (d *Datum) UploadVideoByFile(client Client, filename string, datumID ...ID) (*Datum, error) {
 	id := d.whichID(datumID...)
 	file, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
 	}
-	return client.UploadDatumVideo(ctx, id, file)
+	return client.UploadDatumVideo(id, file)
 }

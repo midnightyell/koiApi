@@ -1,7 +1,6 @@
 package koiApi
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"time"
@@ -9,18 +8,18 @@ import (
 
 // AlbumInterface defines methods for interacting with Album resources.
 type AlbumInterface interface {
-	Create(ctx context.Context, client Client) (*Album, error)                                            // HTTP POST /api/albums
-	Delete(ctx context.Context, client Client, albumID ...ID) error                                       // HTTP DELETE /api/albums/{id}
-	Get(ctx context.Context, client Client, albumID ...ID) (*Album, error)                                // HTTP GET /api/albums/{id}
-	GetParent(ctx context.Context, client Client, albumID ...ID) (*Album, error)                          // HTTP GET /api/albums/{id}/parent
-	IRI() string                                                                                          // /api/albums/{id}
-	List(ctx context.Context, client Client) ([]*Album, error)                                            // HTTP GET /api/albums
-	ListChildren(ctx context.Context, client Client, albumID ...ID) ([]*Album, error)                     // HTTP GET /api/albums/{id}/children
-	ListPhotos(ctx context.Context, client Client, albumID ...ID) ([]*Photo, error)                       // HTTP GET /api/albums/{id}/photos
-	Patch(ctx context.Context, client Client, albumID ...ID) (*Album, error)                              // HTTP PATCH /api/albums/{id}
-	Update(ctx context.Context, client Client, albumID ...ID) (*Album, error)                             // HTTP PUT /api/albums/{id}
-	UploadImage(ctx context.Context, client Client, file []byte, albumID ...ID) (*Album, error)           // HTTP POST /api/albums/{id}/image
-	UploadImageByFile(ctx context.Context, client Client, filename string, albumID ...ID) (*Album, error) // HTTP POST /api/albums/{id}/image
+	Create(client Client) (*Album, error)                                            // HTTP POST /api/albums
+	Delete(client Client, albumID ...ID) error                                       // HTTP DELETE /api/albums/{id}
+	Get(client Client, albumID ...ID) (*Album, error)                                // HTTP GET /api/albums/{id}
+	GetParent(client Client, albumID ...ID) (*Album, error)                          // HTTP GET /api/albums/{id}/parent
+	IRI() string                                                                     // /api/albums/{id}
+	List(client Client) ([]*Album, error)                                            // HTTP GET /api/albums
+	ListChildren(client Client, albumID ...ID) ([]*Album, error)                     // HTTP GET /api/albums/{id}/children
+	ListPhotos(client Client, albumID ...ID) ([]*Photo, error)                       // HTTP GET /api/albums/{id}/photos
+	Patch(client Client, albumID ...ID) (*Album, error)                              // HTTP PATCH /api/albums/{id}
+	Update(client Client, albumID ...ID) (*Album, error)                             // HTTP PUT /api/albums/{id}
+	UploadImage(client Client, file []byte, albumID ...ID) (*Album, error)           // HTTP POST /api/albums/{id}/image
+	UploadImageByFile(client Client, filename string, albumID ...ID) (*Album, error) // HTTP POST /api/albums/{id}/image
 	Summary() string
 }
 
@@ -54,26 +53,26 @@ func (a *Album) whichID(albumID ...ID) ID {
 }
 
 // Create
-func (a *Album) Create(ctx context.Context, client Client) (*Album, error) {
-	return client.CreateAlbum(ctx, a)
+func (a *Album) Create(client Client) (*Album, error) {
+	return client.CreateAlbum(a)
 }
 
 // Delete
-func (a *Album) Delete(ctx context.Context, client Client, albumID ...ID) error {
+func (a *Album) Delete(client Client, albumID ...ID) error {
 	id := a.whichID(albumID...)
-	return client.DeleteAlbum(ctx, id)
+	return client.DeleteAlbum(id)
 }
 
 // Get
-func (a *Album) Get(ctx context.Context, client Client, albumID ...ID) (*Album, error) {
+func (a *Album) Get(client Client, albumID ...ID) (*Album, error) {
 	id := a.whichID(albumID...)
-	return client.GetAlbum(ctx, id)
+	return client.GetAlbum(id)
 }
 
 // GetParent
-func (a *Album) GetParent(ctx context.Context, client Client, albumID ...ID) (*Album, error) {
+func (a *Album) GetParent(client Client, albumID ...ID) (*Album, error) {
 	id := a.whichID(albumID...)
-	return client.GetAlbumParent(ctx, id)
+	return client.GetAlbumParent(id)
 }
 
 // IRI
@@ -82,10 +81,10 @@ func (a *Album) IRI() string {
 }
 
 // List
-func (a *Album) List(ctx context.Context, client Client) ([]*Album, error) {
+func (a *Album) List(client Client) ([]*Album, error) {
 	var allAlbums []*Album
 	for page := 1; ; page++ {
-		albums, err := client.ListAlbums(ctx)
+		albums, err := client.ListAlbums()
 		if err != nil {
 			return nil, fmt.Errorf("failed to list albums on page %d: %w", err)
 		}
@@ -98,11 +97,11 @@ func (a *Album) List(ctx context.Context, client Client) ([]*Album, error) {
 }
 
 // ListChildren
-func (a *Album) ListChildren(ctx context.Context, client Client, albumID ...ID) ([]*Album, error) {
+func (a *Album) ListChildren(client Client, albumID ...ID) ([]*Album, error) {
 	id := a.whichID(albumID...)
 	var allChildren []*Album
 	for page := 1; ; page++ {
-		children, err := client.ListAlbumChildren(ctx, id)
+		children, err := client.ListAlbumChildren(id)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list child albums for ID %s on page %d: %w", id, err)
 		}
@@ -115,11 +114,11 @@ func (a *Album) ListChildren(ctx context.Context, client Client, albumID ...ID) 
 }
 
 // ListPhotos
-func (a *Album) ListPhotos(ctx context.Context, client Client, albumID ...ID) ([]*Photo, error) {
+func (a *Album) ListPhotos(client Client, albumID ...ID) ([]*Photo, error) {
 	id := a.whichID(albumID...)
 	var allPhotos []*Photo
 	for page := 1; ; page++ {
-		photos, err := client.ListAlbumPhotos(ctx, id)
+		photos, err := client.ListAlbumPhotos(id)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list photos for ID %s on page %d: %w", id, err)
 		}
@@ -132,29 +131,29 @@ func (a *Album) ListPhotos(ctx context.Context, client Client, albumID ...ID) ([
 }
 
 // Patch
-func (a *Album) Patch(ctx context.Context, client Client, albumID ...ID) (*Album, error) {
+func (a *Album) Patch(client Client, albumID ...ID) (*Album, error) {
 	id := a.whichID(albumID...)
-	return client.PatchAlbum(ctx, id, a)
+	return client.PatchAlbum(id, a)
 }
 
 // Update
-func (a *Album) Update(ctx context.Context, client Client, albumID ...ID) (*Album, error) {
+func (a *Album) Update(client Client, albumID ...ID) (*Album, error) {
 	id := a.whichID(albumID...)
-	return client.UpdateAlbum(ctx, id, a)
+	return client.UpdateAlbum(id, a)
 }
 
 // UploadImage
-func (a *Album) UploadImage(ctx context.Context, client Client, file []byte, albumID ...ID) (*Album, error) {
+func (a *Album) UploadImage(client Client, file []byte, albumID ...ID) (*Album, error) {
 	id := a.whichID(albumID...)
-	return client.UploadAlbumImage(ctx, id, file)
+	return client.UploadAlbumImage(id, file)
 }
 
 // UploadImageByFile
-func (a *Album) UploadImageByFile(ctx context.Context, client Client, filename string, albumID ...ID) (*Album, error) {
+func (a *Album) UploadImageByFile(client Client, filename string, albumID ...ID) (*Album, error) {
 	id := a.whichID(albumID...)
 	file, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
 	}
-	return client.UploadAlbumImage(ctx, id, file)
+	return client.UploadAlbumImage(id, file)
 }

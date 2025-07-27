@@ -1,21 +1,20 @@
 package koiApi
 
 import (
-	"context"
 	"fmt"
 	"time"
 )
 
 // LoanInterface defines methods for interacting with Loan resources.
 type LoanInterface interface {
-	Create(ctx context.Context, client Client) (*Loan, error)                // HTTP POST /api/loans
-	Delete(ctx context.Context, client Client, loanID ...ID) error           // HTTP DELETE /api/loans/{id}
-	Get(ctx context.Context, client Client, loanID ...ID) (*Loan, error)     // HTTP GET /api/loans/{id}
-	GetItem(ctx context.Context, client Client, loanID ...ID) (*Item, error) // HTTP GET /api/loans/{id}/item
-	IRI() string                                                             // /api/loans/{id}
-	List(ctx context.Context, client Client) ([]*Loan, error)                // HTTP GET /api/loans
-	Patch(ctx context.Context, client Client, loanID ...ID) (*Loan, error)   // HTTP PATCH /api/loans/{id}
-	Update(ctx context.Context, client Client, loanID ...ID) (*Loan, error)  // HTTP PUT /api/loans/{id}
+	Create(client Client) (*Loan, error)                // HTTP POST /api/loans
+	Delete(client Client, loanID ...ID) error           // HTTP DELETE /api/loans/{id}
+	Get(client Client, loanID ...ID) (*Loan, error)     // HTTP GET /api/loans/{id}
+	GetItem(client Client, loanID ...ID) (*Item, error) // HTTP GET /api/loans/{id}/item
+	IRI() string                                        // /api/loans/{id}
+	List(client Client) ([]*Loan, error)                // HTTP GET /api/loans
+	Patch(client Client, loanID ...ID) (*Loan, error)   // HTTP PATCH /api/loans/{id}
+	Update(client Client, loanID ...ID) (*Loan, error)  // HTTP PUT /api/loans/{id}
 	Summary() string
 }
 
@@ -42,26 +41,26 @@ func (l *Loan) whichID(loanID ...ID) ID {
 }
 
 // Create
-func (l *Loan) Create(ctx context.Context, client Client) (*Loan, error) {
-	return client.CreateLoan(ctx, l)
+func (l *Loan) Create(client Client) (*Loan, error) {
+	return client.CreateLoan(l)
 }
 
 // Delete
-func (l *Loan) Delete(ctx context.Context, client Client, loanID ...ID) error {
+func (l *Loan) Delete(client Client, loanID ...ID) error {
 	id := l.whichID(loanID...)
-	return client.DeleteLoan(ctx, id)
+	return client.DeleteLoan(id)
 }
 
 // Get
-func (l *Loan) Get(ctx context.Context, client Client, loanID ...ID) (*Loan, error) {
+func (l *Loan) Get(client Client, loanID ...ID) (*Loan, error) {
 	id := l.whichID(loanID...)
-	return client.GetLoan(ctx, id)
+	return client.GetLoan(id)
 }
 
 // GetItem
-func (l *Loan) GetItem(ctx context.Context, client Client, loanID ...ID) (*Item, error) {
+func (l *Loan) GetItem(client Client, loanID ...ID) (*Item, error) {
 	id := l.whichID(loanID...)
-	return client.GetLoanItem(ctx, id)
+	return client.GetLoanItem(id)
 }
 
 // IRI
@@ -70,10 +69,10 @@ func (l *Loan) IRI() string {
 }
 
 // List
-func (l *Loan) List(ctx context.Context, client Client) ([]*Loan, error) {
+func (l *Loan) List(client Client) ([]*Loan, error) {
 	var allLoans []*Loan
 	for page := 1; ; page++ {
-		loans, err := client.ListLoans(ctx)
+		loans, err := client.ListLoans()
 		if err != nil {
 			return nil, fmt.Errorf("failed to list loans: %w", err)
 		}
@@ -86,13 +85,13 @@ func (l *Loan) List(ctx context.Context, client Client) ([]*Loan, error) {
 }
 
 // Patch
-func (l *Loan) Patch(ctx context.Context, client Client, loanID ...ID) (*Loan, error) {
+func (l *Loan) Patch(client Client, loanID ...ID) (*Loan, error) {
 	id := l.whichID(loanID...)
-	return client.PatchLoan(ctx, id, l)
+	return client.PatchLoan(id, l)
 }
 
 // Update
-func (l *Loan) Update(ctx context.Context, client Client, loanID ...ID) (*Loan, error) {
+func (l *Loan) Update(client Client, loanID ...ID) (*Loan, error) {
 	id := l.whichID(loanID...)
-	return client.UpdateLoan(ctx, id, l)
+	return client.UpdateLoan(id, l)
 }

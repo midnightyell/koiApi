@@ -1,7 +1,6 @@
 package koiApi
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"time"
@@ -9,19 +8,19 @@ import (
 
 // CollectionInterface defines methods for interacting with Collection resources.
 type CollectionInterface interface {
-	Create(ctx context.Context, client Client) (*Collection, error)                                                 // HTTP POST /api/collections
-	Delete(ctx context.Context, client Client, collectionID ...ID) error                                            // HTTP DELETE /api/collections/{id}
-	Get(ctx context.Context, client Client, collectionID ...ID) (*Collection, error)                                // HTTP GET /api/collections/{id}
-	GetDefaultTemplate(ctx context.Context, client Client, collectionID ...ID) (*Template, error)                   // HTTP GET /api/collections/{id}/items_default_template
-	GetParent(ctx context.Context, client Client, collectionID ...ID) (*Collection, error)                          // HTTP GET /api/collections/{id}/parent
-	IRI() string                                                                                                    // /api/collections/{id}
-	ListChildren(ctx context.Context, client Client, collectionID ...ID) ([]*Collection, error)                     // HTTP GET /api/collections/{id}/children
-	ListCollectionData(ctx context.Context, client Client, collectionID ...ID) ([]*Datum, error)                    // HTTP GET /api/collections/{id}/data
-	ListCollectionItems(ctx context.Context, client Client, collectionID ...ID) ([]*Item, error)                    // HTTP GET /api/collections/{id}/items
-	Patch(ctx context.Context, client Client, collectionID ...ID) (*Collection, error)                              // HTTP PATCH /api/collections/{id}
-	Update(ctx context.Context, client Client, collectionID ...ID) (*Collection, error)                             // HTTP PUT /api/collections/{id}
-	UploadImage(ctx context.Context, client Client, file []byte, collectionID ...ID) (*Collection, error)           // HTTP POST /api/collections/{id}/image
-	UploadImageByFile(ctx context.Context, client Client, filename string, collectionID ...ID) (*Collection, error) // HTTP POST /api/collections/{id}/image
+	Create(client Client) (*Collection, error)                                                 // HTTP POST /api/collections
+	Delete(client Client, collectionID ...ID) error                                            // HTTP DELETE /api/collections/{id}
+	Get(client Client, collectionID ...ID) (*Collection, error)                                // HTTP GET /api/collections/{id}
+	GetDefaultTemplate(client Client, collectionID ...ID) (*Template, error)                   // HTTP GET /api/collections/{id}/items_default_template
+	GetParent(client Client, collectionID ...ID) (*Collection, error)                          // HTTP GET /api/collections/{id}/parent
+	IRI() string                                                                               // /api/collections/{id}
+	ListChildren(client Client, collectionID ...ID) ([]*Collection, error)                     // HTTP GET /api/collections/{id}/children
+	ListCollectionData(client Client, collectionID ...ID) ([]*Datum, error)                    // HTTP GET /api/collections/{id}/data
+	ListCollectionItems(client Client, collectionID ...ID) ([]*Item, error)                    // HTTP GET /api/collections/{id}/items
+	Patch(client Client, collectionID ...ID) (*Collection, error)                              // HTTP PATCH /api/collections/{id}
+	Update(client Client, collectionID ...ID) (*Collection, error)                             // HTTP PUT /api/collections/{id}
+	UploadImage(client Client, file []byte, collectionID ...ID) (*Collection, error)           // HTTP POST /api/collections/{id}/image
+	UploadImageByFile(client Client, filename string, collectionID ...ID) (*Collection, error) // HTTP POST /api/collections/{id}/image
 	Summary() string
 	Exists()
 }
@@ -58,32 +57,32 @@ func (c *Collection) whichID(collectionID ...ID) ID {
 }
 
 // Create
-func (c *Collection) Create(ctx context.Context, client Client) (*Collection, error) {
-	return client.CreateCollection(ctx, c)
+func (c *Collection) Create(client Client) (*Collection, error) {
+	return client.CreateCollection(c)
 }
 
 // Delete
-func (c *Collection) Delete(ctx context.Context, client Client, collectionID ...ID) error {
+func (c *Collection) Delete(client Client, collectionID ...ID) error {
 	id := c.whichID(collectionID...)
-	return client.DeleteCollection(ctx, id)
+	return client.DeleteCollection(id)
 }
 
 // Get
-func (c *Collection) Get(ctx context.Context, client Client, collectionID ...ID) (*Collection, error) {
+func (c *Collection) Get(client Client, collectionID ...ID) (*Collection, error) {
 	id := c.whichID(collectionID...)
-	return client.GetCollection(ctx, id)
+	return client.GetCollection(id)
 }
 
 // GetDefaultTemplate
-func (c *Collection) GetDefaultTemplate(ctx context.Context, client Client, collectionID ...ID) (*Template, error) {
+func (c *Collection) GetDefaultTemplate(client Client, collectionID ...ID) (*Template, error) {
 	id := c.whichID(collectionID...)
-	return client.GetCollectionDefaultTemplate(ctx, id)
+	return client.GetCollectionDefaultTemplate(id)
 }
 
 // GetParent
-func (c *Collection) GetParent(ctx context.Context, client Client, collectionID ...ID) (*Collection, error) {
+func (c *Collection) GetParent(client Client, collectionID ...ID) (*Collection, error) {
 	id := c.whichID(collectionID...)
-	return client.GetCollectionParent(ctx, id)
+	return client.GetCollectionParent(id)
 }
 
 // IRI
@@ -92,29 +91,29 @@ func (c *Collection) IRI() string {
 }
 
 // Patch
-func (c *Collection) Patch(ctx context.Context, client Client, collectionID ...ID) (*Collection, error) {
+func (c *Collection) Patch(client Client, collectionID ...ID) (*Collection, error) {
 	id := c.whichID(collectionID...)
-	return client.PatchCollection(ctx, id, c)
+	return client.PatchCollection(id, c)
 }
 
 // Update
-func (c *Collection) Update(ctx context.Context, client Client, collectionID ...ID) (*Collection, error) {
+func (c *Collection) Update(client Client, collectionID ...ID) (*Collection, error) {
 	id := c.whichID(collectionID...)
-	return client.UpdateCollection(ctx, id, c)
+	return client.UpdateCollection(id, c)
 }
 
 // UploadImage
-func (c *Collection) UploadImage(ctx context.Context, client Client, file []byte, collectionID ...ID) (*Collection, error) {
+func (c *Collection) UploadImage(client Client, file []byte, collectionID ...ID) (*Collection, error) {
 	id := c.whichID(collectionID...)
-	return client.UploadCollectionImage(ctx, id, file)
+	return client.UploadCollectionImage(id, file)
 }
 
 // UploadImageByFile
-func (c *Collection) UploadImageByFile(ctx context.Context, client Client, filename string, collectionID ...ID) (*Collection, error) {
+func (c *Collection) UploadImageByFile(client Client, filename string, collectionID ...ID) (*Collection, error) {
 	id := c.whichID(collectionID...)
 	file, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
 	}
-	return c.UploadImage(ctx, client, file, id)
+	return c.UploadImage(client, file, id)
 }

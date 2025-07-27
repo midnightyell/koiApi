@@ -1,16 +1,15 @@
 package koiApi
 
 import (
-	"context"
 	"fmt"
 	"time"
 )
 
 // UserInterface defines methods for interacting with User resources.
 type UserInterface interface {
-	Get(ctx context.Context, client Client, userID ...ID) (*User, error) // HTTP GET /api/users/{id}
-	IRI() string                                                         // /api/users/{id}
-	List(ctx context.Context, client Client) ([]*User, error)            // HTTP GET /api/users
+	Get(client Client, userID ...ID) (*User, error) // HTTP GET /api/users/{id}
+	IRI() string                                    // /api/users/{id}
+	List(client Client) ([]*User, error)            // HTTP GET /api/users
 	Summary() string
 }
 
@@ -57,9 +56,9 @@ func (u *User) whichID(userID ...ID) ID {
 }
 
 // Get
-func (u *User) Get(ctx context.Context, client Client, userID ...ID) (*User, error) {
+func (u *User) Get(client Client, userID ...ID) (*User, error) {
 	id := u.whichID(userID...)
-	return client.GetUser(ctx, id)
+	return client.GetUser(id)
 }
 
 // IRI
@@ -68,6 +67,6 @@ func (u *User) IRI() string {
 }
 
 // List
-func (u *User) List(ctx context.Context, client Client) ([]*User, error) {
-	return client.ListUsers(ctx)
+func (u *User) List(client Client) ([]*User, error) {
+	return client.ListUsers()
 }
