@@ -1,7 +1,6 @@
 package koiApi
 
 import (
-	"context"
 	"fmt"
 )
 
@@ -34,13 +33,13 @@ func (ft FieldType) String() string {
 
 // FieldInterface defines methods for interacting with Field resources.
 type FieldInterface interface {
-	Create(ctx context.Context, client Client) (*Field, error)                        // HTTP POST /api/fields
-	Delete(ctx context.Context, client Client, fieldID ...ID) error                   // HTTP DELETE /api/fields/{id}
-	Get(ctx context.Context, client Client, fieldID ...ID) (*Field, error)            // HTTP GET /api/fields/{id}
-	GetTemplate(ctx context.Context, client Client, fieldID ...ID) (*Template, error) // HTTP GET /api/fields/{id}/template
-	IRI() string                                                                      // /api/fields/{id}
-	Patch(ctx context.Context, client Client, fieldID ...ID) (*Field, error)          // HTTP PATCH /api/fields/{id}
-	Update(ctx context.Context, client Client, fieldID ...ID) (*Field, error)         // HTTP PUT /api/fields/{id}
+	Create(client Client) (*Field, error)                        // HTTP POST /api/fields
+	Delete(client Client, fieldID ...ID) error                   // HTTP DELETE /api/fields/{id}
+	Get(client Client, fieldID ...ID) (*Field, error)            // HTTP GET /api/fields/{id}
+	GetTemplate(client Client, fieldID ...ID) (*Template, error) // HTTP GET /api/fields/{id}/template
+	IRI() string                                                 // /api/fields/{id}
+	Patch(client Client, fieldID ...ID) (*Field, error)          // HTTP PATCH /api/fields/{id}
+	Update(client Client, fieldID ...ID) (*Field, error)         // HTTP PUT /api/fields/{id}
 	Summary() string
 }
 
@@ -69,26 +68,26 @@ func (f *Field) whichID(fieldID ...ID) ID {
 }
 
 // Create
-func (f *Field) Create(ctx context.Context, client Client) (*Field, error) {
-	return client.CreateField(ctx, f)
+func (f *Field) Create(client Client) (*Field, error) {
+	return client.CreateField(f)
 }
 
 // Delete
-func (f *Field) Delete(ctx context.Context, client Client, fieldID ...ID) error {
+func (f *Field) Delete(client Client, fieldID ...ID) error {
 	id := f.whichID(fieldID...)
-	return client.DeleteField(ctx, id)
+	return client.DeleteField(id)
 }
 
 // Get
-func (f *Field) Get(ctx context.Context, client Client, fieldID ...ID) (*Field, error) {
+func (f *Field) Get(client Client, fieldID ...ID) (*Field, error) {
 	id := f.whichID(fieldID...)
-	return client.GetField(ctx, id)
+	return client.GetField(id)
 }
 
 // GetTemplate
-func (f *Field) GetTemplate(ctx context.Context, client Client, fieldID ...ID) (*Template, error) {
+func (f *Field) GetTemplate(client Client, fieldID ...ID) (*Template, error) {
 	id := f.whichID(fieldID...)
-	return client.GetFieldTemplate(ctx, id)
+	return client.GetFieldTemplate(id)
 }
 
 // IRI
@@ -97,13 +96,13 @@ func (f *Field) IRI() string {
 }
 
 // Patch
-func (f *Field) Patch(ctx context.Context, client Client, fieldID ...ID) (*Field, error) {
+func (f *Field) Patch(client Client, fieldID ...ID) (*Field, error) {
 	id := f.whichID(fieldID...)
-	return client.PatchField(ctx, id, f)
+	return client.PatchField(id, f)
 }
 
 // Update
-func (f *Field) Update(ctx context.Context, client Client, fieldID ...ID) (*Field, error) {
+func (f *Field) Update(client Client, fieldID ...ID) (*Field, error) {
 	id := f.whichID(fieldID...)
-	return client.UpdateField(ctx, id, f)
+	return client.UpdateField(id, f)
 }

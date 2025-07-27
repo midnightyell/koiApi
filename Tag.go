@@ -1,7 +1,6 @@
 package koiApi
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"time"
@@ -9,17 +8,17 @@ import (
 
 // TagInterface defines methods for interacting with Tag resources.
 type TagInterface interface {
-	Create(ctx context.Context, client Client) (*Tag, error)                                          // HTTP POST /api/tags
-	Delete(ctx context.Context, client Client, tagID ...ID) error                                     // HTTP DELETE /api/tags/{id}
-	Get(ctx context.Context, client Client, tagID ...ID) (*Tag, error)                                // HTTP GET /api/tags/{id}
-	GetCategory(ctx context.Context, client Client, tagID ...ID) (*TagCategory, error)                // HTTP GET /api/tags/{id}/category
-	IRI() string                                                                                      // /api/tags/{id}
-	List(ctx context.Context, client Client) ([]*Tag, error)                                          // HTTP GET /api/tags
-	ListItems(ctx context.Context, client Client, tagID ...ID) ([]*Item, error)                       // HTTP GET /api/tags/{id}/items
-	Patch(ctx context.Context, client Client, tagID ...ID) (*Tag, error)                              // HTTP PATCH /api/tags/{id}
-	Update(ctx context.Context, client Client, tagID ...ID) (*Tag, error)                             // HTTP PUT /api/tags/{id}
-	UploadImage(ctx context.Context, client Client, file []byte, tagID ...ID) (*Tag, error)           // HTTP POST /api/tags/{id}/image
-	UploadImageByFile(ctx context.Context, client Client, filename string, tagID ...ID) (*Tag, error) // HTTP POST /api/tags/{id}/image
+	Create(client Client) (*Tag, error)                                          // HTTP POST /api/tags
+	Delete(client Client, tagID ...ID) error                                     // HTTP DELETE /api/tags/{id}
+	Get(client Client, tagID ...ID) (*Tag, error)                                // HTTP GET /api/tags/{id}
+	GetCategory(client Client, tagID ...ID) (*TagCategory, error)                // HTTP GET /api/tags/{id}/category
+	IRI() string                                                                 // /api/tags/{id}
+	List(client Client) ([]*Tag, error)                                          // HTTP GET /api/tags
+	ListItems(client Client, tagID ...ID) ([]*Item, error)                       // HTTP GET /api/tags/{id}/items
+	Patch(client Client, tagID ...ID) (*Tag, error)                              // HTTP PATCH /api/tags/{id}
+	Update(client Client, tagID ...ID) (*Tag, error)                             // HTTP PUT /api/tags/{id}
+	UploadImage(client Client, file []byte, tagID ...ID) (*Tag, error)           // HTTP POST /api/tags/{id}/image
+	UploadImageByFile(client Client, filename string, tagID ...ID) (*Tag, error) // HTTP POST /api/tags/{id}/image
 	Summary() string
 }
 
@@ -52,26 +51,26 @@ func (t *Tag) whichID(tagID ...ID) ID {
 }
 
 // Create
-func (t *Tag) Create(ctx context.Context, client Client) (*Tag, error) {
-	return client.CreateTag(ctx, t)
+func (t *Tag) Create(client Client) (*Tag, error) {
+	return client.CreateTag(t)
 }
 
 // Delete
-func (t *Tag) Delete(ctx context.Context, client Client, tagID ...ID) error {
+func (t *Tag) Delete(client Client, tagID ...ID) error {
 	id := t.whichID(tagID...)
-	return client.DeleteTag(ctx, id)
+	return client.DeleteTag(id)
 }
 
 // Get
-func (t *Tag) Get(ctx context.Context, client Client, tagID ...ID) (*Tag, error) {
+func (t *Tag) Get(client Client, tagID ...ID) (*Tag, error) {
 	id := t.whichID(tagID...)
-	return client.GetTag(ctx, id)
+	return client.GetTag(id)
 }
 
 // GetCategory
-func (t *Tag) GetCategory(ctx context.Context, client Client, tagID ...ID) (*TagCategory, error) {
+func (t *Tag) GetCategory(client Client, tagID ...ID) (*TagCategory, error) {
 	id := t.whichID(tagID...)
-	return client.GetCategoryOfTag(ctx, id)
+	return client.GetCategoryOfTag(id)
 }
 
 // IRI
@@ -80,40 +79,40 @@ func (t *Tag) IRI() string {
 }
 
 // List
-func (t *Tag) List(ctx context.Context, client Client) ([]*Tag, error) {
-	return client.ListTags(ctx)
+func (t *Tag) List(client Client) ([]*Tag, error) {
+	return client.ListTags()
 }
 
 // ListItems
-func (t *Tag) ListItems(ctx context.Context, client Client, tagID ...ID) ([]*Item, error) {
+func (t *Tag) ListItems(client Client, tagID ...ID) ([]*Item, error) {
 	id := t.whichID(tagID...)
-	return client.ListTagItems(ctx, id)
+	return client.ListTagItems(id)
 }
 
 // Patch
-func (t *Tag) Patch(ctx context.Context, client Client, tagID ...ID) (*Tag, error) {
+func (t *Tag) Patch(client Client, tagID ...ID) (*Tag, error) {
 	id := t.whichID(tagID...)
-	return client.PatchTag(ctx, id, t)
+	return client.PatchTag(id, t)
 }
 
 // Update
-func (t *Tag) Update(ctx context.Context, client Client, tagID ...ID) (*Tag, error) {
+func (t *Tag) Update(client Client, tagID ...ID) (*Tag, error) {
 	id := t.whichID(tagID...)
-	return client.UpdateTag(ctx, id, t)
+	return client.UpdateTag(id, t)
 }
 
 // UploadImage
-func (t *Tag) UploadImage(ctx context.Context, client Client, file []byte, tagID ...ID) (*Tag, error) {
+func (t *Tag) UploadImage(client Client, file []byte, tagID ...ID) (*Tag, error) {
 	id := t.whichID(tagID...)
-	return client.UploadTagImage(ctx, id, file)
+	return client.UploadTagImage(id, file)
 }
 
 // UploadImageByFile
-func (t *Tag) UploadImageByFile(ctx context.Context, client Client, filename string, tagID ...ID) (*Tag, error) {
+func (t *Tag) UploadImageByFile(client Client, filename string, tagID ...ID) (*Tag, error) {
 	id := t.whichID(tagID...)
 	file, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
 	}
-	return client.UploadTagImage(ctx, id, file)
+	return client.UploadTagImage(id, file)
 }

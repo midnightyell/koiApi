@@ -1,7 +1,6 @@
 package koiApi
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"time"
@@ -9,15 +8,15 @@ import (
 
 // ItemInterface defines methods for interacting with Item resources.
 type ItemInterface interface {
-	Create(ctx context.Context, client Client) (*Item, error)                                           // HTTP POST /api/items
-	Delete(ctx context.Context, client Client, itemID ...ID) error                                      // HTTP DELETE /api/items/{id}
-	Get(ctx context.Context, client Client, itemID ...ID) (*Item, error)                                // HTTP GET /api/items/{id}
-	GetCollection(ctx context.Context, client Client, itemID ...ID) (*Collection, error)                // HTTP GET /api/items/{id}/collection
-	IRI() string                                                                                        // /api/items/{id}
-	Patch(ctx context.Context, client Client, itemID ...ID) (*Item, error)                              // HTTP PATCH /api/items/{id}
-	Update(ctx context.Context, client Client, itemID ...ID) (*Item, error)                             // HTTP PUT /api/items/{id}
-	UploadImage(ctx context.Context, client Client, file []byte, itemID ...ID) (*Item, error)           // HTTP POST /api/items/{id}/image
-	UploadImageByFile(ctx context.Context, client Client, filename string, itemID ...ID) (*Item, error) // HTTP POST /api/items/{id}/image
+	Create(client Client) (*Item, error)                                           // HTTP POST /api/items
+	Delete(client Client, itemID ...ID) error                                      // HTTP DELETE /api/items/{id}
+	Get(client Client, itemID ...ID) (*Item, error)                                // HTTP GET /api/items/{id}
+	GetCollection(client Client, itemID ...ID) (*Collection, error)                // HTTP GET /api/items/{id}/collection
+	IRI() string                                                                   // /api/items/{id}
+	Patch(client Client, itemID ...ID) (*Item, error)                              // HTTP PATCH /api/items/{id}
+	Update(client Client, itemID ...ID) (*Item, error)                             // HTTP PUT /api/items/{id}
+	UploadImage(client Client, file []byte, itemID ...ID) (*Item, error)           // HTTP POST /api/items/{id}/image
+	UploadImageByFile(client Client, filename string, itemID ...ID) (*Item, error) // HTTP POST /api/items/{id}/image
 	Summary() string
 }
 
@@ -53,7 +52,7 @@ type ItemWithData struct {
 	Loans *[]Loan
 }
 
-//func (iwd *ItemWithData) Get ( ctx context.Context, client Client, itemID  ) error {
+//func (iwd *ItemWithData) Get ( client Client, itemID  ) error {
 //*iwd, err :=
 //}
 
@@ -66,26 +65,26 @@ func (i *Item) whichID(itemID ...ID) ID {
 }
 
 // Create
-func (i *Item) Create(ctx context.Context, client Client) (*Item, error) {
-	return client.CreateItem(ctx, i)
+func (i *Item) Create(client Client) (*Item, error) {
+	return client.CreateItem(i)
 }
 
 // Delete
-func (i *Item) Delete(ctx context.Context, client Client, itemID ...ID) error {
+func (i *Item) Delete(client Client, itemID ...ID) error {
 	id := i.whichID(itemID...)
-	return client.DeleteItem(ctx, id)
+	return client.DeleteItem(id)
 }
 
 // Get
-func (i *Item) Get(ctx context.Context, client Client, itemID ...ID) (*Item, error) {
+func (i *Item) Get(client Client, itemID ...ID) (*Item, error) {
 	id := i.whichID(itemID...)
-	return client.GetItem(ctx, id)
+	return client.GetItem(id)
 }
 
 // GetCollection
-func (i *Item) GetCollection(ctx context.Context, client Client, itemID ...ID) (*Collection, error) {
+func (i *Item) GetCollection(client Client, itemID ...ID) (*Collection, error) {
 	id := i.whichID(itemID...)
-	return client.GetItemCollection(ctx, id)
+	return client.GetItemCollection(id)
 }
 
 // IRI
@@ -94,10 +93,10 @@ func (i *Item) IRI() string {
 }
 
 // List
-func (i *Item) List(ctx context.Context, client Client) ([]*Item, error) {
+func (i *Item) List(client Client) ([]*Item, error) {
 	var allItems []*Item
 	for page := 1; ; page++ {
-		items, err := client.ListItems(ctx)
+		items, err := client.ListItems()
 		if err != nil {
 			return nil, fmt.Errorf("failed to list items on page %d: %w", err)
 		}
@@ -110,11 +109,11 @@ func (i *Item) List(ctx context.Context, client Client) ([]*Item, error) {
 }
 
 // ListData
-func (i *Item) ListData(ctx context.Context, client Client, itemID ...ID) ([]*Datum, error) {
+func (i *Item) ListData(client Client, itemID ...ID) ([]*Datum, error) {
 	id := i.whichID(itemID...)
 	var allData []*Datum
 	for page := 1; ; page++ {
-		data, err := client.ListItemData(ctx, id)
+		data, err := client.ListItemData(id)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list data for ID %s: %w", id, err)
 		}
@@ -127,11 +126,11 @@ func (i *Item) ListData(ctx context.Context, client Client, itemID ...ID) ([]*Da
 }
 
 // ListLoans
-func (i *Item) ListLoans(ctx context.Context, client Client, itemID ...ID) ([]*Loan, error) {
+func (i *Item) ListLoans(client Client, itemID ...ID) ([]*Loan, error) {
 	id := i.whichID(itemID...)
 	var allLoans []*Loan
 	for page := 1; ; page++ {
-		loans, err := client.ListItemLoans(ctx, id)
+		loans, err := client.ListItemLoans(id)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list loans for ID %s on page %d: %w", id, page, err)
 		}
@@ -144,29 +143,29 @@ func (i *Item) ListLoans(ctx context.Context, client Client, itemID ...ID) ([]*L
 }
 
 // Patch
-func (i *Item) Patch(ctx context.Context, client Client, itemID ...ID) (*Item, error) {
+func (i *Item) Patch(client Client, itemID ...ID) (*Item, error) {
 	id := i.whichID(itemID...)
-	return client.PatchItem(ctx, id, i)
+	return client.PatchItem(id, i)
 }
 
 // Update
-func (i *Item) Update(ctx context.Context, client Client, itemID ...ID) (*Item, error) {
+func (i *Item) Update(client Client, itemID ...ID) (*Item, error) {
 	id := i.whichID(itemID...)
-	return client.UpdateItem(ctx, id, i)
+	return client.UpdateItem(id, i)
 }
 
 // UploadImage
-func (i *Item) UploadImage(ctx context.Context, client Client, file []byte, itemID ...ID) (*Item, error) {
+func (i *Item) UploadImage(client Client, file []byte, itemID ...ID) (*Item, error) {
 	id := i.whichID(itemID...)
-	return client.UploadItemImage(ctx, id, file)
+	return client.UploadItemImage(id, file)
 }
 
 // UploadImageByFile
-func (i *Item) UploadImageByFile(ctx context.Context, client Client, filename string, itemID ...ID) (*Item, error) {
+func (i *Item) UploadImageByFile(client Client, filename string, itemID ...ID) (*Item, error) {
 	id := i.whichID(itemID...)
 	file, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
 	}
-	return client.UploadItemImage(ctx, id, file)
+	return client.UploadItemImage(id, file)
 }

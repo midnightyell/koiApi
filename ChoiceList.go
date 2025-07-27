@@ -1,20 +1,19 @@
 package koiApi
 
 import (
-	"context"
 	"fmt"
 	"time"
 )
 
 // ChoiceListInterface defines methods for interacting with ChoiceList resources.
 type ChoiceListInterface interface {
-	Create(ctx context.Context, client Client) (*ChoiceList, error)                     // HTTP POST /api/choice_lists
-	Delete(ctx context.Context, client Client, choiceListID ...ID) error                // HTTP DELETE /api/choice_lists/{id}
-	Get(ctx context.Context, client Client, choiceListID ...ID) (*ChoiceList, error)    // HTTP GET /api/choice_lists/{id}
-	IRI() string                                                                        // /api/choice_lists/{id}
-	List(ctx context.Context, client Client) ([]*ChoiceList, error)                     // HTTP GET /api/choice_lists
-	Patch(ctx context.Context, client Client, choiceListID ...ID) (*ChoiceList, error)  // HTTP PATCH /api/choice_lists/{id}
-	Update(ctx context.Context, client Client, choiceListID ...ID) (*ChoiceList, error) // HTTP PUT /api/choice_lists/{id}
+	Create(client Client) (*ChoiceList, error)                     // HTTP POST /api/choice_lists
+	Delete(client Client, choiceListID ...ID) error                // HTTP DELETE /api/choice_lists/{id}
+	Get(client Client, choiceListID ...ID) (*ChoiceList, error)    // HTTP GET /api/choice_lists/{id}
+	IRI() string                                                   // /api/choice_lists/{id}
+	List(client Client) ([]*ChoiceList, error)                     // HTTP GET /api/choice_lists
+	Patch(client Client, choiceListID ...ID) (*ChoiceList, error)  // HTTP PATCH /api/choice_lists/{id}
+	Update(client Client, choiceListID ...ID) (*ChoiceList, error) // HTTP PUT /api/choice_lists/{id}
 	Summary() string
 }
 
@@ -40,20 +39,20 @@ func (cl *ChoiceList) whichID(choiceListID ...ID) ID {
 }
 
 // Create
-func (cl *ChoiceList) Create(ctx context.Context, client Client) (*ChoiceList, error) {
-	return client.CreateChoiceList(ctx, cl)
+func (cl *ChoiceList) Create(client Client) (*ChoiceList, error) {
+	return client.CreateChoiceList(cl)
 }
 
 // Delete
-func (cl *ChoiceList) Delete(ctx context.Context, client Client, choiceListID ...ID) error {
+func (cl *ChoiceList) Delete(client Client, choiceListID ...ID) error {
 	id := cl.whichID(choiceListID...)
-	return client.DeleteChoiceList(ctx, id)
+	return client.DeleteChoiceList(id)
 }
 
 // Get
-func (cl *ChoiceList) Get(ctx context.Context, client Client, choiceListID ...ID) (*ChoiceList, error) {
+func (cl *ChoiceList) Get(client Client, choiceListID ...ID) (*ChoiceList, error) {
 	id := cl.whichID(choiceListID...)
-	return client.GetChoiceList(ctx, id)
+	return client.GetChoiceList(id)
 }
 
 // IRI
@@ -62,10 +61,10 @@ func (cl *ChoiceList) IRI() string {
 }
 
 // List
-func (cl *ChoiceList) List(ctx context.Context, client Client) ([]*ChoiceList, error) {
+func (cl *ChoiceList) List(client Client) ([]*ChoiceList, error) {
 	var allChoiceLists []*ChoiceList
 	for page := 1; ; page++ {
-		choiceLists, err := client.ListChoiceLists(ctx)
+		choiceLists, err := client.ListChoiceLists()
 		if err != nil {
 			return nil, fmt.Errorf("failed to list choice lists on page %d: %w", err)
 		}
@@ -78,13 +77,13 @@ func (cl *ChoiceList) List(ctx context.Context, client Client) ([]*ChoiceList, e
 }
 
 // Patch
-func (cl *ChoiceList) Patch(ctx context.Context, client Client, choiceListID ...ID) (*ChoiceList, error) {
+func (cl *ChoiceList) Patch(client Client, choiceListID ...ID) (*ChoiceList, error) {
 	id := cl.whichID(choiceListID...)
-	return client.PatchChoiceList(ctx, id, cl)
+	return client.PatchChoiceList(id, cl)
 }
 
 // Update
-func (cl *ChoiceList) Update(ctx context.Context, client Client, choiceListID ...ID) (*ChoiceList, error) {
+func (cl *ChoiceList) Update(client Client, choiceListID ...ID) (*ChoiceList, error) {
 	id := cl.whichID(choiceListID...)
-	return client.UpdateChoiceList(ctx, id, cl)
+	return client.UpdateChoiceList(id, cl)
 }

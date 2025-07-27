@@ -1,7 +1,6 @@
 package koiApi
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"reflect"
@@ -310,14 +309,14 @@ func printStruct(v interface{}, indentLevel int, verbose bool, format string, ar
 }
 
 // GetItemAndData retrieves an Item and all associated Datum objects using the Client.
-func GetItemAndData(ctx context.Context, client Client, itemID ID) (*Item, []*Datum, error) {
+func GetItemAndData(client Client, itemID ID) (*Item, []*Datum, error) {
 	// Fetch the Item
-	item, err := client.GetItem(ctx, itemID)
+	item, err := client.GetItem(itemID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get item %s: %w", itemID, err)
 	}
 	// Fetch all Datum objects associated with the item
-	data, err := client.ListItemData(ctx, itemID)
+	data, err := client.ListItemData(itemID)
 	return item, data, nil
 }
 

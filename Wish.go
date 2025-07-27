@@ -1,7 +1,6 @@
 package koiApi
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"time"
@@ -9,16 +8,16 @@ import (
 
 // WishInterface defines methods for interacting with Wish resources.
 type WishInterface interface {
-	Create(ctx context.Context, client Client) (*Wish, error)                                           // HTTP POST /api/wishes
-	Delete(ctx context.Context, client Client, wishID ...ID) error                                      // HTTP DELETE /api/wishes/{id}
-	Get(ctx context.Context, client Client, wishID ...ID) (*Wish, error)                                // HTTP GET /api/wishes/{id}
-	GetWishlist(ctx context.Context, client Client, wishID ...ID) (*Wishlist, error)                    // HTTP GET /api/wishes/{id}/wishlist
-	IRI() string                                                                                        // /api/wishes/{id}
-	List(ctx context.Context, client Client) ([]*Wish, error)                                           // HTTP GET /api/wishes
-	Patch(ctx context.Context, client Client, wishID ...ID) (*Wish, error)                              // HTTP PATCH /api/wishes/{id}
-	Update(ctx context.Context, client Client, wishID ...ID) (*Wish, error)                             // HTTP PUT /api/wishes/{id}
-	UploadImage(ctx context.Context, client Client, file []byte, wishID ...ID) (*Wish, error)           // HTTP POST /api/wishes/{id}/image
-	UploadImageByFile(ctx context.Context, client Client, filename string, wishID ...ID) (*Wish, error) // HTTP POST /api/wishes/{id}/image
+	Create(client Client) (*Wish, error)                                           // HTTP POST /api/wishes
+	Delete(client Client, wishID ...ID) error                                      // HTTP DELETE /api/wishes/{id}
+	Get(client Client, wishID ...ID) (*Wish, error)                                // HTTP GET /api/wishes/{id}
+	GetWishlist(client Client, wishID ...ID) (*Wishlist, error)                    // HTTP GET /api/wishes/{id}/wishlist
+	IRI() string                                                                   // /api/wishes/{id}
+	List(client Client) ([]*Wish, error)                                           // HTTP GET /api/wishes
+	Patch(client Client, wishID ...ID) (*Wish, error)                              // HTTP PATCH /api/wishes/{id}
+	Update(client Client, wishID ...ID) (*Wish, error)                             // HTTP PUT /api/wishes/{id}
+	UploadImage(client Client, file []byte, wishID ...ID) (*Wish, error)           // HTTP POST /api/wishes/{id}/image
+	UploadImageByFile(client Client, filename string, wishID ...ID) (*Wish, error) // HTTP POST /api/wishes/{id}/image
 	Summary() string
 }
 
@@ -56,26 +55,26 @@ func (w *Wish) whichID(wishID ...ID) ID {
 }
 
 // Create
-func (w *Wish) Create(ctx context.Context, client Client) (*Wish, error) {
-	return client.CreateWish(ctx, w)
+func (w *Wish) Create(client Client) (*Wish, error) {
+	return client.CreateWish(w)
 }
 
 // Delete
-func (w *Wish) Delete(ctx context.Context, client Client, wishID ...ID) error {
+func (w *Wish) Delete(client Client, wishID ...ID) error {
 	id := w.whichID(wishID...)
-	return client.DeleteWish(ctx, id)
+	return client.DeleteWish(id)
 }
 
 // Get
-func (w *Wish) Get(ctx context.Context, client Client, wishID ...ID) (*Wish, error) {
+func (w *Wish) Get(client Client, wishID ...ID) (*Wish, error) {
 	id := w.whichID(wishID...)
-	return client.GetWish(ctx, id)
+	return client.GetWish(id)
 }
 
 // GetWishlist
-func (w *Wish) GetWishlist(ctx context.Context, client Client, wishID ...ID) (*Wishlist, error) {
+func (w *Wish) GetWishlist(client Client, wishID ...ID) (*Wishlist, error) {
 	id := w.whichID(wishID...)
-	return client.GetWishWishlist(ctx, id)
+	return client.GetWishWishlist(id)
 }
 
 // IRI
@@ -84,34 +83,34 @@ func (w *Wish) IRI() string {
 }
 
 // List
-func (w *Wish) List(ctx context.Context, client Client) ([]*Wish, error) {
-	return client.ListWishes(ctx)
+func (w *Wish) List(client Client) ([]*Wish, error) {
+	return client.ListWishes()
 }
 
 // Patch
-func (w *Wish) Patch(ctx context.Context, client Client, wishID ...ID) (*Wish, error) {
+func (w *Wish) Patch(client Client, wishID ...ID) (*Wish, error) {
 	id := w.whichID(wishID...)
-	return client.PatchWish(ctx, id, w)
+	return client.PatchWish(id, w)
 }
 
 // Update
-func (w *Wish) Update(ctx context.Context, client Client, wishID ...ID) (*Wish, error) {
+func (w *Wish) Update(client Client, wishID ...ID) (*Wish, error) {
 	id := w.whichID(wishID...)
-	return client.UpdateWish(ctx, id, w)
+	return client.UpdateWish(id, w)
 }
 
 // UploadImage
-func (w *Wish) UploadImage(ctx context.Context, client Client, file []byte, wishID ...ID) (*Wish, error) {
+func (w *Wish) UploadImage(client Client, file []byte, wishID ...ID) (*Wish, error) {
 	id := w.whichID(wishID...)
-	return client.UploadWishImage(ctx, id, file)
+	return client.UploadWishImage(id, file)
 }
 
 // UploadImageByFile
-func (w *Wish) UploadImageByFile(ctx context.Context, client Client, filename string, wishID ...ID) (*Wish, error) {
+func (w *Wish) UploadImageByFile(client Client, filename string, wishID ...ID) (*Wish, error) {
 	id := w.whichID(wishID...)
 	file, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
 	}
-	return client.UploadWishImage(ctx, id, file)
+	return client.UploadWishImage(id, file)
 }

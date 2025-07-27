@@ -1,16 +1,15 @@
 package koiApi
 
 import (
-	"context"
 	"fmt"
 	"time"
 )
 
 // InventoryInterface defines methods for interacting with Inventory resources.
 type InventoryInterface interface {
-	Delete(ctx context.Context, client Client, inventoryID ...ID) error            // HTTP DELETE /api/inventories/{id}
-	Get(ctx context.Context, client Client, inventoryID ...ID) (*Inventory, error) // HTTP GET /api/inventories/{id}
-	IRI() string                                                                   // /api/inventories/{id}
+	Delete(client Client, inventoryID ...ID) error            // HTTP DELETE /api/inventories/{id}
+	Get(client Client, inventoryID ...ID) (*Inventory, error) // HTTP GET /api/inventories/{id}
+	IRI() string                                              // /api/inventories/{id}
 	Summary() string
 }
 
@@ -37,15 +36,15 @@ func (i *Inventory) whichID(inventoryID ...ID) ID {
 }
 
 // Delete
-func (i *Inventory) Delete(ctx context.Context, client Client, inventoryID ...ID) error {
+func (i *Inventory) Delete(client Client, inventoryID ...ID) error {
 	id := i.whichID(inventoryID...)
-	return client.DeleteInventory(ctx, id)
+	return client.DeleteInventory(id)
 }
 
 // Get
-func (i *Inventory) Get(ctx context.Context, client Client, inventoryID ...ID) (*Inventory, error) {
+func (i *Inventory) Get(client Client, inventoryID ...ID) (*Inventory, error) {
 	id := i.whichID(inventoryID...)
-	return client.GetInventory(ctx, id)
+	return client.GetInventory(id)
 }
 
 // IRI

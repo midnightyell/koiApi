@@ -1,20 +1,19 @@
 package koiApi
 
 import (
-	"context"
 	"fmt"
 	"time"
 )
 
 // TemplateInterface defines methods for interacting with Template resources.
 type TemplateInterface interface {
-	Create(ctx context.Context, client Client) (*Template, error)                   // HTTP POST /api/templates
-	Delete(ctx context.Context, client Client, templateID ...ID) error              // HTTP DELETE /api/templates/{id}
-	Get(ctx context.Context, client Client, templateID ...ID) (*Template, error)    // HTTP GET /api/templates/{id}
-	IRI() string                                                                    // /api/templates/{id}
-	List(ctx context.Context, client Client) ([]*Template, error)                   // HTTP GET /api/templates
-	Patch(ctx context.Context, client Client, templateID ...ID) (*Template, error)  // HTTP PATCH /api/templates/{id}
-	Update(ctx context.Context, client Client, templateID ...ID) (*Template, error) // HTTP PUT /api/templates/{id}
+	Create(client Client) (*Template, error)                   // HTTP POST /api/templates
+	Delete(client Client, templateID ...ID) error              // HTTP DELETE /api/templates/{id}
+	Get(client Client, templateID ...ID) (*Template, error)    // HTTP GET /api/templates/{id}
+	IRI() string                                               // /api/templates/{id}
+	List(client Client) ([]*Template, error)                   // HTTP GET /api/templates
+	Patch(client Client, templateID ...ID) (*Template, error)  // HTTP PATCH /api/templates/{id}
+	Update(client Client, templateID ...ID) (*Template, error) // HTTP PUT /api/templates/{id}
 	Summary() string
 }
 
@@ -40,20 +39,20 @@ func (t *Template) whichID(templateID ...ID) ID {
 }
 
 // Create
-func (t *Template) Create(ctx context.Context, client Client) (*Template, error) {
-	return client.CreateTemplate(ctx, t)
+func (t *Template) Create(client Client) (*Template, error) {
+	return client.CreateTemplate(t)
 }
 
 // Delete
-func (t *Template) Delete(ctx context.Context, client Client, templateID ...ID) error {
+func (t *Template) Delete(client Client, templateID ...ID) error {
 	id := t.whichID(templateID...)
-	return client.DeleteTemplate(ctx, id)
+	return client.DeleteTemplate(id)
 }
 
 // Get
-func (t *Template) Get(ctx context.Context, client Client, templateID ...ID) (*Template, error) {
+func (t *Template) Get(client Client, templateID ...ID) (*Template, error) {
 	id := t.whichID(templateID...)
-	return client.GetTemplate(ctx, id)
+	return client.GetTemplate(id)
 }
 
 // IRI
@@ -62,18 +61,18 @@ func (t *Template) IRI() string {
 }
 
 // List
-func (t *Template) List(ctx context.Context, client Client) ([]*Template, error) {
-	return client.ListTemplates(ctx)
+func (t *Template) List(client Client) ([]*Template, error) {
+	return client.ListTemplates()
 }
 
 // Patch
-func (t *Template) Patch(ctx context.Context, client Client, templateID ...ID) (*Template, error) {
+func (t *Template) Patch(client Client, templateID ...ID) (*Template, error) {
 	id := t.whichID(templateID...)
-	return client.PatchTemplate(ctx, id, t)
+	return client.PatchTemplate(id, t)
 }
 
 // Update
-func (t *Template) Update(ctx context.Context, client Client, templateID ...ID) (*Template, error) {
+func (t *Template) Update(client Client, templateID ...ID) (*Template, error) {
 	id := t.whichID(templateID...)
-	return client.UpdateTemplate(ctx, id, t)
+	return client.UpdateTemplate(id, t)
 }

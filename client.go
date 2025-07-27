@@ -20,10 +20,11 @@ import (
 
 // Errors for common HTTP status codes.
 var (
-	ErrInvalidInput  = errors.New("invalid input")
-	ErrNotFound      = errors.New("resource not found")
-	ErrUnprocessable = errors.New("unprocessable entity")
-	ErrUnauthorized  = errors.New("unauthorized")
+	ErrInvalidInput              = errors.New("invalid input")
+	ErrNotFound                  = errors.New("resource not found")
+	ErrUnprocessable             = errors.New("unprocessable entity")
+	ErrUnauthorized              = errors.New("unauthorized")
+	globalContextTimeoutDuration = 30 * time.Second // Default timeout for context
 )
 
 // KoiError represents a union of the 400 and 422 error response structures.
@@ -84,7 +85,7 @@ func NewHTTPClient(baseURL string, timeout time.Duration) Client {
 }
 
 // GetResponse retrieves the response from the httpClient struct.
-func (c *httpClient) GetResponse(ctx context.Context) string {
+func (c *httpClient) GetResponse() string {
 	if verbose {
 		fmt.Fprintln(os.Stderr, "--------------------------------------------------------")
 		// Print request headers
@@ -162,7 +163,7 @@ func (c *httpClient) GetResponse(ctx context.Context) string {
 }
 
 // doRequest sends an HTTP request, stores it and the response in the httpClient struct, and returns the response.
-func (c *httpClient) doRequest(ctx context.Context, method, path string, body io.Reader, multipartContentType string) (*http.Response, error) {
+func (c *httpClient) doRequest(method, path string, body io.Reader, multipartContentType string) (*http.Response, error) {
 	var bodyBytes []byte
 	if body != nil {
 		var err error
@@ -183,6 +184,8 @@ func (c *httpClient) doRequest(ctx context.Context, method, path string, body io
 	if bodyBytes != nil {
 		reqBody = bytes.NewReader(bodyBytes)
 	}
+
+	ctx, _ := context.WithTimeout(context.Background(), globalContextTimeoutDuration)
 
 	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, reqBody)
 	if err != nil {
@@ -260,8 +263,8 @@ func (c *httpClient) doRequest(ctx context.Context, method, path string, body io
 }
 
 // getResource retrieves a single resource and decodes it into the provided struct.
-func (c *httpClient) getResource(ctx context.Context, path string, out interface{}) error {
-	resp, err := c.doRequest(ctx, http.MethodGet, path, nil, "")
+func (c *httpClient) getResource(path string, out interface{}) error {
+	resp, err := c.doRequest(http.MethodGet, path, nil, "")
 	if err != nil {
 		return err
 	}
@@ -271,7 +274,7 @@ func (c *httpClient) getResource(ctx context.Context, path string, out interface
 }
 
 // listResources retrieves all resources by looping through all pages and decodes the member array.
-func (c *httpClient) listResources(ctx context.Context, path string, out interface{}, queryParams ...string) error {
+func (c *httpClient) listResources(path string, out interface{}, queryParams ...string) error {
 	// Ensure out is a slice to collect all resources
 	outValue := reflect.ValueOf(out)
 	if outValue.Kind() != reflect.Ptr || outValue.Elem().Kind() != reflect.Slice {
@@ -302,7 +305,7 @@ func (c *httpClient) listResources(ctx context.Context, path string, out interfa
 		q.Set("page", strconv.Itoa(page))
 		u.RawQuery = q.Encode()
 
-		resp, err := c.doRequest(ctx, http.MethodGet, u.Path+"?"+u.RawQuery, nil, "")
+		resp, err := c.doRequest(http.MethodGet, u.Path+"?"+u.RawQuery, nil, "")
 		if err != nil {
 			return err
 		}
@@ -361,13 +364,13 @@ func (c *httpClient) listResources(ctx context.Context, path string, out interfa
 }
 
 // patchResource partially updates a resource and decodes the response into the provided struct.
-func (c *httpClient) patchResource(ctx context.Context, path string, in, out interface{}) error {
+func (c *httpClient) patchResource(path string, in, out interface{}) error {
 	body, err := json.Marshal(in)
 	if err != nil {
 		return fmt.Errorf("encoding request body: %w", err)
 	}
 
-	resp, err := c.doRequest(ctx, http.MethodPatch, path, bytes.NewReader(body), "")
+	resp, err := c.doRequest(http.MethodPatch, path, bytes.NewReader(body), "")
 	if err != nil {
 		return err
 	}
@@ -377,8 +380,8 @@ func (c *httpClient) patchResource(ctx context.Context, path string, in, out int
 }
 
 // deleteResource deletes a resource.
-func (c *httpClient) deleteResource(ctx context.Context, path string) error {
-	resp, err := c.doRequest(ctx, http.MethodDelete, path, nil, "")
+func (c *httpClient) deleteResource(path string) error {
+	resp, err := c.doRequest(http.MethodDelete, path, nil, "")
 	if err != nil {
 		return err
 	}
@@ -387,7 +390,7 @@ func (c *httpClient) deleteResource(ctx context.Context, path string) error {
 }
 
 // uploadFile uploads a file using multipart/form-data and decodes the response.
-func (c *httpClient) uploadFile(ctx context.Context, path string, file []byte, fieldName string, out interface{}) error {
+func (c *httpClient) uploadFile(path string, file []byte, fieldName string, out interface{}) error {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	part, err := writer.CreateFormFile(fieldName, "upload")
@@ -402,7 +405,7 @@ func (c *httpClient) uploadFile(ctx context.Context, path string, file []byte, f
 	}
 
 	contentType := writer.FormDataContentType()
-	resp, err := c.doRequest(ctx, http.MethodPost, path, body, contentType)
+	resp, err := c.doRequest(http.MethodPost, path, body, contentType)
 	if err != nil {
 		return err
 	}
@@ -412,7 +415,7 @@ func (c *httpClient) uploadFile(ctx context.Context, path string, file []byte, f
 }
 
 // CheckLogin authenticates a user and returns a JWT token.
-func (c *httpClient) CheckLogin(ctx context.Context) (string, error) {
+func (c *httpClient) CheckLogin() (string, error) {
 
 	u := Auth.Username
 	p := Auth.Password
@@ -425,7 +428,7 @@ func (c *httpClient) CheckLogin(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("encoding request body: %w", err)
 	}
 
-	resp, err := c.doRequest(ctx, http.MethodPost, "/api/authentication_token", bytes.NewReader(body), "")
+	resp, err := c.doRequest(http.MethodPost, "/api/authentication_token", bytes.NewReader(body), "")
 	if err != nil {
 		return "", err
 	}
@@ -443,13 +446,13 @@ func (c *httpClient) CheckLogin(ctx context.Context) (string, error) {
 }
 
 // postResource creates a resource and decodes the response into the provided struct.
-func (c *httpClient) postResource(ctx context.Context, path string, in, out interface{}) error {
+func (c *httpClient) postResource(path string, in, out interface{}) error {
 	body, err := json.Marshal(in)
 	if err != nil {
 		return fmt.Errorf("encoding request body: %w", err)
 	}
 
-	resp, err := c.doRequest(ctx, http.MethodPost, path, bytes.NewReader(body), "")
+	resp, err := c.doRequest(http.MethodPost, path, bytes.NewReader(body), "")
 	if err != nil {
 		return err
 	}
@@ -462,13 +465,13 @@ func (c *httpClient) postResource(ctx context.Context, path string, in, out inte
 }
 
 // putResource updates a resource and decodes the response into the provided struct.
-func (c *httpClient) putResource(ctx context.Context, path string, in, out interface{}) error {
+func (c *httpClient) putResource(path string, in, out interface{}) error {
 	body, err := json.Marshal(in)
 	if err != nil {
 		return fmt.Errorf("encoding request body: %w", err)
 	}
 
-	resp, err := c.doRequest(ctx, http.MethodPut, path, bytes.NewReader(body), "")
+	resp, err := c.doRequest(http.MethodPut, path, bytes.NewReader(body), "")
 	if err != nil {
 		return err
 	}

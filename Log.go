@@ -1,16 +1,15 @@
 package koiApi
 
 import (
-	"context"
 	"fmt"
 	"time"
 )
 
 // LogInterface defines methods for interacting with Log resources.
 type LogInterface interface {
-	Get(ctx context.Context, client Client, logID ...ID) (*Log, error) // HTTP GET /api/logs/{id}
-	IRI() string                                                       // /api/logs/{id}
-	List(ctx context.Context, client Client) ([]*Log, error)           // HTTP GET /api/logs
+	Get(client Client, logID ...ID) (*Log, error) // HTTP GET /api/logs/{id}
+	IRI() string                                  // /api/logs/{id}
+	List(client Client) ([]*Log, error)           // HTTP GET /api/logs
 	Summary() string
 }
 
@@ -39,9 +38,9 @@ func (l *Log) whichID(logID ...ID) ID {
 }
 
 // Get
-func (l *Log) Get(ctx context.Context, client Client, logID ...ID) (*Log, error) {
+func (l *Log) Get(client Client, logID ...ID) (*Log, error) {
 	id := l.whichID(logID...)
-	return client.GetLog(ctx, id)
+	return client.GetLog(id)
 }
 
 // IRI
@@ -50,6 +49,6 @@ func (l *Log) IRI() string {
 }
 
 // List
-func (l *Log) List(ctx context.Context, client Client) ([]*Log, error) {
-	return client.ListLogs(ctx)
+func (l *Log) List(client Client) ([]*Log, error) {
+	return client.ListLogs()
 }

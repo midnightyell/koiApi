@@ -1,7 +1,6 @@
 package koiApi
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"time"
@@ -11,16 +10,16 @@ type PhotoImage *string
 
 // PhotoInterface defines methods for interacting with Photo resources.
 type PhotoInterface interface {
-	Create(ctx context.Context, client Client) (*Photo, error)                                            // HTTP POST /api/photos
-	Delete(ctx context.Context, client Client, photoID ...ID) error                                       // HTTP DELETE /api/photos/{id}
-	Get(ctx context.Context, client Client, photoID ...ID) (*Photo, error)                                // HTTP GET /api/photos/{id}
-	GetAlbum(ctx context.Context, client Client, photoID ...ID) (*Album, error)                           // HTTP GET /api/photos/{id}/album
-	IRI() string                                                                                          // /api/photos/{id}
-	List(ctx context.Context, client Client) ([]*Photo, error)                                            // HTTP GET /api/photos
-	Patch(ctx context.Context, client Client, photoID ...ID) (*Photo, error)                              // HTTP PATCH /api/photos/{id}
-	Update(ctx context.Context, client Client, photoID ...ID) (*Photo, error)                             // HTTP PUT /api/photos/{id}
-	UploadImage(ctx context.Context, client Client, file []byte, photoID ...ID) (*Photo, error)           // HTTP POST /api/photos/{id}/image
-	UploadImageByFile(ctx context.Context, client Client, filename string, photoID ...ID) (*Photo, error) // HTTP POST /api/photos/{id}/image
+	Create(client Client) (*Photo, error)                                            // HTTP POST /api/photos
+	Delete(client Client, photoID ...ID) error                                       // HTTP DELETE /api/photos/{id}
+	Get(client Client, photoID ...ID) (*Photo, error)                                // HTTP GET /api/photos/{id}
+	GetAlbum(client Client, photoID ...ID) (*Album, error)                           // HTTP GET /api/photos/{id}/album
+	IRI() string                                                                     // /api/photos/{id}
+	List(client Client) ([]*Photo, error)                                            // HTTP GET /api/photos
+	Patch(client Client, photoID ...ID) (*Photo, error)                              // HTTP PATCH /api/photos/{id}
+	Update(client Client, photoID ...ID) (*Photo, error)                             // HTTP PUT /api/photos/{id}
+	UploadImage(client Client, file []byte, photoID ...ID) (*Photo, error)           // HTTP POST /api/photos/{id}/image
+	UploadImageByFile(client Client, filename string, photoID ...ID) (*Photo, error) // HTTP POST /api/photos/{id}/image
 	Summary() string
 }
 
@@ -56,26 +55,26 @@ func (p *Photo) whichID(photoID ...ID) ID {
 }
 
 // Create
-func (p *Photo) Create(ctx context.Context, client Client) (*Photo, error) {
-	return client.CreatePhoto(ctx, p)
+func (p *Photo) Create(client Client) (*Photo, error) {
+	return client.CreatePhoto(p)
 }
 
 // Delete
-func (p *Photo) Delete(ctx context.Context, client Client, photoID ...ID) error {
+func (p *Photo) Delete(client Client, photoID ...ID) error {
 	id := p.whichID(photoID...)
-	return client.DeletePhoto(ctx, id)
+	return client.DeletePhoto(id)
 }
 
 // Get
-func (p *Photo) Get(ctx context.Context, client Client, photoID ...ID) (*Photo, error) {
+func (p *Photo) Get(client Client, photoID ...ID) (*Photo, error) {
 	id := p.whichID(photoID...)
-	return client.GetPhoto(ctx, id)
+	return client.GetPhoto(id)
 }
 
 // GetAlbum
-func (p *Photo) GetAlbum(ctx context.Context, client Client, photoID ...ID) (*Album, error) {
+func (p *Photo) GetAlbum(client Client, photoID ...ID) (*Album, error) {
 	id := p.whichID(photoID...)
-	return client.GetPhotoAlbum(ctx, id)
+	return client.GetPhotoAlbum(id)
 }
 
 // IRI
@@ -84,29 +83,29 @@ func (p *Photo) IRI() string {
 }
 
 // Patch
-func (p *Photo) Patch(ctx context.Context, client Client, photoID ...ID) (*Photo, error) {
+func (p *Photo) Patch(client Client, photoID ...ID) (*Photo, error) {
 	id := p.whichID(photoID...)
-	return client.PatchPhoto(ctx, id, p)
+	return client.PatchPhoto(id, p)
 }
 
 // Update
-func (p *Photo) Update(ctx context.Context, client Client, photoID ...ID) (*Photo, error) {
+func (p *Photo) Update(client Client, photoID ...ID) (*Photo, error) {
 	id := p.whichID(photoID...)
-	return client.UpdatePhoto(ctx, id, p)
+	return client.UpdatePhoto(id, p)
 }
 
 // UploadImage
-func (p *Photo) UploadImage(ctx context.Context, client Client, file []byte, photoID ...ID) (*Photo, error) {
+func (p *Photo) UploadImage(client Client, file []byte, photoID ...ID) (*Photo, error) {
 	id := p.whichID(photoID...)
-	return client.UploadPhotoImage(ctx, id, file)
+	return client.UploadPhotoImage(id, file)
 }
 
 // UploadImageByFile
-func (p *Photo) UploadImageByFile(ctx context.Context, client Client, filename string, photoID ...ID) (*Photo, error) {
+func (p *Photo) UploadImageByFile(client Client, filename string, photoID ...ID) (*Photo, error) {
 	id := p.whichID(photoID...)
 	file, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
 	}
-	return client.UploadPhotoImage(ctx, id, file)
+	return client.UploadPhotoImage(id, file)
 }
