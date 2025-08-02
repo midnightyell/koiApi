@@ -42,7 +42,7 @@ func TestCollectionAndItemLifecycleWithRealServer(t *testing.T) {
 	assert.NotEmpty(t, creds.Password, "Password is empty")
 
 	// Initialize client (assumes a real client implementation)
-	client := NewHTTPClient(creds.URL, 30*time.Second)
+	client := NewKoiClient(creds.URL, 30*time.Second)
 
 	:= context.Background()
 

@@ -7,7 +7,7 @@ import (
 // DeleteAllData deletes all accessible data from the Koillection database.
 // It returns an error if any deletions fail, but continues processing to maximize cleanup.
 // The error contains a list of individual failures.
-func (c *httpClient) DeleteAllData() error {
+func (c *koiClient) DeleteAllData() error {
 	var errs []error
 
 	// Helper function to append errors

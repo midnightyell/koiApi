@@ -6,7 +6,7 @@ import (
 )
 
 // validateItem enforces schema restrictions for Item creation, collecting all validation errors.
-func (c *httpClient) validateItem(item *Item) error {
+func (c *koiClient) validateItem(item *Item) error {
 	var errs []string
 
 	// name is required, type string; see components.schemas.Item-item.write.required
@@ -39,7 +39,7 @@ func (c *httpClient) validateItem(item *Item) error {
 }
 
 // validateAlbum enforces schema restrictions for Album creation, collecting all validation errors.
-func (c *httpClient) validateAlbum(album *Album) error {
+func (c *koiClient) validateAlbum(album *Album) error {
 	var errs []string
 	// title is required, type string; see components.schemas.Album-album.write.required
 	if album.Title == "" {
@@ -60,7 +60,7 @@ func (c *httpClient) validateAlbum(album *Album) error {
 }
 
 // validateChoiceList enforces schema restrictions for ChoiceList creation, collecting all validation errors.
-func (c *httpClient) validateChoiceList(choiceList *ChoiceList) error {
+func (c *koiClient) validateChoiceList(choiceList *ChoiceList) error {
 	var errs []string
 	// choices array of unique strings; see components.schemas.ChoiceList-choiceList.write.properties.choices
 	if len(choiceList.Choices) > 0 {
@@ -79,7 +79,7 @@ func (c *httpClient) validateChoiceList(choiceList *ChoiceList) error {
 }
 
 // validateCollection enforces schema restrictions for Collection creation, collecting all validation errors.
-func (c *httpClient) validateCollection(collection *Collection) error {
+func (c *koiClient) validateCollection(collection *Collection) error {
 	var errs []string
 	// title is required, type string; see components.schemas.Collection-collection.write.required
 	if collection.Title == "" {
@@ -100,7 +100,7 @@ func (c *httpClient) validateCollection(collection *Collection) error {
 }
 
 // validateDatum enforces schema restrictions for Datum creation, collecting all validation errors.
-func (c *httpClient) validateDatum(datum *Datum) error {
+func (c *koiClient) validateDatum(datum *Datum) error {
 	var errs []string
 	// type is required, enum; see components.schemas.Datum-datum.write.required
 	if datum.DatumType == "" {
@@ -143,7 +143,7 @@ func (c *httpClient) validateDatum(datum *Datum) error {
 }
 
 // validateField enforces schema restrictions for Field creation, collecting all validation errors.
-func (c *httpClient) validateField(field *Field) error {
+func (c *koiClient) validateField(field *Field) error {
 	var errs []string
 	// name is required, type string; see components.schemas.Field-field.write.required
 	if field.Name == "" {
@@ -188,7 +188,7 @@ func (c *httpClient) validateField(field *Field) error {
 }
 
 // validateLoan enforces schema restrictions for Loan creation, collecting all validation errors.
-func (c *httpClient) validateLoan(loan *Loan) error {
+func (c *koiClient) validateLoan(loan *Loan) error {
 	var errs []string
 	// item is required, type string or null (IRI); see components.schemas.Loan-loan.write.required
 	if loan.Item == nil {
@@ -209,7 +209,7 @@ func (c *httpClient) validateLoan(loan *Loan) error {
 }
 
 // validatePhoto enforces schema restrictions for Photo creation, collecting all validation errors.
-func (c *httpClient) validatePhoto(photo *Photo) error {
+func (c *koiClient) validatePhoto(photo *Photo) error {
 	var errs []string
 	// title is required, type string; see components.schemas.Photo-photo.write.required
 	if photo.Title == "" {
@@ -238,7 +238,7 @@ func (c *httpClient) validatePhoto(photo *Photo) error {
 }
 
 // validateTag enforces schema restrictions for Tag creation, collecting all validation errors.
-func (c *httpClient) validateTag(tag *Tag) error {
+func (c *koiClient) validateTag(tag *Tag) error {
 	var errs []string
 	// label is required, type string; see components.schemas.Tag-tag.write.required
 	if tag.Label == "" {
@@ -259,7 +259,7 @@ func (c *httpClient) validateTag(tag *Tag) error {
 }
 
 // validateTagCategory enforces schema restrictions for TagCategory creation, collecting all validation errors.
-func (c *httpClient) validateTagCategory(category *TagCategory) error {
+func (c *koiClient) validateTagCategory(category *TagCategory) error {
 	var errs []string
 	// label is required, type string; see components.schemas.TagCategory-tagCategory.write.required
 	if category.Label == "" {
@@ -272,7 +272,7 @@ func (c *httpClient) validateTagCategory(category *TagCategory) error {
 }
 
 // validateTemplate enforces schema restrictions for Template creation, collecting all validation errors.
-func (c *httpClient) validateTemplate(template *Template) error {
+func (c *koiClient) validateTemplate(template *Template) error {
 	var errs []string
 	// name is required, type string; see components.schemas.Template-template.write.required
 	if template.Name == "" {
@@ -285,7 +285,7 @@ func (c *httpClient) validateTemplate(template *Template) error {
 }
 
 // validateWish enforces schema restrictions for Wish creation, collecting all validation errors.
-func (c *httpClient) validateWish(wish *Wish) error {
+func (c *koiClient) validateWish(wish *Wish) error {
 	var errs []string
 	// name is required, type string; see components.schemas.Wish-wish.write.required
 	if wish.Name == "" {
@@ -316,7 +316,7 @@ func (c *httpClient) validateWish(wish *Wish) error {
 }
 
 // validateWishlist enforces schema restrictions for Wishlist creation, collecting all validation errors.
-func (c *httpClient) validateWishlist(wishlist *Wishlist) error {
+func (c *koiClient) validateWishlist(wishlist *Wishlist) error {
 	var errs []string
 	// name is required, type string; see components.schemas.Wishlist-wishlist.write.required
 	if wishlist.Name == "" {

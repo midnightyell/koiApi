@@ -135,7 +135,7 @@ type Client interface {
 }
 
 // GetMetrics retrieves system or user-specific metrics.
-func (c *httpClient) GetMetrics() (*Metrics, error) {
+func (c *koiClient) GetMetrics() (*Metrics, error) {
 	var metrics Metrics
 	if err := c.getResource("/api/metrics", &metrics); err != nil {
 		return nil, err
@@ -144,7 +144,7 @@ func (c *httpClient) GetMetrics() (*Metrics, error) {
 }
 
 // CreateAlbum creates a new album with schema validation.
-func (c *httpClient) CreateAlbum(album *Album) (*Album, error) {
+func (c *koiClient) CreateAlbum(album *Album) (*Album, error) {
 	if err := c.validateAlbum(album); err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (c *httpClient) CreateAlbum(album *Album) (*Album, error) {
 }
 
 // GetAlbum retrieves an album by its ID.
-func (c *httpClient) GetAlbum(id ID) (*Album, error) {
+func (c *koiClient) GetAlbum(id ID) (*Album, error) {
 	var album Album
 	if err := c.getResource("/api/albums/"+string(id), &album); err != nil {
 		return nil, err
@@ -165,7 +165,7 @@ func (c *httpClient) GetAlbum(id ID) (*Album, error) {
 }
 
 // ListAlbums retrieves a list of albums.
-func (c *httpClient) ListAlbums(queryParams ...string) ([]*Album, error) {
+func (c *koiClient) ListAlbums(queryParams ...string) ([]*Album, error) {
 	var albums []*Album
 	if err := c.listResources("/api/albums", &albums, queryParams...); err != nil {
 		return nil, err
@@ -174,7 +174,7 @@ func (c *httpClient) ListAlbums(queryParams ...string) ([]*Album, error) {
 }
 
 // UpdateAlbum replaces an existing album.
-func (c *httpClient) UpdateAlbum(id ID, album *Album) (*Album, error) {
+func (c *koiClient) UpdateAlbum(id ID, album *Album) (*Album, error) {
 	var result Album
 	if err := c.putResource("/api/albums/"+string(id), album, &result); err != nil {
 		return nil, err
@@ -183,7 +183,7 @@ func (c *httpClient) UpdateAlbum(id ID, album *Album) (*Album, error) {
 }
 
 // PatchAlbum updates an existing album partially.
-func (c *httpClient) PatchAlbum(id ID, album *Album) (*Album, error) {
+func (c *koiClient) PatchAlbum(id ID, album *Album) (*Album, error) {
 	var result Album
 	if err := c.patchResource("/api/albums/"+string(id), album, &result); err != nil {
 		return nil, err
@@ -192,12 +192,12 @@ func (c *httpClient) PatchAlbum(id ID, album *Album) (*Album, error) {
 }
 
 // DeleteAlbum deletes an album by its ID.
-func (c *httpClient) DeleteAlbum(id ID) error {
+func (c *koiClient) DeleteAlbum(id ID) error {
 	return c.deleteResource("/api/albums/" + string(id))
 }
 
 // ListAlbumChildren retrieves the children of an album.
-func (c *httpClient) ListAlbumChildren(id ID, queryParams ...string) ([]*Album, error) {
+func (c *koiClient) ListAlbumChildren(id ID, queryParams ...string) ([]*Album, error) {
 	var albums []*Album
 	path := fmt.Sprintf("/api/albums/%s/children", id)
 	if err := c.listResources(path, &albums, queryParams...); err != nil {
@@ -207,7 +207,7 @@ func (c *httpClient) ListAlbumChildren(id ID, queryParams ...string) ([]*Album, 
 }
 
 // UploadAlbumImage uploads an image for an album.
-func (c *httpClient) UploadAlbumImage(id ID, file []byte) (*Album, error) {
+func (c *koiClient) UploadAlbumImage(id ID, file []byte) (*Album, error) {
 	var album Album
 	if err := c.uploadFile("/api/albums/"+string(id)+"/image", file, "file", &album); err != nil {
 		return nil, err
@@ -216,7 +216,7 @@ func (c *httpClient) UploadAlbumImage(id ID, file []byte) (*Album, error) {
 }
 
 // GetAlbumParent retrieves the parent album of an album.
-func (c *httpClient) GetAlbumParent(id ID) (*Album, error) {
+func (c *koiClient) GetAlbumParent(id ID) (*Album, error) {
 	var album Album
 	if err := c.getResource("/api/albums/"+string(id)+"/parent", &album); err != nil {
 		return nil, err
@@ -225,7 +225,7 @@ func (c *httpClient) GetAlbumParent(id ID) (*Album, error) {
 }
 
 // ListAlbumPhotos retrieves the photos in an album.
-func (c *httpClient) ListAlbumPhotos(id ID, queryParams ...string) ([]*Photo, error) {
+func (c *koiClient) ListAlbumPhotos(id ID, queryParams ...string) ([]*Photo, error) {
 	var photos []*Photo
 	path := fmt.Sprintf("/api/albums/%s/photos", id)
 	if err := c.listResources(path, &photos, queryParams...); err != nil {
@@ -235,7 +235,7 @@ func (c *httpClient) ListAlbumPhotos(id ID, queryParams ...string) ([]*Photo, er
 }
 
 // CreateChoiceList creates a new choice list with schema validation.
-func (c *httpClient) CreateChoiceList(choiceList *ChoiceList) (*ChoiceList, error) {
+func (c *koiClient) CreateChoiceList(choiceList *ChoiceList) (*ChoiceList, error) {
 	if err := c.validateChoiceList(choiceList); err != nil {
 		return nil, err
 	}
@@ -247,7 +247,7 @@ func (c *httpClient) CreateChoiceList(choiceList *ChoiceList) (*ChoiceList, erro
 }
 
 // GetChoiceList retrieves a choice list by its ID.
-func (c *httpClient) GetChoiceList(id ID) (*ChoiceList, error) {
+func (c *koiClient) GetChoiceList(id ID) (*ChoiceList, error) {
 	var choiceList ChoiceList
 	if err := c.getResource("/api/choice_lists/"+string(id), &choiceList); err != nil {
 		return nil, err
@@ -256,7 +256,7 @@ func (c *httpClient) GetChoiceList(id ID) (*ChoiceList, error) {
 }
 
 // ListChoiceLists retrieves a list of choice lists.
-func (c *httpClient) ListChoiceLists(queryParams ...string) ([]*ChoiceList, error) {
+func (c *koiClient) ListChoiceLists(queryParams ...string) ([]*ChoiceList, error) {
 	var choiceLists []*ChoiceList
 	if err := c.listResources("/api/choice_lists", &choiceLists, queryParams...); err != nil {
 		return nil, err
@@ -265,7 +265,7 @@ func (c *httpClient) ListChoiceLists(queryParams ...string) ([]*ChoiceList, erro
 }
 
 // UpdateChoiceList replaces an existing choice list.
-func (c *httpClient) UpdateChoiceList(id ID, choiceList *ChoiceList) (*ChoiceList, error) {
+func (c *koiClient) UpdateChoiceList(id ID, choiceList *ChoiceList) (*ChoiceList, error) {
 	var result ChoiceList
 	if err := c.putResource("/api/choice_lists/"+string(id), choiceList, &result); err != nil {
 		return nil, err
@@ -274,7 +274,7 @@ func (c *httpClient) UpdateChoiceList(id ID, choiceList *ChoiceList) (*ChoiceLis
 }
 
 // PatchChoiceList updates an existing choice list partially.
-func (c *httpClient) PatchChoiceList(id ID, choiceList *ChoiceList) (*ChoiceList, error) {
+func (c *koiClient) PatchChoiceList(id ID, choiceList *ChoiceList) (*ChoiceList, error) {
 	var result ChoiceList
 	if err := c.patchResource("/api/choice_lists/"+string(id), choiceList, &result); err != nil {
 		return nil, err
@@ -283,12 +283,12 @@ func (c *httpClient) PatchChoiceList(id ID, choiceList *ChoiceList) (*ChoiceList
 }
 
 // DeleteChoiceList deletes a choice list by its ID.
-func (c *httpClient) DeleteChoiceList(id ID) error {
+func (c *koiClient) DeleteChoiceList(id ID) error {
 	return c.deleteResource("/api/choice_lists/" + string(id))
 }
 
 // CreateCollection creates a new collection with schema validation.
-func (c *httpClient) CreateCollection(collection *Collection) (*Collection, error) {
+func (c *koiClient) CreateCollection(collection *Collection) (*Collection, error) {
 	if err := c.validateCollection(collection); err != nil {
 		return nil, err
 	}
@@ -300,7 +300,7 @@ func (c *httpClient) CreateCollection(collection *Collection) (*Collection, erro
 }
 
 // GetCollection retrieves a collection by its ID.
-func (c *httpClient) GetCollection(id ID) (*Collection, error) {
+func (c *koiClient) GetCollection(id ID) (*Collection, error) {
 	var collection Collection
 	if err := c.getResource("/api/collections/"+string(id), &collection); err != nil {
 		return nil, err
@@ -309,7 +309,7 @@ func (c *httpClient) GetCollection(id ID) (*Collection, error) {
 }
 
 // ListCollections retrieves a list of collections.
-func (c *httpClient) ListCollections(queryParams ...string) ([]*Collection, error) {
+func (c *koiClient) ListCollections(queryParams ...string) ([]*Collection, error) {
 	var collections []*Collection
 	if err := c.listResources("/api/collections", &collections, queryParams...); err != nil {
 		return nil, err
@@ -318,7 +318,7 @@ func (c *httpClient) ListCollections(queryParams ...string) ([]*Collection, erro
 }
 
 // UpdateCollection replaces an existing collection.
-func (c *httpClient) UpdateCollection(id ID, collection *Collection) (*Collection, error) {
+func (c *koiClient) UpdateCollection(id ID, collection *Collection) (*Collection, error) {
 	var result Collection
 	if err := c.putResource("/api/collections/"+string(id), collection, &result); err != nil {
 		return nil, err
@@ -327,7 +327,7 @@ func (c *httpClient) UpdateCollection(id ID, collection *Collection) (*Collectio
 }
 
 // PatchCollection updates an existing collection partially.
-func (c *httpClient) PatchCollection(id ID, collection *Collection) (*Collection, error) {
+func (c *koiClient) PatchCollection(id ID, collection *Collection) (*Collection, error) {
 	var result Collection
 	if err := c.patchResource("/api/collections/"+string(id), collection, &result); err != nil {
 		return nil, err
@@ -336,12 +336,12 @@ func (c *httpClient) PatchCollection(id ID, collection *Collection) (*Collection
 }
 
 // DeleteCollection deletes a collection by its ID.
-func (c *httpClient) DeleteCollection(id ID) error {
+func (c *koiClient) DeleteCollection(id ID) error {
 	return c.deleteResource("/api/collections/" + string(id))
 }
 
 // ListCollectionChildren retrieves the children of a collection.
-func (c *httpClient) ListCollectionChildren(id ID, queryParams ...string) ([]*Collection, error) {
+func (c *koiClient) ListCollectionChildren(id ID, queryParams ...string) ([]*Collection, error) {
 	var collections []*Collection
 	path := fmt.Sprintf("/api/collections/%s/children", id)
 	if err := c.listResources(path, &collections, queryParams...); err != nil {
@@ -351,7 +351,7 @@ func (c *httpClient) ListCollectionChildren(id ID, queryParams ...string) ([]*Co
 }
 
 // UploadCollectionImage uploads an image for a collection.
-func (c *httpClient) UploadCollectionImage(id ID, file []byte) (*Collection, error) {
+func (c *koiClient) UploadCollectionImage(id ID, file []byte) (*Collection, error) {
 	var collection Collection
 	if err := c.uploadFile("/api/collections/"+string(id)+"/image", file, "file", &collection); err != nil {
 		return nil, err
@@ -360,7 +360,7 @@ func (c *httpClient) UploadCollectionImage(id ID, file []byte) (*Collection, err
 }
 
 // GetCollectionParent retrieves the parent collection of a collection.
-func (c *httpClient) GetCollectionParent(id ID) (*Collection, error) {
+func (c *koiClient) GetCollectionParent(id ID) (*Collection, error) {
 	var collection Collection
 	if err := c.getResource("/api/collections/"+string(id)+"/parent", &collection); err != nil {
 		return nil, err
@@ -369,7 +369,7 @@ func (c *httpClient) GetCollectionParent(id ID) (*Collection, error) {
 }
 
 // ListCollectionItems retrieves the items in a collection.
-func (c *httpClient) ListCollectionItems(id ID, queryParams ...string) ([]*Item, error) {
+func (c *koiClient) ListCollectionItems(id ID, queryParams ...string) ([]*Item, error) {
 	var items []*Item
 	path := fmt.Sprintf("/api/collections/%s/items", id)
 	if err := c.listResources(path, &items, queryParams...); err != nil {
@@ -379,7 +379,7 @@ func (c *httpClient) ListCollectionItems(id ID, queryParams ...string) ([]*Item,
 }
 
 // ListCollectionData retrieves the data in a collection.
-func (c *httpClient) ListCollectionData(id ID, queryParams ...string) ([]*Datum, error) {
+func (c *koiClient) ListCollectionData(id ID, queryParams ...string) ([]*Datum, error) {
 	var data []*Datum
 	path := fmt.Sprintf("/api/collections/%s/data", id)
 	if err := c.listResources(path, &data, queryParams...); err != nil {
@@ -389,7 +389,7 @@ func (c *httpClient) ListCollectionData(id ID, queryParams ...string) ([]*Datum,
 }
 
 // GetCollectionDefaultTemplate retrieves the default template for items in a collection.
-func (c *httpClient) GetCollectionDefaultTemplate(id ID) (*Template, error) {
+func (c *koiClient) GetCollectionDefaultTemplate(id ID) (*Template, error) {
 	var template Template
 	if err := c.getResource("/api/collections/"+string(id)+"/items_default_template", &template); err != nil {
 		return nil, err
@@ -398,7 +398,7 @@ func (c *httpClient) GetCollectionDefaultTemplate(id ID) (*Template, error) {
 }
 
 // CreateDatum creates a new datum with schema validation.
-func (c *httpClient) CreateDatum(datum *Datum) (*Datum, error) {
+func (c *koiClient) CreateDatum(datum *Datum) (*Datum, error) {
 	if err := c.validateDatum(datum); err != nil {
 		return nil, err
 	}
@@ -410,7 +410,7 @@ func (c *httpClient) CreateDatum(datum *Datum) (*Datum, error) {
 }
 
 // GetDatum retrieves a datum by its ID.
-func (c *httpClient) GetDatum(id ID) (*Datum, error) {
+func (c *koiClient) GetDatum(id ID) (*Datum, error) {
 	var datum Datum
 	if err := c.getResource("/api/data/"+string(id), &datum); err != nil {
 		return nil, err
@@ -419,7 +419,7 @@ func (c *httpClient) GetDatum(id ID) (*Datum, error) {
 }
 
 // ListData retrieves a list of data.
-func (c *httpClient) ListData(queryParams ...string) ([]*Datum, error) {
+func (c *koiClient) ListData(queryParams ...string) ([]*Datum, error) {
 	var data []*Datum
 	if err := c.listResources("/api/data", &data, queryParams...); err != nil {
 		return nil, err
@@ -428,7 +428,7 @@ func (c *httpClient) ListData(queryParams ...string) ([]*Datum, error) {
 }
 
 // UpdateDatum replaces an existing datum.
-func (c *httpClient) UpdateDatum(id ID, datum *Datum) (*Datum, error) {
+func (c *koiClient) UpdateDatum(id ID, datum *Datum) (*Datum, error) {
 	var result Datum
 	if err := c.putResource("/api/data/"+string(id), datum, &result); err != nil {
 		return nil, err
@@ -437,7 +437,7 @@ func (c *httpClient) UpdateDatum(id ID, datum *Datum) (*Datum, error) {
 }
 
 // PatchDatum updates an existing datum partially.
-func (c *httpClient) PatchDatum(id ID, datum *Datum) (*Datum, error) {
+func (c *koiClient) PatchDatum(id ID, datum *Datum) (*Datum, error) {
 	var result Datum
 	if err := c.patchResource("/api/data/"+string(id), datum, &result); err != nil {
 		return nil, err
@@ -446,12 +446,12 @@ func (c *httpClient) PatchDatum(id ID, datum *Datum) (*Datum, error) {
 }
 
 // DeleteDatum deletes a datum by its ID.
-func (c *httpClient) DeleteDatum(id ID) error {
+func (c *koiClient) DeleteDatum(id ID) error {
 	return c.deleteResource("/api/data/" + string(id))
 }
 
 // UploadDatumFile uploads a file for a datum.
-func (c *httpClient) UploadDatumFile(id ID, file []byte) (*Datum, error) {
+func (c *koiClient) UploadDatumFile(id ID, file []byte) (*Datum, error) {
 	var datum Datum
 	if err := c.uploadFile("/api/data/"+string(id)+"/file", file, "fileFile", &datum); err != nil {
 		return nil, err
@@ -460,7 +460,7 @@ func (c *httpClient) UploadDatumFile(id ID, file []byte) (*Datum, error) {
 }
 
 // UploadDatumImage uploads an image for a datum.
-func (c *httpClient) UploadDatumImage(id ID, image []byte) (*Datum, error) {
+func (c *koiClient) UploadDatumImage(id ID, image []byte) (*Datum, error) {
 	var datum Datum
 	if err := c.uploadFile("/api/data/"+string(id)+"/image", image, "fileImage", &datum); err != nil {
 		return nil, err
@@ -469,7 +469,7 @@ func (c *httpClient) UploadDatumImage(id ID, image []byte) (*Datum, error) {
 }
 
 // UploadDatumVideo uploads a video for a datum.
-func (c *httpClient) UploadDatumVideo(id ID, video []byte) (*Datum, error) {
+func (c *koiClient) UploadDatumVideo(id ID, video []byte) (*Datum, error) {
 	var datum Datum
 	if err := c.uploadFile("/api/data/"+string(id)+"/video", video, "fileVideo", &datum); err != nil {
 		return nil, err
@@ -478,7 +478,7 @@ func (c *httpClient) UploadDatumVideo(id ID, video []byte) (*Datum, error) {
 }
 
 // GetDatumItem retrieves the item associated with a datum.
-func (c *httpClient) GetDatumItem(id ID) (*Item, error) {
+func (c *koiClient) GetDatumItem(id ID) (*Item, error) {
 	var item Item
 	if err := c.getResource("/api/data/"+string(id)+"/item", &item); err != nil {
 		return nil, err
@@ -487,7 +487,7 @@ func (c *httpClient) GetDatumItem(id ID) (*Item, error) {
 }
 
 // GetDatumCollection retrieves the collection associated with a datum.
-func (c *httpClient) GetDatumCollection(id ID) (*Collection, error) {
+func (c *koiClient) GetDatumCollection(id ID) (*Collection, error) {
 	var collection Collection
 	if err := c.getResource("/api/data/"+string(id)+"/collection", &collection); err != nil {
 		return nil, err
@@ -496,7 +496,7 @@ func (c *httpClient) GetDatumCollection(id ID) (*Collection, error) {
 }
 
 // CreateField creates a new field with schema validation.
-func (c *httpClient) CreateField(field *Field) (*Field, error) {
+func (c *koiClient) CreateField(field *Field) (*Field, error) {
 	if err := c.validateField(field); err != nil {
 		return nil, err
 	}
@@ -508,7 +508,7 @@ func (c *httpClient) CreateField(field *Field) (*Field, error) {
 }
 
 // GetField retrieves a field by its ID.
-func (c *httpClient) GetField(id ID) (*Field, error) {
+func (c *koiClient) GetField(id ID) (*Field, error) {
 	var field Field
 	if err := c.getResource("/api/fields/"+string(id), &field); err != nil {
 		return nil, err
@@ -517,7 +517,7 @@ func (c *httpClient) GetField(id ID) (*Field, error) {
 }
 
 // ListFields retrieves a list of fields.
-func (c *httpClient) ListFields(queryParams ...string) ([]*Field, error) {
+func (c *koiClient) ListFields(queryParams ...string) ([]*Field, error) {
 	var fields []*Field
 	if err := c.listResources("/api/fields", &fields, queryParams...); err != nil {
 		return nil, err
@@ -526,7 +526,7 @@ func (c *httpClient) ListFields(queryParams ...string) ([]*Field, error) {
 }
 
 // UpdateField replaces an existing field.
-func (c *httpClient) UpdateField(id ID, field *Field) (*Field, error) {
+func (c *koiClient) UpdateField(id ID, field *Field) (*Field, error) {
 	var result Field
 	if err := c.putResource("/api/fields/"+string(id), field, &result); err != nil {
 		return nil, err
@@ -535,7 +535,7 @@ func (c *httpClient) UpdateField(id ID, field *Field) (*Field, error) {
 }
 
 // PatchField updates an existing field partially.
-func (c *httpClient) PatchField(id ID, field *Field) (*Field, error) {
+func (c *koiClient) PatchField(id ID, field *Field) (*Field, error) {
 	var result Field
 	if err := c.patchResource("/api/fields/"+string(id), field, &result); err != nil {
 		return nil, err
@@ -544,12 +544,12 @@ func (c *httpClient) PatchField(id ID, field *Field) (*Field, error) {
 }
 
 // DeleteField deletes a field by its ID.
-func (c *httpClient) DeleteField(id ID) error {
+func (c *koiClient) DeleteField(id ID) error {
 	return c.deleteResource("/api/fields/" + string(id))
 }
 
 // GetFieldTemplate retrieves the template associated with a field.
-func (c *httpClient) GetFieldTemplate(id ID) (*Template, error) {
+func (c *koiClient) GetFieldTemplate(id ID) (*Template, error) {
 	var template Template
 	if err := c.getResource("/api/fields/"+string(id)+"/template", &template); err != nil {
 		return nil, err
@@ -558,7 +558,7 @@ func (c *httpClient) GetFieldTemplate(id ID) (*Template, error) {
 }
 
 // ListTemplateFields retrieves the fields of a template.
-func (c *httpClient) ListTemplateFields(templateid ID, queryParams ...string) ([]*Field, error) {
+func (c *koiClient) ListTemplateFields(templateid ID, queryParams ...string) ([]*Field, error) {
 	var fields []*Field
 	path := fmt.Sprintf("/api/templates/%s/fields", templateid)
 	if err := c.listResources(path, &fields, queryParams...); err != nil {
@@ -568,7 +568,7 @@ func (c *httpClient) ListTemplateFields(templateid ID, queryParams ...string) ([
 }
 
 // ListInventories retrieves a list of inventories.
-func (c *httpClient) ListInventories(queryParams ...string) ([]*Inventory, error) {
+func (c *koiClient) ListInventories(queryParams ...string) ([]*Inventory, error) {
 	var inventories []*Inventory
 	if err := c.listResources("/api/inventories", &inventories, queryParams...); err != nil {
 		return nil, err
@@ -577,7 +577,7 @@ func (c *httpClient) ListInventories(queryParams ...string) ([]*Inventory, error
 }
 
 // GetInventory retrieves an inventory by its ID.
-func (c *httpClient) GetInventory(id ID) (*Inventory, error) {
+func (c *koiClient) GetInventory(id ID) (*Inventory, error) {
 	var inventory Inventory
 	if err := c.getResource("/api/inventories/"+string(id), &inventory); err != nil {
 		return nil, err
@@ -586,12 +586,12 @@ func (c *httpClient) GetInventory(id ID) (*Inventory, error) {
 }
 
 // DeleteInventory deletes an inventory by its ID.
-func (c *httpClient) DeleteInventory(id ID) error {
+func (c *koiClient) DeleteInventory(id ID) error {
 	return c.deleteResource("/api/inventories/" + string(id))
 }
 
 // CreateItem creates a new item.
-func (c *httpClient) CreateItem(item *Item) (*Item, error) {
+func (c *koiClient) CreateItem(item *Item) (*Item, error) {
 	if err := c.validateItem(item); err != nil {
 		return nil, err
 	}
@@ -603,7 +603,7 @@ func (c *httpClient) CreateItem(item *Item) (*Item, error) {
 }
 
 // GetItem retrieves an item by its ID.
-func (c *httpClient) GetItem(id ID) (*Item, error) {
+func (c *koiClient) GetItem(id ID) (*Item, error) {
 	var item Item
 	if err := c.getResource("/api/items/"+string(id), &item); err != nil {
 		return nil, err
@@ -612,7 +612,7 @@ func (c *httpClient) GetItem(id ID) (*Item, error) {
 }
 
 // ListItems retrieves a list of items.
-func (c *httpClient) ListItems(queryParams ...string) ([]*Item, error) {
+func (c *koiClient) ListItems(queryParams ...string) ([]*Item, error) {
 	var items []*Item
 	if err := c.listResources("/api/items", &items, queryParams...); err != nil {
 		return nil, err
@@ -621,7 +621,7 @@ func (c *httpClient) ListItems(queryParams ...string) ([]*Item, error) {
 }
 
 // SearchItems retrieves a list of items that match a query
-func (c *httpClient) SearchItems(queryParams ...string) ([]*Item, error) {
+func (c *koiClient) SearchItems(queryParams ...string) ([]*Item, error) {
 	var items []*Item
 	if err := c.listResources("/search", &items, queryParams...); err != nil {
 		return nil, err
@@ -630,7 +630,7 @@ func (c *httpClient) SearchItems(queryParams ...string) ([]*Item, error) {
 }
 
 // UpdateItem replaces an existing item.
-func (c *httpClient) UpdateItem(id ID, item *Item) (*Item, error) {
+func (c *koiClient) UpdateItem(id ID, item *Item) (*Item, error) {
 	var result Item
 	if err := c.putResource("/api/items/"+string(id), item, &result); err != nil {
 		return nil, err
@@ -639,7 +639,7 @@ func (c *httpClient) UpdateItem(id ID, item *Item) (*Item, error) {
 }
 
 // PatchItem updates an existing item partially.
-func (c *httpClient) PatchItem(id ID, item *Item) (*Item, error) {
+func (c *koiClient) PatchItem(id ID, item *Item) (*Item, error) {
 	var result Item
 	if err := c.patchResource("/api/items/"+string(id), item, &result); err != nil {
 		return nil, err
@@ -648,12 +648,12 @@ func (c *httpClient) PatchItem(id ID, item *Item) (*Item, error) {
 }
 
 // DeleteItem deletes an item by its ID.
-func (c *httpClient) DeleteItem(id ID) error {
+func (c *koiClient) DeleteItem(id ID) error {
 	return c.deleteResource("/api/items/" + string(id))
 }
 
 // UploadItemImage uploads an image for an item.
-func (c *httpClient) UploadItemImage(id ID, file []byte) (*Item, error) {
+func (c *koiClient) UploadItemImage(id ID, file []byte) (*Item, error) {
 	var item Item
 	if err := c.uploadFile("/api/items/"+string(id)+"/image", file, "file", &item); err != nil {
 		return nil, err
@@ -662,7 +662,7 @@ func (c *httpClient) UploadItemImage(id ID, file []byte) (*Item, error) {
 }
 
 // ListItemRelatedItems retrieves the related items of an item.
-func (c *httpClient) ListItemRelatedItems(id ID, queryParams ...string) ([]*Item, error) {
+func (c *koiClient) ListItemRelatedItems(id ID, queryParams ...string) ([]*Item, error) {
 	var items []*Item
 	path := fmt.Sprintf("/api/items/%s/related_items", id)
 	if err := c.listResources(path, &items, queryParams...); err != nil {
@@ -672,7 +672,7 @@ func (c *httpClient) ListItemRelatedItems(id ID, queryParams ...string) ([]*Item
 }
 
 // ListItemLoans retrieves the loans of an item.
-func (c *httpClient) ListItemLoans(id ID, queryParams ...string) ([]*Loan, error) {
+func (c *koiClient) ListItemLoans(id ID, queryParams ...string) ([]*Loan, error) {
 	var loans []*Loan
 	path := fmt.Sprintf("/api/items/%s/loans", id)
 	if err := c.listResources(path, &loans, queryParams...); err != nil {
@@ -682,7 +682,7 @@ func (c *httpClient) ListItemLoans(id ID, queryParams ...string) ([]*Loan, error
 }
 
 // ListItemTags retrieves the tags of an item.
-func (c *httpClient) ListItemTags(id ID, queryParams ...string) ([]*Tag, error) {
+func (c *koiClient) ListItemTags(id ID, queryParams ...string) ([]*Tag, error) {
 	var tags []*Tag
 	path := fmt.Sprintf("/api/items/%s/tags", id)
 	if err := c.listResources(path, &tags, queryParams...); err != nil {
@@ -692,7 +692,7 @@ func (c *httpClient) ListItemTags(id ID, queryParams ...string) ([]*Tag, error) 
 }
 
 // ListItemData retrieves the data of an item.
-func (c *httpClient) ListItemData(id ID, queryParams ...string) ([]*Datum, error) {
+func (c *koiClient) ListItemData(id ID, queryParams ...string) ([]*Datum, error) {
 	var data []*Datum
 	path := fmt.Sprintf("/api/items/%s/data", id)
 	if err := c.listResources(path, &data, queryParams...); err != nil {
@@ -702,7 +702,7 @@ func (c *httpClient) ListItemData(id ID, queryParams ...string) ([]*Datum, error
 }
 
 // GetItemCollection retrieves the collection associated with an item.
-func (c *httpClient) GetItemCollection(id ID) (*Collection, error) {
+func (c *koiClient) GetItemCollection(id ID) (*Collection, error) {
 	var collection Collection
 	if err := c.getResource("/api/items/"+string(id)+"/collection", &collection); err != nil {
 		return nil, err
@@ -711,7 +711,7 @@ func (c *httpClient) GetItemCollection(id ID) (*Collection, error) {
 }
 
 // / CreateLoan creates a new loan with schema validation.
-func (c *httpClient) CreateLoan(loan *Loan) (*Loan, error) {
+func (c *koiClient) CreateLoan(loan *Loan) (*Loan, error) {
 	if err := c.validateLoan(loan); err != nil {
 		return nil, err
 	}
@@ -723,7 +723,7 @@ func (c *httpClient) CreateLoan(loan *Loan) (*Loan, error) {
 }
 
 // GetLoan retrieves a loan by its ID.
-func (c *httpClient) GetLoan(id ID) (*Loan, error) {
+func (c *koiClient) GetLoan(id ID) (*Loan, error) {
 	var loan Loan
 	if err := c.getResource("/api/loans/"+string(id), &loan); err != nil {
 		return nil, err
@@ -732,7 +732,7 @@ func (c *httpClient) GetLoan(id ID) (*Loan, error) {
 }
 
 // ListLoans retrieves a list of loans.
-func (c *httpClient) ListLoans(queryParams ...string) ([]*Loan, error) {
+func (c *koiClient) ListLoans(queryParams ...string) ([]*Loan, error) {
 	var loans []*Loan
 	if err := c.listResources("/api/loans", &loans, queryParams...); err != nil {
 		return nil, err
@@ -741,7 +741,7 @@ func (c *httpClient) ListLoans(queryParams ...string) ([]*Loan, error) {
 }
 
 // UpdateLoan replaces(an existing loan.
-func (c *httpClient) UpdateLoan(id ID, loan *Loan) (*Loan, error) {
+func (c *koiClient) UpdateLoan(id ID, loan *Loan) (*Loan, error) {
 	var result Loan
 	if err := c.putResource("/api/loans/"+string(id), loan, &result); err != nil {
 		return nil, err
@@ -750,7 +750,7 @@ func (c *httpClient) UpdateLoan(id ID, loan *Loan) (*Loan, error) {
 }
 
 // PatchLoan updates an existing loan partially.
-func (c *httpClient) PatchLoan(id ID, loan *Loan) (*Loan, error) {
+func (c *koiClient) PatchLoan(id ID, loan *Loan) (*Loan, error) {
 	var result Loan
 	if err := c.patchResource("/api/loans/"+string(id), loan, &result); err != nil {
 		return nil, err
@@ -759,12 +759,12 @@ func (c *httpClient) PatchLoan(id ID, loan *Loan) (*Loan, error) {
 }
 
 // DeleteLoan deletes a loan by its ID.
-func (c *httpClient) DeleteLoan(id ID) error {
+func (c *koiClient) DeleteLoan(id ID) error {
 	return c.deleteResource("/api/loans/" + string(id))
 }
 
 // GetLoanItem retrieves the item associated with a loan.
-func (c *httpClient) GetLoanItem(id ID) (*Item, error) {
+func (c *koiClient) GetLoanItem(id ID) (*Item, error) {
 	var item Item
 	if err := c.getResource("/api/loans/"+string(id)+"/item", &item); err != nil {
 		return nil, err
@@ -773,7 +773,7 @@ func (c *httpClient) GetLoanItem(id ID) (*Item, error) {
 }
 
 // GetLog retrieves a log by its ID.
-func (c *httpClient) GetLog(id ID) (*Log, error) {
+func (c *koiClient) GetLog(id ID) (*Log, error) {
 	var log Log
 	if err := c.getResource("/api/logs/"+string(id), &log); err != nil {
 		return nil, err
@@ -782,7 +782,7 @@ func (c *httpClient) GetLog(id ID) (*Log, error) {
 }
 
 // ListLogs retrieves a list of logs.
-func (c *httpClient) ListLogs(queryParams ...string) ([]*Log, error) {
+func (c *koiClient) ListLogs(queryParams ...string) ([]*Log, error) {
 	var logs []*Log
 	if err := c.listResources("/api/logs", &logs, queryParams...); err != nil {
 		return nil, err
@@ -791,7 +791,7 @@ func (c *httpClient) ListLogs(queryParams ...string) ([]*Log, error) {
 }
 
 // CreatePhoto creates a new photo with schema validation.
-func (c *httpClient) CreatePhoto(photo *Photo) (*Photo, error) {
+func (c *koiClient) CreatePhoto(photo *Photo) (*Photo, error) {
 	if err := c.validatePhoto(photo); err != nil {
 		return nil, err
 	}
@@ -803,7 +803,7 @@ func (c *httpClient) CreatePhoto(photo *Photo) (*Photo, error) {
 }
 
 // GetPhoto retrieves a photo by its ID.
-func (c *httpClient) GetPhoto(id ID) (*Photo, error) {
+func (c *koiClient) GetPhoto(id ID) (*Photo, error) {
 	var photo Photo
 	if err := c.getResource("/api/photos/"+string(id), &photo); err != nil {
 		return nil, err
@@ -812,7 +812,7 @@ func (c *httpClient) GetPhoto(id ID) (*Photo, error) {
 }
 
 // ListPhotos retrieves a list of photos.
-func (c *httpClient) ListPhotos(queryParams ...string) ([]*Photo, error) {
+func (c *koiClient) ListPhotos(queryParams ...string) ([]*Photo, error) {
 	var photos []*Photo
 	if err := c.listResources("/api/photos", &photos, queryParams...); err != nil {
 		return nil, err
@@ -821,7 +821,7 @@ func (c *httpClient) ListPhotos(queryParams ...string) ([]*Photo, error) {
 }
 
 // UpdatePhoto replaces an existing photo.
-func (c *httpClient) UpdatePhoto(id ID, photo *Photo) (*Photo, error) {
+func (c *koiClient) UpdatePhoto(id ID, photo *Photo) (*Photo, error) {
 	var result Photo
 	if err := c.putResource("/api/photos/"+string(id), photo, &result); err != nil {
 		return nil, err
@@ -830,7 +830,7 @@ func (c *httpClient) UpdatePhoto(id ID, photo *Photo) (*Photo, error) {
 }
 
 // PatchPhoto updates an existing photo partially.
-func (c *httpClient) PatchPhoto(id ID, photo *Photo) (*Photo, error) {
+func (c *koiClient) PatchPhoto(id ID, photo *Photo) (*Photo, error) {
 	var result Photo
 	if err := c.patchResource("/api/photos/"+string(id), photo, &result); err != nil {
 		return nil, err
@@ -839,12 +839,12 @@ func (c *httpClient) PatchPhoto(id ID, photo *Photo) (*Photo, error) {
 }
 
 // DeletePhoto deletes a photo by its ID.
-func (c *httpClient) DeletePhoto(id ID) error {
+func (c *koiClient) DeletePhoto(id ID) error {
 	return c.deleteResource("/api/photos/" + string(id))
 }
 
 // UploadPhotoImage uploads an image for a photo.
-func (c *httpClient) UploadPhotoImage(id ID, file []byte) (*Photo, error) {
+func (c *koiClient) UploadPhotoImage(id ID, file []byte) (*Photo, error) {
 	var photo Photo
 	if err := c.uploadFile("/api/photos/"+string(id)+"/image", file, "file", &photo); err != nil {
 		return nil, err
@@ -853,7 +853,7 @@ func (c *httpClient) UploadPhotoImage(id ID, file []byte) (*Photo, error) {
 }
 
 // GetPhotoAlbum retrieves the album associated with a photo.
-func (c *httpClient) GetPhotoAlbum(id ID) (*Album, error) {
+func (c *koiClient) GetPhotoAlbum(id ID) (*Album, error) {
 	var album Album
 	if err := c.getResource("/api/photos/"+string(id)+"/album", &album); err != nil {
 		return nil, err
@@ -862,7 +862,7 @@ func (c *httpClient) GetPhotoAlbum(id ID) (*Album, error) {
 }
 
 // CreateTag creates a new tag with schema validation.
-func (c *httpClient) CreateTag(tag *Tag) (*Tag, error) {
+func (c *koiClient) CreateTag(tag *Tag) (*Tag, error) {
 	if err := c.validateTag(tag); err != nil {
 		return nil, err
 	}
@@ -874,7 +874,7 @@ func (c *httpClient) CreateTag(tag *Tag) (*Tag, error) {
 }
 
 // GetTag retrieves a tag by its ID.
-func (c *httpClient) GetTag(id ID) (*Tag, error) {
+func (c *koiClient) GetTag(id ID) (*Tag, error) {
 	var tag Tag
 	if err := c.getResource("/api/tags/"+string(id), &tag); err != nil {
 		return nil, err
@@ -883,7 +883,7 @@ func (c *httpClient) GetTag(id ID) (*Tag, error) {
 }
 
 // ListTags retrieves a list of tags.
-func (c *httpClient) ListTags(queryParams ...string) ([]*Tag, error) {
+func (c *koiClient) ListTags(queryParams ...string) ([]*Tag, error) {
 	var tags []*Tag
 	if err := c.listResources("/api/tags", &tags, queryParams...); err != nil {
 		return nil, err
@@ -892,7 +892,7 @@ func (c *httpClient) ListTags(queryParams ...string) ([]*Tag, error) {
 }
 
 // UpdateTag replaces an existing tag.
-func (c *httpClient) UpdateTag(id ID, tag *Tag) (*Tag, error) {
+func (c *koiClient) UpdateTag(id ID, tag *Tag) (*Tag, error) {
 	var result Tag
 	if err := c.putResource("/api/tags/"+string(id), tag, &result); err != nil {
 		return nil, err
@@ -901,7 +901,7 @@ func (c *httpClient) UpdateTag(id ID, tag *Tag) (*Tag, error) {
 }
 
 // PatchTag updates an existing tag partially.
-func (c *httpClient) PatchTag(id ID, tag *Tag) (*Tag, error) {
+func (c *koiClient) PatchTag(id ID, tag *Tag) (*Tag, error) {
 	var result Tag
 	if err := c.patchResource("/api/tags/"+string(id), tag, &result); err != nil {
 		return nil, err
@@ -910,12 +910,12 @@ func (c *httpClient) PatchTag(id ID, tag *Tag) (*Tag, error) {
 }
 
 // DeleteTag deletes a tag by its ID.
-func (c *httpClient) DeleteTag(id ID) error {
+func (c *koiClient) DeleteTag(id ID) error {
 	return c.deleteResource("/api/tags/" + string(id))
 }
 
 // UploadTagImage uploads an image for a tag.
-func (c *httpClient) UploadTagImage(id ID, file []byte) (*Tag, error) {
+func (c *koiClient) UploadTagImage(id ID, file []byte) (*Tag, error) {
 	var tag Tag
 	if err := c.uploadFile("/api/tags/"+string(id)+"/image", file, "file", &tag); err != nil {
 		return nil, err
@@ -924,7 +924,7 @@ func (c *httpClient) UploadTagImage(id ID, file []byte) (*Tag, error) {
 }
 
 // ListTagItems retrieves the items of a tag.
-func (c *httpClient) ListTagItems(id ID, queryParams ...string) ([]*Item, error) {
+func (c *koiClient) ListTagItems(id ID, queryParams ...string) ([]*Item, error) {
 	var items []*Item
 	path := fmt.Sprintf("/api/tags/%s/items", id)
 	if err := c.listResources(path, &items, queryParams...); err != nil {
@@ -934,7 +934,7 @@ func (c *httpClient) ListTagItems(id ID, queryParams ...string) ([]*Item, error)
 }
 
 // GetCategoryOfTag retrieves the category associated with a tag.
-func (c *httpClient) GetCategoryOfTag(id ID) (*TagCategory, error) {
+func (c *koiClient) GetCategoryOfTag(id ID) (*TagCategory, error) {
 	var category TagCategory
 	if err := c.getResource("/api/tags/"+string(id)+"/category", &category); err != nil {
 		return nil, err
@@ -943,7 +943,7 @@ func (c *httpClient) GetCategoryOfTag(id ID) (*TagCategory, error) {
 }
 
 // CreateTagCategory creates a new tag category with schema validation.
-func (c *httpClient) CreateTagCategory(category *TagCategory) (*TagCategory, error) {
+func (c *koiClient) CreateTagCategory(category *TagCategory) (*TagCategory, error) {
 	if err := c.validateTagCategory(category); err != nil {
 		return nil, err
 	}
@@ -955,7 +955,7 @@ func (c *httpClient) CreateTagCategory(category *TagCategory) (*TagCategory, err
 }
 
 // GetTagCategory retrieves a tag category by its ID.
-func (c *httpClient) GetTagCategory(id ID) (*TagCategory, error) {
+func (c *koiClient) GetTagCategory(id ID) (*TagCategory, error) {
 	var category TagCategory
 	if err := c.getResource("/api/tag_categories/"+string(id), &category); err != nil {
 		return nil, err
@@ -964,7 +964,7 @@ func (c *httpClient) GetTagCategory(id ID) (*TagCategory, error) {
 }
 
 // ListTagCategories retrieves a list of tag categories.
-func (c *httpClient) ListTagCategories(queryParams ...string) ([]*TagCategory, error) {
+func (c *koiClient) ListTagCategories(queryParams ...string) ([]*TagCategory, error) {
 	var categories []*TagCategory
 	if err := c.listResources("/api/tag_categories", &categories, queryParams...); err != nil {
 		return nil, err
@@ -973,7 +973,7 @@ func (c *httpClient) ListTagCategories(queryParams ...string) ([]*TagCategory, e
 }
 
 // UpdateTagCategory replaces an existing tag category.
-func (c *httpClient) UpdateTagCategory(id ID, category *TagCategory) (*TagCategory, error) {
+func (c *koiClient) UpdateTagCategory(id ID, category *TagCategory) (*TagCategory, error) {
 	var result TagCategory
 	if err := c.putResource("/api/tag_categories/"+string(id), category, &result); err != nil {
 		return nil, err
@@ -982,7 +982,7 @@ func (c *httpClient) UpdateTagCategory(id ID, category *TagCategory) (*TagCatego
 }
 
 // PatchTagCategory updates an existing tag category partially.
-func (c *httpClient) PatchTagCategory(id ID, category *TagCategory) (*TagCategory, error) {
+func (c *koiClient) PatchTagCategory(id ID, category *TagCategory) (*TagCategory, error) {
 	var result TagCategory
 	if err := c.patchResource("/api/tag_categories/"+string(id), category, &result); err != nil {
 		return nil, err
@@ -991,12 +991,12 @@ func (c *httpClient) PatchTagCategory(id ID, category *TagCategory) (*TagCategor
 }
 
 // DeleteTagCategory deletes a tag category by its ID.
-func (c *httpClient) DeleteTagCategory(id ID) error {
+func (c *koiClient) DeleteTagCategory(id ID) error {
 	return c.deleteResource("/api/tag_categories/" + string(id))
 }
 
 // ListTagCategoryTags retrieves the tags of a tag category.
-func (c *httpClient) ListTagCategoryTags(id ID, queryParams ...string) ([]*Tag, error) {
+func (c *koiClient) ListTagCategoryTags(id ID, queryParams ...string) ([]*Tag, error) {
 	var tags []*Tag
 	path := fmt.Sprintf("/api/tag_categories/%s/tags", id)
 	if err := c.listResources(path, &tags, queryParams...); err != nil {
@@ -1006,7 +1006,7 @@ func (c *httpClient) ListTagCategoryTags(id ID, queryParams ...string) ([]*Tag, 
 }
 
 // CreateTemplate creates a new template with schema validation.
-func (c *httpClient) CreateTemplate(template *Template) (*Template, error) {
+func (c *koiClient) CreateTemplate(template *Template) (*Template, error) {
 	if err := c.validateTemplate(template); err != nil {
 		return nil, err
 	}
@@ -1018,7 +1018,7 @@ func (c *httpClient) CreateTemplate(template *Template) (*Template, error) {
 }
 
 // GetTemplate retrieves a template by its ID.
-func (c *httpClient) GetTemplate(id ID) (*Template, error) {
+func (c *koiClient) GetTemplate(id ID) (*Template, error) {
 	var template Template
 	if err := c.getResource("/api/templates/"+string(id), &template); err != nil {
 		return nil, err
@@ -1027,7 +1027,7 @@ func (c *httpClient) GetTemplate(id ID) (*Template, error) {
 }
 
 // ListTemplates retrieves a list of templates.
-func (c *httpClient) ListTemplates(queryParams ...string) ([]*Template, error) {
+func (c *koiClient) ListTemplates(queryParams ...string) ([]*Template, error) {
 	var templates []*Template
 	if err := c.listResources("/api/templates", &templates, queryParams...); err != nil {
 		return nil, err
@@ -1036,7 +1036,7 @@ func (c *httpClient) ListTemplates(queryParams ...string) ([]*Template, error) {
 }
 
 // UpdateTemplate replaces an existing template.
-func (c *httpClient) UpdateTemplate(id ID, template *Template) (*Template, error) {
+func (c *koiClient) UpdateTemplate(id ID, template *Template) (*Template, error) {
 	var result Template
 	if err := c.putResource("/api/templates/"+string(id), template, &result); err != nil {
 		return nil, err
@@ -1045,7 +1045,7 @@ func (c *httpClient) UpdateTemplate(id ID, template *Template) (*Template, error
 }
 
 // PatchTemplate updates an existing template partially.
-func (c *httpClient) PatchTemplate(id ID, template *Template) (*Template, error) {
+func (c *koiClient) PatchTemplate(id ID, template *Template) (*Template, error) {
 	var result Template
 	if err := c.patchResource("/api/templates/"+string(id), template, &result); err != nil {
 		return nil, err
@@ -1054,12 +1054,12 @@ func (c *httpClient) PatchTemplate(id ID, template *Template) (*Template, error)
 }
 
 // DeleteTemplate deletes a template by its ID.
-func (c *httpClient) DeleteTemplate(id ID) error {
+func (c *koiClient) DeleteTemplate(id ID) error {
 	return c.deleteResource("/api/templates/" + string(id))
 }
 
 // GetUser retrieves a user by its ID.
-func (c *httpClient) GetUser(id ID) (*User, error) {
+func (c *koiClient) GetUser(id ID) (*User, error) {
 	var user User
 	if err := c.getResource("/api/users/"+string(id), &user); err != nil {
 		return nil, err
@@ -1068,7 +1068,7 @@ func (c *httpClient) GetUser(id ID) (*User, error) {
 }
 
 // ListUsers retrieves a list of users.
-func (c *httpClient) ListUsers(queryParams ...string) ([]*User, error) {
+func (c *koiClient) ListUsers(queryParams ...string) ([]*User, error) {
 	var users []*User
 	if err := c.listResources("/api/users", &users, queryParams...); err != nil {
 		return nil, err
@@ -1077,7 +1077,7 @@ func (c *httpClient) ListUsers(queryParams ...string) ([]*User, error) {
 }
 
 // CreateWish creates a new wish with schema validation.
-func (c *httpClient) CreateWish(wish *Wish) (*Wish, error) {
+func (c *koiClient) CreateWish(wish *Wish) (*Wish, error) {
 	if err := c.validateWish(wish); err != nil {
 		return nil, err
 	}
@@ -1089,7 +1089,7 @@ func (c *httpClient) CreateWish(wish *Wish) (*Wish, error) {
 }
 
 // GetWish retrieves a wish by its ID.
-func (c *httpClient) GetWish(id ID) (*Wish, error) {
+func (c *koiClient) GetWish(id ID) (*Wish, error) {
 	var wish Wish
 	if err := c.getResource("/api/wishes/"+string(id), &wish); err != nil {
 		return nil, err
@@ -1098,7 +1098,7 @@ func (c *httpClient) GetWish(id ID) (*Wish, error) {
 }
 
 // ListWishes retrieves a list of wishes.
-func (c *httpClient) ListWishes(queryParams ...string) ([]*Wish, error) {
+func (c *koiClient) ListWishes(queryParams ...string) ([]*Wish, error) {
 	var wishes []*Wish
 	if err := c.listResources("/api/wishes", &wishes, queryParams...); err != nil {
 		return nil, err
@@ -1107,7 +1107,7 @@ func (c *httpClient) ListWishes(queryParams ...string) ([]*Wish, error) {
 }
 
 // UpdateWish replaces an existing wish.
-func (c *httpClient) UpdateWish(id ID, wish *Wish) (*Wish, error) {
+func (c *koiClient) UpdateWish(id ID, wish *Wish) (*Wish, error) {
 	var result Wish
 	if err := c.putResource("/api/wishes/"+string(id), wish, &result); err != nil {
 		return nil, err
@@ -1116,7 +1116,7 @@ func (c *httpClient) UpdateWish(id ID, wish *Wish) (*Wish, error) {
 }
 
 // PatchWish updates an existing wish partially.
-func (c *httpClient) PatchWish(id ID, wish *Wish) (*Wish, error) {
+func (c *koiClient) PatchWish(id ID, wish *Wish) (*Wish, error) {
 	var result Wish
 	if err := c.patchResource("/api/wishes/"+string(id), wish, &result); err != nil {
 		return nil, err
@@ -1125,12 +1125,12 @@ func (c *httpClient) PatchWish(id ID, wish *Wish) (*Wish, error) {
 }
 
 // DeleteWish deletes a wish by its ID.
-func (c *httpClient) DeleteWish(id ID) error {
+func (c *koiClient) DeleteWish(id ID) error {
 	return c.deleteResource("/api/wishes/" + string(id))
 }
 
 // UploadWishImage uploads an image for a wish.
-func (c *httpClient) UploadWishImage(id ID, file []byte) (*Wish, error) {
+func (c *koiClient) UploadWishImage(id ID, file []byte) (*Wish, error) {
 	var wish Wish
 	if err := c.uploadFile("/api/wishes/"+string(id)+"/image", file, "file", &wish); err != nil {
 		return nil, err
@@ -1139,7 +1139,7 @@ func (c *httpClient) UploadWishImage(id ID, file []byte) (*Wish, error) {
 }
 
 // GetWishWishlist retrieves the wishlist associated with a wish.
-func (c *httpClient) GetWishWishlist(id ID) (*Wishlist, error) {
+func (c *koiClient) GetWishWishlist(id ID) (*Wishlist, error) {
 	var wishlist Wishlist
 	if err := c.getResource("/api/wishes/"+string(id)+"/wishlist", &wishlist); err != nil {
 		return nil, err
@@ -1148,7 +1148,7 @@ func (c *httpClient) GetWishWishlist(id ID) (*Wishlist, error) {
 }
 
 // CreateWishlist creates a new wishlist with schema validation.
-func (c *httpClient) CreateWishlist(wishlist *Wishlist) (*Wishlist, error) {
+func (c *koiClient) CreateWishlist(wishlist *Wishlist) (*Wishlist, error) {
 	if err := c.validateWishlist(wishlist); err != nil {
 		return nil, err
 	}
@@ -1160,7 +1160,7 @@ func (c *httpClient) CreateWishlist(wishlist *Wishlist) (*Wishlist, error) {
 }
 
 // GetWishlist retrieves a wishlist by its ID.
-func (c *httpClient) GetWishlist(id ID) (*Wishlist, error) {
+func (c *koiClient) GetWishlist(id ID) (*Wishlist, error) {
 	var wishlist Wishlist
 	if err := c.getResource("/api/wishlists/"+string(id), &wishlist); err != nil {
 		return nil, err
@@ -1169,7 +1169,7 @@ func (c *httpClient) GetWishlist(id ID) (*Wishlist, error) {
 }
 
 // ListWishlists retrieves a list of wishlists.
-func (c *httpClient) ListWishlists(queryParams ...string) ([]*Wishlist, error) {
+func (c *koiClient) ListWishlists(queryParams ...string) ([]*Wishlist, error) {
 	var wishlists []*Wishlist
 	if err := c.listResources("/api/wishlists", &wishlists, queryParams...); err != nil {
 		return nil, err
@@ -1178,7 +1178,7 @@ func (c *httpClient) ListWishlists(queryParams ...string) ([]*Wishlist, error) {
 }
 
 // UpdateWishlist replaces an existing wishlist.
-func (c *httpClient) UpdateWishlist(id ID, wishlist *Wishlist) (*Wishlist, error) {
+func (c *koiClient) UpdateWishlist(id ID, wishlist *Wishlist) (*Wishlist, error) {
 	var result Wishlist
 	if err := c.putResource("/api/wishlists/"+string(id), wishlist, &result); err != nil {
 		return nil, err
@@ -1187,7 +1187,7 @@ func (c *httpClient) UpdateWishlist(id ID, wishlist *Wishlist) (*Wishlist, error
 }
 
 // PatchWishlist updates an existing wishlist partially.
-func (c *httpClient) PatchWishlist(id ID, wishlist *Wishlist) (*Wishlist, error) {
+func (c *koiClient) PatchWishlist(id ID, wishlist *Wishlist) (*Wishlist, error) {
 	var result Wishlist
 	if err := c.patchResource("/api/wishlists/"+string(id), wishlist, &result); err != nil {
 		return nil, err
@@ -1196,12 +1196,12 @@ func (c *httpClient) PatchWishlist(id ID, wishlist *Wishlist) (*Wishlist, error)
 }
 
 // DeleteWishlist deletes a wishlist by its ID.
-func (c *httpClient) DeleteWishlist(id ID) error {
+func (c *koiClient) DeleteWishlist(id ID) error {
 	return c.deleteResource("/api/wishlists/" + string(id))
 }
 
 // ListWishlistWishes retrieves the wishes in a wishlist.
-func (c *httpClient) ListWishlistWishes(id ID, queryParams ...string) ([]*Wish, error) {
+func (c *koiClient) ListWishlistWishes(id ID, queryParams ...string) ([]*Wish, error) {
 	var wishes []*Wish
 	path := fmt.Sprintf("/api/wishlists/%s/wishes", id)
 	if err := c.listResources(path, &wishes, queryParams...); err != nil {
@@ -1211,7 +1211,7 @@ func (c *httpClient) ListWishlistWishes(id ID, queryParams ...string) ([]*Wish, 
 }
 
 // ListWishlistChildren retrieves the children of a wishlist.
-func (c *httpClient) ListWishlistChildren(id ID, queryParams ...string) ([]*Wishlist, error) {
+func (c *koiClient) ListWishlistChildren(id ID, queryParams ...string) ([]*Wishlist, error) {
 	var wishlists []*Wishlist
 	path := fmt.Sprintf("/api/wishlists/%s/children", id)
 	if err := c.listResources(path, &wishlists, queryParams...); err != nil {
@@ -1221,7 +1221,7 @@ func (c *httpClient) ListWishlistChildren(id ID, queryParams ...string) ([]*Wish
 }
 
 // UploadWishlistImage uploads an image for a wishlist.
-func (c *httpClient) UploadWishlistImage(id ID, file []byte) (*Wishlist, error) {
+func (c *koiClient) UploadWishlistImage(id ID, file []byte) (*Wishlist, error) {
 	var wishlist Wishlist
 	if err := c.uploadFile("/api/wishlists/"+string(id)+"/image", file, "file", &wishlist); err != nil {
 		return nil, err
@@ -1230,7 +1230,7 @@ func (c *httpClient) UploadWishlistImage(id ID, file []byte) (*Wishlist, error) 
 }
 
 // GetWishlistParent retrieves the parent wishlist of a wishlist.
-func (c *httpClient) GetWishlistParent(id ID) (*Wishlist, error) {
+func (c *koiClient) GetWishlistParent(id ID) (*Wishlist, error) {
 	var wishlist Wishlist
 	if err := c.getResource("/api/wishlists/"+string(id)+"/parent", &wishlist); err != nil {
 		return nil, err
