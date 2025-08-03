@@ -1,10 +1,15 @@
 package koiApi
 
+import (
+	"fmt"
+	"time"
+)
+
 var (
 	defaultClient *koiClient
 )
 
-func GetClient(*c ...koiClient) *koiClient {
+func GetClient(c ...*koiClient) *koiClient {
 	if len(c) > 0 {
 		if defaultClient == nil {
 			defaultClient = c[0]
@@ -12,8 +17,11 @@ func GetClient(*c ...koiClient) *koiClient {
 		return c[0]
 	}
 	if defaultClient == nil {
-		defaultClient = NewKoiClient( "", 30 * time.Second )
-		res, err := defaultClient.CheckLogin()
-
-
+		defaultClient = NewKoiClient("", 30*time.Second)
+		_, err := defaultClient.CheckLogin()
+		if err != nil {
+			panic(fmt.Sprintf("Login failed: %v", err))
+		}
+	}
+	return defaultClient
 }

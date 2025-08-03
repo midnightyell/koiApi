@@ -3,6 +3,7 @@ package koiApi
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"time"
 )
 
@@ -30,10 +31,9 @@ func (obj *Album) Create() (interface{}, error) {
 	koiOp := KoiPathForOp()
 
 	pc, _, _, _ := runtime.Caller(0)
-    return runtime.FuncForPC(pc).Name()
+	return runtime.FuncForPC(pc).Name()
 
 }
-
 
 // Album represents an album in Koillection, combining fields for JSON-LD and API interactions.
 type Album struct {
@@ -63,10 +63,6 @@ func (a *Album) whichID(albumID ...ID) ID {
 	}
 	return a.ID
 }
-
-// 
-func (a *Album) KoiPath() string {
-
 
 // Create
 func (a *Album) Create(client Client) (*Album, error) {

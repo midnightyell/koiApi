@@ -27,7 +27,7 @@ func (i *Inventory) Summary() string {
 }
 
 func (i *Item) Summary() string {
-	return fmt.Sprintf("%-40s %s", i.Name, i.ID)
+	return fmt.Sprintf("%8.8s   %s", i.ID[len(i.ID)-8:], i.Name)
 }
 
 func (l *Loan) Summary() string {
