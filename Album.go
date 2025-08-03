@@ -3,13 +3,12 @@ package koiApi
 import (
 	"fmt"
 	"os"
-	"runtime"
 	"time"
 )
 
 // AlbumInterface defines methods for interacting with Album resources.
 type AlbumInterface interface {
-	Create(client Client) (*Album, error)                                            // HTTP POST /api/albums
+	//Create(client Client) (*Album, error)                                            // HTTP POST /api/albums
 	Delete(client Client, albumID ...ID) error                                       // HTTP DELETE /api/albums/{id}
 	Get(client Client, albumID ...ID) (*Album, error)                                // HTTP GET /api/albums/{id}
 	GetParent(client Client, albumID ...ID) (*Album, error)                          // HTTP GET /api/albums/{id}/parent
@@ -22,17 +21,6 @@ type AlbumInterface interface {
 	UploadImage(client Client, file []byte, albumID ...ID) (*Album, error)           // HTTP POST /api/albums/{id}/image
 	UploadImageByFile(client Client, filename string, albumID ...ID) (*Album, error) // HTTP POST /api/albums/{id}/image
 	Summary() string
-}
-
-func (obj *Album) Create() (interface{}, error) {
-	if err := obj.Validate(); err != nil {
-		return nil, fmt.Errorf("validation error: %w", err)
-	}
-	koiOp := KoiPathForOp()
-
-	pc, _, _, _ := runtime.Caller(0)
-	return runtime.FuncForPC(pc).Name()
-
 }
 
 // Album represents an album in Koillection, combining fields for JSON-LD and API interactions.
@@ -64,9 +52,19 @@ func (a *Album) whichID(albumID ...ID) ID {
 	return a.ID
 }
 
+func (a *Album) GetID() string {
+	return string(a.ID)
+}
+
 // Create
-func (a *Album) Create(client Client) (*Album, error) {
-	return client.CreateAlbum(a)
+func (a *Album) Create(client ...koiClient) (*Album, error) {
+	Create(a)
+	koi, err := Create(a)
+	return koi.(*Album), err
+}
+
+func (a *Album) Validate() error {
+	return nil
 }
 
 // Delete

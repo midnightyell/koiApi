@@ -106,11 +106,19 @@ func GetID(o KoiObject) string {
 	return o.GetID()
 }
 
-func Create(o KoiObject) error {
+func Create(o KoiObject) (KoiObject, error) {
 	result, err := KoiPathForOp(o)
 	if err != nil {
-		return fmt.Errorf("failed to get operation path: %w", err)
+		return nil, fmt.Errorf("failed to get operation path: %w", err)
 	}
-	fmt.Printf("Operation: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
-	return nil
+	op := result.op
+	path := result.path
+
+	// if op == GET
+	if op == http.MethodGet {
+		err := defaultClient.getResource(path, o)
+		return o, err
+	}
+	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
+	return nil, fmt.Errorf("operation %s not implemented for type %T", op, o)
 }

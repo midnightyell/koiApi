@@ -61,7 +61,7 @@ type koiClient struct {
 }
 
 // NewKoiClient creates a new HTTP client for the Koillection API.
-func NewKoiClient(baseURL string, timeout time.Duration) Client {
+func NewKoiClient(baseURL string, timeout time.Duration) *koiClient {
 	if baseURL == "" {
 		baseURL = *Auth.ServerURL
 	}
