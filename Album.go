@@ -23,6 +23,18 @@ type AlbumInterface interface {
 	Summary() string
 }
 
+func (obj *Album) Create() (interface{}, error) {
+	if err := obj.Validate(); err != nil {
+		return nil, fmt.Errorf("validation error: %w", err)
+	}
+	koiOp := KoiPathForOp()
+
+	pc, _, _, _ := runtime.Caller(0)
+    return runtime.FuncForPC(pc).Name()
+
+}
+
+
 // Album represents an album in Koillection, combining fields for JSON-LD and API interactions.
 type Album struct {
 	Context          *Context   `json:"@context,omitempty" access:"rw"`         // JSON-LD only
@@ -51,6 +63,10 @@ func (a *Album) whichID(albumID ...ID) ID {
 	}
 	return a.ID
 }
+
+// 
+func (a *Album) KoiPath() string {
+
 
 // Create
 func (a *Album) Create(client Client) (*Album, error) {

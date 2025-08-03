@@ -1,10 +1,10 @@
 package koiApi
 
 var (
-	defaultClient *Client
+	defaultClient *koiClient
 )
 
-func GetClient(*c ...koiClient) *Client {
+func GetClient(*c ...koiClient) *koiClient {
 	if len(c) > 0 {
 		if defaultClient == nil {
 			defaultClient = c[0]
@@ -13,6 +13,7 @@ func GetClient(*c ...koiClient) *Client {
 	}
 	if defaultClient == nil {
 		defaultClient = NewKoiClient( "", 30 * time.Second )
+		res, err := defaultClient.CheckLogin()
 
 
 }
