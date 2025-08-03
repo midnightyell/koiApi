@@ -57,19 +57,20 @@ func (a *Album) GetID() string {
 }
 
 // Create
-func (a *Album) Create(client ...koiClient) (*Album, error) {
-	Create(a)
+func (a *Album) Create() (*Album, error) {
 	koi, err := Create(a)
 	return koi.(*Album), err
 }
 
 func (a *Album) Validate() error {
+	if a.Title == "" {
+		return fmt.Errorf("album title cannot be empty")
+	}
 	return nil
 }
 
 // Delete
-func (a *Album) Delete(client Client, albumID ...ID) error {
-	id := a.whichID(albumID...)
+func (a *Album) Delete(client Client, id ID) error {
 	return client.DeleteAlbum(id)
 }
 
