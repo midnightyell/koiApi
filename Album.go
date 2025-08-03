@@ -2,7 +2,6 @@ package koiApi
 
 import (
 	"fmt"
-	"os"
 	"time"
 )
 
@@ -58,8 +57,7 @@ func (a *Album) GetID() string {
 
 // Create
 func (a *Album) Create() (*Album, error) {
-	koi, err := Create(a)
-	return koi.(*Album), err
+	return Create(a)
 }
 
 func (a *Album) Validate() error {
@@ -70,20 +68,18 @@ func (a *Album) Validate() error {
 }
 
 // Delete
-func (a *Album) Delete(client Client, id ID) error {
-	return client.DeleteAlbum(id)
+func (a *Album) Delete() error {
+	return Delete(a)
 }
 
 // Get
-func (a *Album) Get(client Client, albumID ...ID) (*Album, error) {
-	id := a.whichID(albumID...)
-	return client.GetAlbum(id)
+func (a *Album) Get() (*Album, error) {
+	return Get(a)
 }
 
 // GetParent
-func (a *Album) GetParent(client Client, albumID ...ID) (*Album, error) {
-	id := a.whichID(albumID...)
-	return client.GetAlbumParent(id)
+func (a *Album) GetParent() (*Album, error) {
+	return GetParent(a)
 }
 
 // IRI
@@ -92,79 +88,36 @@ func (a *Album) IRI() string {
 }
 
 // List
-func (a *Album) List(client Client) ([]*Album, error) {
-	var allAlbums []*Album
-	for page := 1; ; page++ {
-		albums, err := client.ListAlbums()
-		if err != nil {
-			return nil, fmt.Errorf("failed to list albums on page %d: %w", err)
-		}
-		if len(albums) == 0 {
-			break
-		}
-		allAlbums = append(allAlbums, albums...)
-	}
-	return allAlbums, nil
+func (a *Album) List() ([]*Album, error) {
+	return List(a)
 }
 
 // ListChildren
-func (a *Album) ListChildren(client Client, albumID ...ID) ([]*Album, error) {
-	id := a.whichID(albumID...)
-	var allChildren []*Album
-	for page := 1; ; page++ {
-		children, err := client.ListAlbumChildren(id)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list child albums for ID %s on page %d: %w", id, err)
-		}
-		if len(children) == 0 {
-			break
-		}
-		allChildren = append(allChildren, children...)
-	}
-	return allChildren, nil
+func (a *Album) ListChildren() ([]*Album, error) {
+	return ListChildren(a)
 }
 
 // ListPhotos
-func (a *Album) ListPhotos(client Client, albumID ...ID) ([]*Photo, error) {
-	id := a.whichID(albumID...)
-	var allPhotos []*Photo
-	for page := 1; ; page++ {
-		photos, err := client.ListAlbumPhotos(id)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list photos for ID %s on page %d: %w", id, err)
-		}
-		if len(photos) == 0 {
-			break
-		}
-		allPhotos = append(allPhotos, photos...)
-	}
-	return allPhotos, nil
+func (a *Album) ListPhotos() ([]*Photo, error) {
+	return ListPhotos(a)
 }
 
 // Patch
-func (a *Album) Patch(client Client, albumID ...ID) (*Album, error) {
-	id := a.whichID(albumID...)
-	return client.PatchAlbum(id, a)
+func (a *Album) Patch() (*Album, error) {
+	return Patch(a)
 }
 
 // Update
-func (a *Album) Update(client Client, albumID ...ID) (*Album, error) {
-	id := a.whichID(albumID...)
-	return client.UpdateAlbum(id, a)
+func (a *Album) Update() (*Album, error) {
+	return Update(a)
 }
 
 // UploadImage
-func (a *Album) UploadImage(client Client, file []byte, albumID ...ID) (*Album, error) {
-	id := a.whichID(albumID...)
-	return client.UploadAlbumImage(id, file)
+func (a *Album) UploadImage(file []byte) (*Album, error) {
+	return UploadImage(a, file)
 }
 
-// UploadImageByFile
-func (a *Album) UploadImageByFile(client Client, filename string, albumID ...ID) (*Album, error) {
-	id := a.whichID(albumID...)
-	file, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
-	}
-	return client.UploadAlbumImage(id, file)
+// UploadImageFromFile
+func (a *Album) UploadImageFromFile(filename string) (*Album, error) {
+	return UploadImageFromFile(a, filename)
 }

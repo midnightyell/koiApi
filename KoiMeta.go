@@ -3,6 +3,7 @@ package koiApi
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
 
@@ -105,8 +106,85 @@ func KoiPathForOp(obj KoiObject) (*koiOp, error) {
 func GetID(o KoiObject) string {
 	return o.GetID()
 }
+func Create[T KoiObject](o T) (T, error) {
+	result, err := KoiPathForOp(o)
+	if err != nil {
+		return o, fmt.Errorf("failed to get operation path: %w", err)
+	}
+	op := result.op
+	path := result.path
 
-func Create(o KoiObject) (KoiObject, error) {
+	c := GetClient()
+
+	// if op == POST
+	if op == http.MethodPost {
+		var resp T
+		err := c.postResource(path, o, &resp)
+		return resp, err
+	}
+	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
+	return o, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
+}
+
+func Delete[T KoiObject](o T) error {
+	result, err := KoiPathForOp(o)
+	if err != nil {
+		return fmt.Errorf("failed to get operation path: %w", err)
+	}
+	op := result.op
+	path := result.path
+
+	c := GetClient()
+
+	// if op == DELETE
+	if op == http.MethodDelete {
+		return c.deleteResource(path)
+	}
+	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
+	return fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
+}
+
+func Get[T KoiObject](o T) (T, error) {
+	result, err := KoiPathForOp(o)
+	if err != nil {
+		return o, fmt.Errorf("failed to get operation path: %w", err)
+	}
+	op := result.op
+	path := result.path
+
+	c := GetClient()
+
+	// if op == GET
+	if op == http.MethodGet {
+		var resp T
+		err := c.getResource(path, &resp)
+		return resp, err
+	}
+	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
+	return o, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
+}
+
+func GetParent[T KoiObject](o T) (T, error) {
+	result, err := KoiPathForOp(o)
+	if err != nil {
+		return o, fmt.Errorf("failed to get operation path: %w", err)
+	}
+	op := result.op
+	path := result.path
+
+	c := GetClient()
+
+	// if op == GET
+	if op == http.MethodGet {
+		var resp T
+		err := c.getResource(path, &resp)
+		return resp, err
+	}
+	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
+	return o, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
+}
+
+func List[T KoiObject](o T) ([]T, error) {
 	result, err := KoiPathForOp(o)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get operation path: %w", err)
@@ -116,11 +194,135 @@ func Create(o KoiObject) (KoiObject, error) {
 
 	c := GetClient()
 
-	// if op == POST
-	if op == http.MethodPost {
-		err := c.postResource(path, o, &o)
-		return o, err
+	// if op == GET
+	if op == http.MethodGet {
+		var items []T
+		err := c.listResources(path, &items)
+		return items, err
 	}
 	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
-	return nil, fmt.Errorf("operation %s not implemented for type %T", op, o)
+	return nil, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
+}
+
+func ListChildren[T KoiObject](o T) ([]T, error) {
+	result, err := KoiPathForOp(o)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get operation path: %w", err)
+	}
+	op := result.op
+	path := result.path
+
+	c := GetClient()
+
+	// if op == GET
+	if op == http.MethodGet {
+		var items []T
+		err := c.listResources(path, &items)
+		return items, err
+	}
+	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
+	return nil, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
+}
+
+func ListPhotos[T KoiObject](o T) ([]*Photo, error) {
+	result, err := KoiPathForOp(o)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get operation path: %w", err)
+	}
+	op := result.op
+	path := result.path
+
+	c := GetClient()
+
+	// if op == GET
+	if op == http.MethodGet {
+		var items []*Photo
+		err := c.listResources(path, &items)
+		return items, err
+	}
+	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
+	return nil, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
+}
+
+func Patch[T KoiObject](o T) (T, error) {
+	result, err := KoiPathForOp(o)
+	if err != nil {
+		return o, fmt.Errorf("failed to get operation path: %w", err)
+	}
+	op := result.op
+	path := result.path
+
+	c := GetClient()
+
+	// if op == PATCH
+	if op == http.MethodPatch {
+		var resp T
+		err := c.patchResource(path, o, &resp)
+		return resp, err
+	}
+	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
+	return o, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
+}
+func Update[T KoiObject](o T) (T, error) {
+	result, err := KoiPathForOp(o)
+	if err != nil {
+		return o, fmt.Errorf("failed to get operation path: %w", err)
+	}
+	op := result.op
+	path := result.path
+
+	c := GetClient()
+
+	// if op == PUT
+	if op == http.MethodPut {
+		var resp T
+		err := c.putResource(path, o, &resp)
+		return resp, err
+	}
+	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
+	return o, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
+}
+
+func UploadImage[T KoiObject](o T, file []byte) (T, error) {
+	result, err := KoiPathForOp(o)
+	if err != nil {
+		return o, fmt.Errorf("failed to get operation path: %w", err)
+	}
+	op := result.op
+	path := result.path
+
+	c := GetClient()
+
+	// if op == POST
+	if op == http.MethodPost {
+		var resp T
+		err := c.uploadFile(path, file, "file", &resp)
+		return resp, err
+	}
+	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
+	return o, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
+}
+
+func UploadImageFromFile[T KoiObject](o T, filename string) (T, error) {
+	result, err := KoiPathForOp(o)
+	if err != nil {
+		return o, fmt.Errorf("failed to get operation path: %w", err)
+	}
+	op := result.op
+	path := result.path
+
+	c := GetClient()
+
+	// if op == POST
+	if op == http.MethodPost {
+		file, err := os.ReadFile(filename)
+		if err != nil {
+			return o, fmt.Errorf("failed to read file %s: %w", filename, err)
+		}
+		var resp T
+		err = c.uploadFile(path, file, "file", &resp)
+		return resp, err
+	}
+	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
+	return o, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
 }
