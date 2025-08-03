@@ -114,9 +114,11 @@ func Create(o KoiObject) (KoiObject, error) {
 	op := result.op
 	path := result.path
 
-	// if op == GET
-	if op == http.MethodGet {
-		err := defaultClient.getResource(path, o)
+	c := GetClient()
+
+	// if op == POST
+	if op == http.MethodPost {
+		err := c.postResource(path, o, &o)
 		return o, err
 	}
 	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
