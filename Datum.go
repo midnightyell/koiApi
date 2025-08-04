@@ -26,25 +26,6 @@ const (
 	DatumTypeSection    string = "section"
 )
 
-// DatumInterface defines methods for interacting with Datum resources.
-type DatumInterface interface {
-	Create(client Client) (*Datum, error)                                            // HTTP POST /api/data
-	Delete(client Client, datumID ...ID) error                                       // HTTP DELETE /api/data/{id}
-	Get(client Client, datumID ...ID) (*Datum, error)                                // HTTP GET /api/data/{id}
-	GetCollection(client Client, datumID ...ID) (*Collection, error)                 // HTTP GET /api/data/{id}/collection
-	GetItem(client Client, datumID ...ID) (*Item, error)                             // HTTP GET /api/data/{id}/item
-	IRI() string                                                                     // /api/data/{id}
-	Patch(client Client, datumID ...ID) (*Datum, error)                              // HTTP PATCH /api/data/{id}
-	Update(client Client, datumID ...ID) (*Datum, error)                             // HTTP PUT /api/data/{id}
-	UploadFile(client Client, file []byte, datumID ...ID) (*Datum, error)            // HTTP POST /api/data/{id}/file
-	UploadFileByFile(client Client, filename string, datumID ...ID) (*Datum, error)  // HTTP POST /api/data/{id}/file
-	UploadImage(client Client, image []byte, datumID ...ID) (*Datum, error)          // HTTP POST /api/data/{id}/image
-	UploadImageByFile(client Client, filename string, datumID ...ID) (*Datum, error) // HTTP POST /api/data/{id}/image
-	UploadVideo(client Client, video []byte, datumID ...ID) (*Datum, error)          // HTTP POST /api/data/{id}/video
-	UploadVideoByFile(client Client, filename string, datumID ...ID) (*Datum, error) // HTTP POST /api/data/{id}/video
-	Summary() string
-}
-
 // Datum represents a custom data field in Koillection, combining fields for JSON-LD and API interactions.
 type Datum struct {
 	Context             *Context   `json:"@context,omitempty" access:"rw"`            // JSON-LD only
@@ -76,59 +57,71 @@ type Datum struct {
 	FileVideo           *string    `json:"fileVideo,omitempty" access:"wo"`           // Video file data
 }
 
-// whichID
-func (d *Datum) whichID(datumID ...ID) ID {
-	if len(datumID) > 0 {
-		return datumID[0]
-	}
-	return d.ID
+// GetID
+func (a *Datum) GetID() string {
+	return string(a.ID)
+}
+
+// Validate
+func (a *Datum) Validate() error {
+	return nil
 }
 
 // Create
-func (d *Datum) Create(client Client) (*Datum, error) {
-	return client.CreateDatum(d)
+func (a *Datum) Create() (*Datum, error) {
+	return Create(a)
 }
 
 // Delete
-func (d *Datum) Delete(client Client, datumID ...ID) error {
-	id := d.whichID(datumID...)
-	return client.DeleteDatum(id)
+func (a *Datum) Delete() error {
+	return Delete(a)
 }
 
 // Get
-func (d *Datum) Get(client Client, datumID ...ID) (*Datum, error) {
-	id := d.whichID(datumID...)
-	return client.GetDatum(id)
+func (a *Datum) Get() (*Datum, error) {
+	return Get(a)
 }
 
-// GetCollection
-func (d *Datum) GetCollection(client Client, datumID ...ID) (*Collection, error) {
-	id := d.whichID(datumID...)
-	return client.GetDatumCollection(id)
+// GetDefaultTemplate
+unc (a *Datum) GetDefaultTemplate() (*Template, error) {
+	return GetDefaultTemplate(a)
 }
 
-// GetItem
-func (d *Datum) GetItem(client Client, datumID ...ID) (*Item, error) {
-	id := d.whichID(datumID...)
-	return client.GetDatumItem(id)
+// GetParent
+func (a *Datum) GetParent() (*Datum, error) {
+	return GetParent(a)
 }
 
 // IRI
-func (d *Datum) IRI() string {
-	return fmt.Sprintf("/api/data/%s", d.ID)
+func (a *Datum) IRI() string {
+	return IRI(a)
+}
+
+// List
+func (a *Datum) List() ([]*Datum, error) {
+	return List(a)
 }
 
 // Patch
-func (d *Datum) Patch(client Client, datumID ...ID) (*Datum, error) {
-	id := d.whichID(datumID...)
-	return client.PatchDatum(id, d)
+func (a *Datum) Patch() (*Datum, error) {
+	return Patch(a)
 }
 
 // Update
-func (d *Datum) Update(client Client, datumID ...ID) (*Datum, error) {
-	id := d.whichID(datumID...)
-	return client.UpdateDatum(id, d)
+func (a *Datum) Update() (*Datum, error) {
+	return Update(a)
 }
+
+// UploadImage
+func (a *Datum) UploadImage(file []byte) (*Datum, error) {
+	return UploadImage(a, file)
+}
+
+// UploadImageFromFile
+func (a *Datum) UploadImageFromFile(filename string) (*Datum, error) {
+	return UploadImageFromFile(a, filename)
+}
+
 
 // UploadFile
 func (d *Datum) UploadFile(client Client, file []byte, datumID ...ID) (*Datum, error) {

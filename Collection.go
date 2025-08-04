@@ -1,29 +1,8 @@
 package koiApi
 
 import (
-	"fmt"
-	"os"
 	"time"
 )
-
-// CollectionInterface defines methods for interacting with Collection resources.
-type CollectionInterface interface {
-	Create(client Client) (*Collection, error)                                                 // HTTP POST /api/collections
-	Delete(client Client, collectionID ...ID) error                                            // HTTP DELETE /api/collections/{id}
-	Get(client Client, collectionID ...ID) (*Collection, error)                                // HTTP GET /api/collections/{id}
-	GetDefaultTemplate(client Client, collectionID ...ID) (*Template, error)                   // HTTP GET /api/collections/{id}/items_default_template
-	GetParent(client Client, collectionID ...ID) (*Collection, error)                          // HTTP GET /api/collections/{id}/parent
-	IRI() string                                                                               // /api/collections/{id}
-	ListChildren(client Client, collectionID ...ID) ([]*Collection, error)                     // HTTP GET /api/collections/{id}/children
-	ListCollectionData(client Client, collectionID ...ID) ([]*Datum, error)                    // HTTP GET /api/collections/{id}/data
-	ListCollectionItems(client Client, collectionID ...ID) ([]*Item, error)                    // HTTP GET /api/collections/{id}/items
-	Patch(client Client, collectionID ...ID) (*Collection, error)                              // HTTP PATCH /api/collections/{id}
-	Update(client Client, collectionID ...ID) (*Collection, error)                             // HTTP PUT /api/collections/{id}
-	UploadImage(client Client, file []byte, collectionID ...ID) (*Collection, error)           // HTTP POST /api/collections/{id}/image
-	UploadImageByFile(client Client, filename string, collectionID ...ID) (*Collection, error) // HTTP POST /api/collections/{id}/image
-	Summary() string
-	Exists()
-}
 
 // Collection represents a collection in Koillection, combining fields for JSON-LD and API interactions.
 type Collection struct {
@@ -48,72 +27,76 @@ type Collection struct {
 	DeleteImage          *bool      `json:"deleteImage,omitempty" access:"wo"`          // Flag to delete image
 }
 
-// whichID
-func (c *Collection) whichID(collectionID ...ID) ID {
-	if len(collectionID) > 0 {
-		return collectionID[0]
-	}
-	return c.ID
+// GetID
+func (a *Collection) GetID() string {
+	return string(a.ID)
+}
+
+// Validate
+func (a *Collection) Validate() error {
+	return nil
 }
 
 // Create
-func (c *Collection) Create(client Client) (*Collection, error) {
-	return client.CreateCollection(c)
+func (a *Collection) Create() (*Collection, error) {
+	return Create(a)
 }
 
 // Delete
-func (c *Collection) Delete(client Client, collectionID ...ID) error {
-	id := c.whichID(collectionID...)
-	return client.DeleteCollection(id)
+func (a *Collection) Delete() error {
+	return Delete(a)
 }
 
 // Get
-func (c *Collection) Get(client Client, collectionID ...ID) (*Collection, error) {
-	id := c.whichID(collectionID...)
-	return client.GetCollection(id)
+func (a *Collection) Get() (*Collection, error) {
+	return Get(a)
 }
 
 // GetDefaultTemplate
-func (c *Collection) GetDefaultTemplate(client Client, collectionID ...ID) (*Template, error) {
-	id := c.whichID(collectionID...)
-	return client.GetCollectionDefaultTemplate(id)
+unc (a *Collection) GetDefaultTemplate() (*Template, error) {
+	return GetDefaultTemplate(a)
 }
 
 // GetParent
-func (c *Collection) GetParent(client Client, collectionID ...ID) (*Collection, error) {
-	id := c.whichID(collectionID...)
-	return client.GetCollectionParent(id)
+func (a *Collection) GetParent() (*Collection, error) {
+	return GetParent(a)
 }
 
 // IRI
-func (c *Collection) IRI() string {
-	return fmt.Sprintf("/api/collections/%s", c.ID)
+func (a *Collection) IRI() string {
+	return IRI(a)
+}
+
+// List
+func (a *Collection) List() ([]*Collection, error) {
+	return List(a)
+}
+
+// ListChildren
+func (a *Collection) ListChildren() ([]*Collection, error) {
+	return ListChildren(a)
 }
 
 // Patch
-func (c *Collection) Patch(client Client, collectionID ...ID) (*Collection, error) {
-	id := c.whichID(collectionID...)
-	return client.PatchCollection(id, c)
+func (a *Collection) Patch() (*Collection, error) {
+	return Patch(a)
 }
 
 // Update
-func (c *Collection) Update(client Client, collectionID ...ID) (*Collection, error) {
-	id := c.whichID(collectionID...)
-	return client.UpdateCollection(id, c)
+func (a *Collection) Update() (*Collection, error) {
+	return Update(a)
 }
 
 // UploadImage
-func (c *Collection) UploadImage(client Client, file []byte, collectionID ...ID) (*Collection, error) {
-	id := c.whichID(collectionID...)
-	return client.UploadCollectionImage(id, file)
+func (a *Collection) UploadImage(file []byte) (*Collection, error) {
+	return UploadImage(a, file)
 }
 
-// UploadImageByFile
-func (c *Collection) UploadImageByFile(client Client, filename string, collectionID ...ID) (*Collection, error) {
-	id := c.whichID(collectionID...)
-	file, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
-	}
-	return c.UploadImage(client, file, id)
+// UploadImageFromFile
+func (a *Collection) UploadImageFromFile(filename string) (*Collection, error) {
+	return UploadImageFromFile(a, filename)
+}
+
+func (a *Collection) GetItems(filename string) (*Collection, error) {
+	return UploadImageFromFile(a, filename)
 }

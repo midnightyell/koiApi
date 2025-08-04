@@ -43,14 +43,7 @@ type Album struct {
 	DeleteImage      *bool      `json:"deleteImage,omitempty" access:"wo"`      // Flag to delete image
 }
 
-// whichID
-func (a *Album) whichID(albumID ...ID) ID {
-	if len(albumID) > 0 {
-		return albumID[0]
-	}
-	return a.ID
-}
-
+// GetID
 func (a *Album) GetID() string {
 	return string(a.ID)
 }
@@ -60,6 +53,7 @@ func (a *Album) Create() (*Album, error) {
 	return Create(a)
 }
 
+// Validate
 func (a *Album) Validate() error {
 	if a.Title == "" {
 		return fmt.Errorf("album title cannot be empty")
