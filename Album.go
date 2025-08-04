@@ -5,23 +5,6 @@ import (
 	"time"
 )
 
-// AlbumInterface defines methods for interacting with Album resources.
-type AlbumInterface interface {
-	//Create(client Client) (*Album, error)                                            // HTTP POST /api/albums
-	Delete(client Client, albumID ...ID) error                                       // HTTP DELETE /api/albums/{id}
-	Get(client Client, albumID ...ID) (*Album, error)                                // HTTP GET /api/albums/{id}
-	GetParent(client Client, albumID ...ID) (*Album, error)                          // HTTP GET /api/albums/{id}/parent
-	IRI() string                                                                     // /api/albums/{id}
-	List(client Client) ([]*Album, error)                                            // HTTP GET /api/albums
-	ListChildren(client Client, albumID ...ID) ([]*Album, error)                     // HTTP GET /api/albums/{id}/children
-	ListPhotos(client Client, albumID ...ID) ([]*Photo, error)                       // HTTP GET /api/albums/{id}/photos
-	Patch(client Client, albumID ...ID) (*Album, error)                              // HTTP PATCH /api/albums/{id}
-	Update(client Client, albumID ...ID) (*Album, error)                             // HTTP PUT /api/albums/{id}
-	UploadImage(client Client, file []byte, albumID ...ID) (*Album, error)           // HTTP POST /api/albums/{id}/image
-	UploadImageByFile(client Client, filename string, albumID ...ID) (*Album, error) // HTTP POST /api/albums/{id}/image
-	Summary() string
-}
-
 // Album represents an album in Koillection, combining fields for JSON-LD and API interactions.
 type Album struct {
 	Context          *Context   `json:"@context,omitempty" access:"rw"`         // JSON-LD only
@@ -68,32 +51,37 @@ func (a *Album) Delete() error {
 
 // Get
 func (a *Album) Get() (*Album, error) {
-	return Get(a)
+	res, err := Get(a)
+	return res.(*Album), err
 }
 
 // GetParent
 func (a *Album) GetParent() (*Album, error) {
-	return GetParent(a)
+	res, err := Get(a)
+	return res.(*Album), err
 }
 
 // IRI
 func (a *Album) IRI() string {
-	return fmt.Sprintf("/api/albums/%s", a.ID)
+	return IRI(a)
 }
 
 // List
 func (a *Album) List() ([]*Album, error) {
-	return List(a)
+	res, err := List(a)
+	return res.([]*Album), err
 }
 
 // ListChildren
 func (a *Album) ListChildren() ([]*Album, error) {
-	return ListChildren(a)
+	res, err := List(a)
+	return res.([]*Album), err
 }
 
 // ListPhotos
 func (a *Album) ListPhotos() ([]*Photo, error) {
-	return ListPhotos(a)
+	res, err := List(a)
+	return res.([]*Photo), err
 }
 
 // Patch
@@ -108,10 +96,10 @@ func (a *Album) Update() (*Album, error) {
 
 // UploadImage
 func (a *Album) UploadImage(file []byte) (*Album, error) {
-	return UploadImage(a, file)
+	return Upload(a, file)
 }
 
 // UploadImageFromFile
 func (a *Album) UploadImageFromFile(filename string) (*Album, error) {
-	return UploadImageFromFile(a, filename)
+	return UploadFromFile(a, filename)
 }

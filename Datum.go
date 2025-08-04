@@ -2,7 +2,6 @@ package koiApi
 
 import (
 	"fmt"
-	"os"
 	"time"
 )
 
@@ -64,6 +63,15 @@ func (a *Datum) GetID() string {
 
 // Validate
 func (a *Datum) Validate() error {
+	if a.Collection == nil && a.Item == nil {
+		return fmt.Errorf("datum must belong to either a collection or an item")
+	}
+	if a.DatumType == "" {
+		return fmt.Errorf("datum type cannot be empty")
+	}
+	if a.Label == "" {
+		return fmt.Errorf("datum label cannot be empty")
+	}
 	return nil
 }
 
@@ -79,17 +87,20 @@ func (a *Datum) Delete() error {
 
 // Get
 func (a *Datum) Get() (*Datum, error) {
-	return Get(a)
+	res, err := Get(a)
+	return res.(*Datum), err
 }
 
 // GetDefaultTemplate
-unc (a *Datum) GetDefaultTemplate() (*Template, error) {
-	return GetDefaultTemplate(a)
+func (a *Datum) GetDefaultTemplate() (*Template, error) {
+	res, err := Get(a)
+	return res.(*Template), err
 }
 
 // GetParent
 func (a *Datum) GetParent() (*Datum, error) {
-	return GetParent(a)
+	res, err := Get(a)
+	return res.(*Datum), err
 }
 
 // IRI
@@ -99,7 +110,8 @@ func (a *Datum) IRI() string {
 
 // List
 func (a *Datum) List() ([]*Datum, error) {
-	return List(a)
+	res, err := List(a)
+	return res.([]*Datum), err
 }
 
 // Patch
@@ -114,59 +126,18 @@ func (a *Datum) Update() (*Datum, error) {
 
 // UploadImage
 func (a *Datum) UploadImage(file []byte) (*Datum, error) {
-	return UploadImage(a, file)
+	return Upload(a, file)
 }
 
 // UploadImageFromFile
 func (a *Datum) UploadImageFromFile(filename string) (*Datum, error) {
-	return UploadImageFromFile(a, filename)
+	return UploadFromFile(a, filename)
 }
 
-
-// UploadFile
-func (d *Datum) UploadFile(client Client, file []byte, datumID ...ID) (*Datum, error) {
-	id := d.whichID(datumID...)
-	return client.UploadDatumFile(id, file)
+func (a *Datum) UploadVideo(file []byte) (*Datum, error) {
+	return Upload(a, file)
 }
 
-// UploadFileByFile
-func (d *Datum) UploadFileByFile(client Client, filename string, datumID ...ID) (*Datum, error) {
-	id := d.whichID(datumID...)
-	file, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
-	}
-	return client.UploadDatumFile(id, file)
-}
-
-// UploadImage
-func (d *Datum) UploadImage(client Client, image []byte, datumID ...ID) (*Datum, error) {
-	id := d.whichID(datumID...)
-	return client.UploadDatumImage(id, image)
-}
-
-// UploadImageByFile
-func (d *Datum) UploadImageByFile(client Client, filename string, datumID ...ID) (*Datum, error) {
-	id := d.whichID(datumID...)
-	file, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
-	}
-	return client.UploadDatumImage(id, file)
-}
-
-// UploadVideo
-func (d *Datum) UploadVideo(client Client, video []byte, datumID ...ID) (*Datum, error) {
-	id := d.whichID(datumID...)
-	return client.UploadDatumVideo(id, video)
-}
-
-// UploadVideoByFile
-func (d *Datum) UploadVideoByFile(client Client, filename string, datumID ...ID) (*Datum, error) {
-	id := d.whichID(datumID...)
-	file, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
-	}
-	return client.UploadDatumVideo(id, file)
+func (a *Datum) UploadVideoFromFile(filename string) (*Datum, error) {
+	return UploadFromFile(a, filename)
 }

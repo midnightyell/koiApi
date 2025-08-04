@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	caller "gitea.local/smalloy/caller"
+	caller "gitea.local/smalloy/caller-utils"
 )
 
 var basePathForType = map[string]string{
@@ -26,8 +26,9 @@ var basePathForType = map[string]string{
 }
 
 type koiOp struct {
-	op   string
-	path string
+	op     string
+	path   string
+	caller string
 }
 
 type KoiObject interface {
@@ -55,42 +56,51 @@ func KoiPathForOp(obj KoiObject) (*koiOp, error) {
 	}
 
 	// Get caller name
-	op := strings.ToLower(caller.ParentFunc())
+	fn := strings.ToLower(caller.GrandparentFunc())
+	retval := koiOp{caller: fn}
 
-	retval := koiOp{}
-
-	switch op {
+	switch fn {
 	case "create":
-		retval = koiOp{op: http.MethodPost, path: basePath}
+		retval = koiOp{caller: fn, op: http.MethodPost, path: basePath}
 	case "get":
-		retval = koiOp{op: http.MethodGet, path: fmt.Sprintf("%s/%s", basePath, GetID(obj))}
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s", basePath, GetID(obj))}
 	case "list":
-		retval = koiOp{op: http.MethodGet, path: basePath}
+		retval = koiOp{caller: fn, op: http.MethodGet, path: basePath}
 	case "update":
-		retval = koiOp{op: http.MethodPut, path: fmt.Sprintf("%s/%s", basePath, obj.GetID())}
+		retval = koiOp{caller: fn, op: http.MethodPut, path: fmt.Sprintf("%s/%s", basePath, obj.GetID())}
 	case "delete":
-		retval = koiOp{op: http.MethodDelete, path: fmt.Sprintf("%s/%s", basePath, obj.GetID())}
+		retval = koiOp{caller: fn, op: http.MethodDelete, path: fmt.Sprintf("%s/%s", basePath, obj.GetID())}
 	case "patch":
-		retval = koiOp{op: http.MethodPatch, path: fmt.Sprintf("%s/%s", basePath, obj.GetID())}
+		retval = koiOp{caller: fn, op: http.MethodPatch, path: fmt.Sprintf("%s/%s", basePath, obj.GetID())}
 	case "listphotos":
-		retval = koiOp{op: http.MethodGet, path: fmt.Sprintf("%s/%s/photos", basePath, obj.GetID())}
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/photos", basePath, obj.GetID())}
 	case "listchildren":
-		retval = koiOp{op: http.MethodGet, path: fmt.Sprintf("%s/%s/children", basePath, obj.GetID())}
-	case "uploadimage":
-		retval = koiOp{op: http.MethodPost, path: fmt.Sprintf("%s/%s/image", basePath, obj.GetID())}
-	case "uploadimagefromfile":
-		retval = koiOp{op: http.MethodPost, path: fmt.Sprintf("%s/%s/image", basePath, obj.GetID())}
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/children", basePath, obj.GetID())}
+	case "listdata":
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/data", basePath, obj.GetID())}
+	case "listitems":
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/items", basePath, obj.GetID())}
 	case "getparent":
-		retval = koiOp{op: http.MethodGet, path: fmt.Sprintf("%s/%s/parent", basePath, obj.GetID())}
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/parent", basePath, obj.GetID())}
+	case "uploadimage":
+		retval = koiOp{caller: fn, op: http.MethodPost, path: fmt.Sprintf("%s/%s/image", basePath, obj.GetID())}
+	case "uploadimagefromfile":
+		retval = koiOp{caller: fn, op: http.MethodPost, path: fmt.Sprintf("%s/%s/image", basePath, obj.GetID())}
 	case "uploadfile":
-		retval = koiOp{op: http.MethodPost, path: fmt.Sprintf("%s/%s/file", basePath, obj.GetID())}
+		retval = koiOp{caller: fn, op: http.MethodPost, path: fmt.Sprintf("%s/%s/file", basePath, obj.GetID())}
 	case "uploadfilefromfile":
-		retval = koiOp{op: http.MethodPost, path: fmt.Sprintf("%s/%s/file", basePath, obj.GetID())}
+		retval = koiOp{caller: fn, op: http.MethodPost, path: fmt.Sprintf("%s/%s/file", basePath, obj.GetID())}
+	case "uploadvideo":
+		retval = koiOp{caller: fn, op: http.MethodPost, path: fmt.Sprintf("%s/%s/video", basePath, obj.GetID())}
+	case "uploadvideofromfile":
+		retval = koiOp{caller: fn, op: http.MethodPost, path: fmt.Sprintf("%s/%s/video", basePath, obj.GetID())}
 	case "getdefaulttemplate":
-		retval = koiOp{op: http.MethodGet, path: fmt.Sprintf("%s/%s/items_default_template", basePath, obj.GetID())}
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/items_default_template", basePath, obj.GetID())}
+	case "relateditems":
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/related_items", basePath, obj.GetID())}
 	// Add more cases as needed
 	default:
-		return &koiOp{}, fmt.Errorf("unknown operation: %s", op)
+		return &koiOp{caller: fn}, fmt.Errorf("unknown operation: %s for type %T", fn, obj)
 	}
 
 	return &retval, nil
@@ -138,7 +148,7 @@ func Delete[T KoiObject](o T) error {
 	return fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
 }
 
-func Get[T KoiObject](o T) (T, error) {
+func Get[T KoiObject](o T) (any, error) {
 	result, err := KoiPathForOp(o)
 	if err != nil {
 		return o, fmt.Errorf("failed to get operation path: %w", err)
@@ -150,35 +160,53 @@ func Get[T KoiObject](o T) (T, error) {
 
 	// if op == GET
 	if op == http.MethodGet {
-		var resp T
-		err := c.getResource(path, &resp)
-		return resp, err
+		switch result.caller {
+		case "getcollection":
+			// Datum, Item,
+			var resp *Collection
+			err := c.getResource(path, &resp)
+			return resp, err
+		case "getdefaulttemplate":
+			// Collection
+			var resp *Template
+			err := c.getResource(path, &resp)
+			return resp, err
+		case "gettemplate":
+			// Fields
+			var resp *Template
+			err := c.getResource(path, &resp)
+			return resp, err
+		case "getalbum":
+			// Photo
+			var resp *Album
+			err := c.getResource(path, &resp)
+			return resp, err
+		case "getitem":
+			// Data, Loan
+			var resp *Item
+			err := c.getResource(path, &resp)
+			return resp, err
+		case "gettagcategory":
+			// Tag
+			var resp *TagCategory
+			err := c.getResource(path, &resp)
+			return resp, err
+		default:
+			var resp T
+			err := c.getResource(path, &resp)
+			return resp, err
+		}
 	}
 	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
 	return o, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
 }
 
-func GetParent[T KoiObject](o T) (T, error) {
-	result, err := KoiPathForOp(o)
-	if err != nil {
-		return o, fmt.Errorf("failed to get operation path: %w", err)
-	}
-	op := result.op
-	path := result.path
-
-	c := GetClient()
-
-	// if op == GET
-	if op == http.MethodGet {
-		var resp T
-		err := c.getResource(path, &resp)
-		return resp, err
-	}
-	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
-	return o, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
-}
-
-func List[T KoiObject](o T) ([]T, error) {
+func List[T KoiObject](o T) (any, error) {
+	/*
+		List can sometimes return a different type than T, such as a list of Photos for an Album,
+		or a list of Items for a Collection.
+		So we return an interface{} and let the caller handle the type assertion.
+	*/
 	result, err := KoiPathForOp(o)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get operation path: %w", err)
@@ -187,52 +215,51 @@ func List[T KoiObject](o T) ([]T, error) {
 	path := result.path
 
 	c := GetClient()
-
 	// if op == GET
 	if op == http.MethodGet {
-		var items []T
-		err := c.listResources(path, &items)
-		return items, err
-	}
-	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
-	return nil, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
-}
 
-func ListChildren[T KoiObject](o T) ([]T, error) {
-	result, err := KoiPathForOp(o)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get operation path: %w", err)
-	}
-	op := result.op
-	path := result.path
+		switch result.caller {
+		case "listphotos":
+			// Album
+			var objs []*Photo
+			err := c.listResources(path, &objs)
+			return objs, err
 
-	c := GetClient()
+		case "listdata":
+			// Collection, Item
+			var objs []*Datum
+			err := c.listResources(path, &objs)
+			return objs, err
 
-	// if op == GET
-	if op == http.MethodGet {
-		var items []T
-		err := c.listResources(path, &items)
-		return items, err
-	}
-	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
-	return nil, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
-}
+		case "listitems":
+			// Collection, Tags
+			var objs []*Item
+			err := c.listResources(path, &objs)
+			return objs, err
 
-func ListPhotos[T KoiObject](o T) ([]*Photo, error) {
-	result, err := KoiPathForOp(o)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get operation path: %w", err)
-	}
-	op := result.op
-	path := result.path
+		case "listwishes":
+			// Wishlist
+			var objs []*Wish
+			err := c.listResources(path, &objs)
+			return objs, err
 
-	c := GetClient()
+		case "listfields":
+			// Templates
+			var objs []*Field
+			err := c.listResources(path, &objs)
+			return objs, err
 
-	// if op == GET
-	if op == http.MethodGet {
-		var items []*Photo
-		err := c.listResources(path, &items)
-		return items, err
+		case "listtags":
+			// Item, TagCategory
+			var objs []*Field
+			err := c.listResources(path, &objs)
+			return objs, err
+
+		default:
+			var objs []T
+			err := c.listResources(path, &objs)
+			return objs, err
+		}
 	}
 	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
 	return nil, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
@@ -257,6 +284,7 @@ func Patch[T KoiObject](o T) (T, error) {
 	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
 	return o, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
 }
+
 func Update[T KoiObject](o T) (T, error) {
 	result, err := KoiPathForOp(o)
 	if err != nil {
@@ -277,7 +305,7 @@ func Update[T KoiObject](o T) (T, error) {
 	return o, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
 }
 
-func UploadImage[T KoiObject](o T, file []byte) (T, error) {
+func Upload[T KoiObject](o T, file []byte) (T, error) {
 	result, err := KoiPathForOp(o)
 	if err != nil {
 		return o, fmt.Errorf("failed to get operation path: %w", err)
@@ -297,46 +325,10 @@ func UploadImage[T KoiObject](o T, file []byte) (T, error) {
 	return o, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
 }
 
-func UploadImageFromFile[T KoiObject](o T, filename string) (T, error) {
-	result, err := KoiPathForOp(o)
+func UploadFromFile[T KoiObject](o T, fname string) (T, error) {
+	file, err := os.ReadFile(fname)
 	if err != nil {
-		return o, fmt.Errorf("failed to get operation path: %w", err)
+		return o, fmt.Errorf("failed to read file %s: %w", fname, err)
 	}
-	op := result.op
-	path := result.path
-
-	c := GetClient()
-
-	// if op == POST
-	if op == http.MethodPost {
-		file, err := os.ReadFile(filename)
-		if err != nil {
-			return o, fmt.Errorf("failed to read file %s: %w", filename, err)
-		}
-		var resp T
-		err = c.uploadFile(path, file, "file", &resp)
-		return resp, err
-	}
-	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
-	return o, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
-}
-
-func GetDefaultTemplate[T KoiObject](o T) (*Template, error) {
-	result, err := KoiPathForOp(o)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get operation path: %w", err)
-	}
-	op := result.op
-	path := result.path
-
-	c := GetClient()
-
-	// if op == GET
-	if op == http.MethodGet {
-		var resp *Template
-		err := c.getResource(path, &resp)
-		return resp, err
-	}
-	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
-	return nil, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
+	return Upload(o, file)
 }

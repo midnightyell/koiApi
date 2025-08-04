@@ -1,7 +1,6 @@
 package koiApi
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -20,7 +19,7 @@ type ChoiceList struct {
 
 // IRI
 func (a *ChoiceList) IRI() string {
-	return fmt.Sprintf("/api/choice_lists/%s", a.ID)
+	return IRI(a)
 }
 
 // GetID
@@ -45,12 +44,14 @@ func (a *ChoiceList) Delete() error {
 
 // Get
 func (a *ChoiceList) Get() (*ChoiceList, error) {
-	return Get(a)
+	res, err := Get(a)
+	return res.(*ChoiceList), err
 }
 
 // List
 func (a *ChoiceList) List() ([]*ChoiceList, error) {
-	return List(a)
+	res, err := List(a)
+	return res.([]*ChoiceList), err
 }
 
 // Patch

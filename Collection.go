@@ -49,17 +49,20 @@ func (a *Collection) Delete() error {
 
 // Get
 func (a *Collection) Get() (*Collection, error) {
-	return Get(a)
+	res, err := Get(a)
+	return res.(*Collection), err
 }
 
 // GetDefaultTemplate
-unc (a *Collection) GetDefaultTemplate() (*Template, error) {
-	return GetDefaultTemplate(a)
+func (a *Collection) GetDefaultTemplate() (*Template, error) {
+	res, err := Get(a)
+	return res.(*Template), err
 }
 
 // GetParent
 func (a *Collection) GetParent() (*Collection, error) {
-	return GetParent(a)
+	res, err := Get(a)
+	return res.(*Collection), err
 }
 
 // IRI
@@ -69,12 +72,26 @@ func (a *Collection) IRI() string {
 
 // List
 func (a *Collection) List() ([]*Collection, error) {
-	return List(a)
+	res, err := List(a)
+	return res.([]*Collection), err
 }
 
 // ListChildren
 func (a *Collection) ListChildren() ([]*Collection, error) {
-	return ListChildren(a)
+	res, err := List(a)
+	return res.([]*Collection), err
+}
+
+// ListItems
+func (a *Collection) ListItems() ([]*Item, error) {
+	res, err := List(a)
+	return res.([]*Item), err
+}
+
+// ListData
+func (a *Collection) ListData() ([]*Datum, error) {
+	res, err := List(a)
+	return res.([]*Datum), err
 }
 
 // Patch
@@ -89,14 +106,10 @@ func (a *Collection) Update() (*Collection, error) {
 
 // UploadImage
 func (a *Collection) UploadImage(file []byte) (*Collection, error) {
-	return UploadImage(a, file)
+	return Upload(a, file)
 }
 
 // UploadImageFromFile
-func (a *Collection) UploadImageFromFile(filename string) (*Collection, error) {
-	return UploadImageFromFile(a, filename)
-}
-
-func (a *Collection) GetItems(filename string) (*Collection, error) {
-	return UploadImageFromFile(a, filename)
+func (a *Collection) UploadFromFile(filename string) (*Collection, error) {
+	return UploadFromFile(a, filename)
 }
