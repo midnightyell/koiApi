@@ -6,21 +6,6 @@ import (
 	"time"
 )
 
-// WishInterface defines methods for interacting with Wish resources.
-type WishInterface interface {
-	Create(client Client) (*Wish, error)                                           // HTTP POST /api/wishes
-	Delete(client Client, wishID ...ID) error                                      // HTTP DELETE /api/wishes/{id}
-	Get(client Client, wishID ...ID) (*Wish, error)                                // HTTP GET /api/wishes/{id}
-	GetWishlist(client Client, wishID ...ID) (*Wishlist, error)                    // HTTP GET /api/wishes/{id}/wishlist
-	IRI() string                                                                   // /api/wishes/{id}
-	List(client Client) ([]*Wish, error)                                           // HTTP GET /api/wishes
-	Patch(client Client, wishID ...ID) (*Wish, error)                              // HTTP PATCH /api/wishes/{id}
-	Update(client Client, wishID ...ID) (*Wish, error)                             // HTTP PUT /api/wishes/{id}
-	UploadImage(client Client, file []byte, wishID ...ID) (*Wish, error)           // HTTP POST /api/wishes/{id}/image
-	UploadImageByFile(client Client, filename string, wishID ...ID) (*Wish, error) // HTTP POST /api/wishes/{id}/image
-	Summary() string
-}
-
 // Wish represents a wish in Koillection, combining fields for JSON-LD and API interactions.
 type Wish struct {
 	Context             *Context   `json:"@context,omitempty" access:"rw"`            // JSON-LD only
@@ -46,71 +31,28 @@ type Wish struct {
 
 }
 
-// whichID
-func (w *Wish) whichID(wishID ...ID) ID {
-	if len(wishID) > 0 {
-		return wishID[0]
-	}
-	return w.ID
-}
-
-// Create
-func (w *Wish) Create(client Client) (*Wish, error) {
-	return client.CreateWish(w)
-}
-
-// Delete
-func (w *Wish) Delete(client Client, wishID ...ID) error {
-	id := w.whichID(wishID...)
-	return client.DeleteWish(id)
-}
-
-// Get
-func (w *Wish) Get(client Client, wishID ...ID) (*Wish, error) {
-	id := w.whichID(wishID...)
-	return client.GetWish(id)
-}
-
-// GetWishlist
-func (w *Wish) GetWishlist(client Client, wishID ...ID) (*Wishlist, error) {
-	id := w.whichID(wishID...)
-	return client.GetWishWishlist(id)
-}
-
-// IRI
 func (w *Wish) IRI() string {
 	return fmt.Sprintf("/api/wishes/%s", w.ID)
 }
 
-// List
-func (w *Wish) List(client Client) ([]*Wish, error) {
-	return client.ListWishes()
+func (w *Wish) GetID() string {
+	return string(w.ID)
 }
 
-// Patch
-func (w *Wish) Patch(client Client, wishID ...ID) (*Wish, error) {
-	id := w.whichID(wishID...)
-	return client.PatchWish(id, w)
-}
-
-// Update
-func (w *Wish) Update(client Client, wishID ...ID) (*Wish, error) {
-	id := w.whichID(wishID...)
-	return client.UpdateWish(id, w)
-}
-
-// UploadImage
-func (w *Wish) UploadImage(client Client, file []byte, wishID ...ID) (*Wish, error) {
-	id := w.whichID(wishID...)
-	return client.UploadWishImage(id, file)
-}
-
-// UploadImageByFile
-func (w *Wish) UploadImageByFile(client Client, filename string, wishID ...ID) (*Wish, error) {
-	id := w.whichID(wishID...)
-	file, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
+func (w *Wish) Validate() error {
+	if w.Name == "" {
+		return fmt.Errorf("wish name cannot be empty")
 	}
-	return client.UploadWishImage(id, file)
+	if w.Wishlist == nil || *w.Wishlist == "" {
+		return fmt.Errorf("wishlist cannot be empty")
+	}
+	if w.Owner == nil || *w.Owner == "" {
+		return fmt.Errorf("owner cannot be empty")
+	}
+	if w.Image != nil && *w.Image != "" {
+		if _, err := os.Stat(*w.Image); os.IsNotExist(err) {
+			return fmt.Errorf("image file does not exist: %s", *w.Image)
+		}
+	}
+	return nil
 }

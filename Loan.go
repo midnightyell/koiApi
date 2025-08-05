@@ -5,19 +5,6 @@ import (
 	"time"
 )
 
-// LoanInterface defines methods for interacting with Loan resources.
-type LoanInterface interface {
-	Create(client Client) (*Loan, error)                // HTTP POST /api/loans
-	Delete(client Client, loanID ...ID) error           // HTTP DELETE /api/loans/{id}
-	Get(client Client, loanID ...ID) (*Loan, error)     // HTTP GET /api/loans/{id}
-	GetItem(client Client, loanID ...ID) (*Item, error) // HTTP GET /api/loans/{id}/item
-	IRI() string                                        // /api/loans/{id}
-	List(client Client) ([]*Loan, error)                // HTTP GET /api/loans
-	Patch(client Client, loanID ...ID) (*Loan, error)   // HTTP PATCH /api/loans/{id}
-	Update(client Client, loanID ...ID) (*Loan, error)  // HTTP PUT /api/loans/{id}
-	Summary() string
-}
-
 // Loan represents a loan record in Koillection, combining fields for JSON-LD and API interactions.
 type Loan struct {
 	Context    *Context   `json:"@context,omitempty" access:"rw"`   // JSON-LD only
@@ -32,66 +19,15 @@ type Loan struct {
 
 }
 
-// whichID
-func (l *Loan) whichID(loanID ...ID) ID {
-	if len(loanID) > 0 {
-		return loanID[0]
-	}
-	return l.ID
-}
-
-// Create
-func (l *Loan) Create(client Client) (*Loan, error) {
-	return client.CreateLoan(l)
-}
-
-// Delete
-func (l *Loan) Delete(client Client, loanID ...ID) error {
-	id := l.whichID(loanID...)
-	return client.DeleteLoan(id)
-}
-
-// Get
-func (l *Loan) Get(client Client, loanID ...ID) (*Loan, error) {
-	id := l.whichID(loanID...)
-	return client.GetLoan(id)
-}
-
-// GetItem
-func (l *Loan) GetItem(client Client, loanID ...ID) (*Item, error) {
-	id := l.whichID(loanID...)
-	return client.GetLoanItem(id)
-}
-
 // IRI
 func (l *Loan) IRI() string {
 	return fmt.Sprintf("/api/loans/%s", l.ID)
 }
 
-// List
-func (l *Loan) List(client Client) ([]*Loan, error) {
-	var allLoans []*Loan
-	for page := 1; ; page++ {
-		loans, err := client.ListLoans()
-		if err != nil {
-			return nil, fmt.Errorf("failed to list loans: %w", err)
-		}
-		if len(loans) == 0 {
-			break
-		}
-		allLoans = append(allLoans, loans...)
-	}
-	return allLoans, nil
+func (l *Loan) GetID() string {
+	return string(l.ID)
 }
 
-// Patch
-func (l *Loan) Patch(client Client, loanID ...ID) (*Loan, error) {
-	id := l.whichID(loanID...)
-	return client.PatchLoan(id, l)
-}
-
-// Update
-func (l *Loan) Update(client Client, loanID ...ID) (*Loan, error) {
-	id := l.whichID(loanID...)
-	return client.UpdateLoan(id, l)
+func (l *Loan) Validate() error {
+	return nil
 }

@@ -31,29 +31,11 @@ func (a *Inventory) GetID() string {
 	return string(a.ID)
 }
 
-// Create
-// Not supported for Inventory?
-func (a *Inventory) Create() (*Inventory, error) {
-	return Create(a)
-}
-
-// Validate
-func (a *Inventory) Validate() error {
-	return nil
-}
-
-// Delete
-func (a *Inventory) Delete() error {
-	return Delete(a)
-}
-
-// Get
-func (a *Inventory) Get() (*Inventory, error) {
-	res, err := Get(a)
-	return res.(*Inventory), err
-}
-
 // IRI
 func (a *Inventory) IRI() string {
 	return IRI(a)
+}
+
+func (a *Inventory) Validate() error {
+	return nil
 }

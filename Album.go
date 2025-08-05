@@ -31,11 +31,6 @@ func (a *Album) GetID() string {
 	return string(a.ID)
 }
 
-// Create
-func (a *Album) Create() (*Album, error) {
-	return Create(a)
-}
-
 // Validate
 func (a *Album) Validate() error {
 	if a.Title == "" {
@@ -44,62 +39,7 @@ func (a *Album) Validate() error {
 	return nil
 }
 
-// Delete
-func (a *Album) Delete() error {
-	return Delete(a)
-}
-
-// Get
-func (a *Album) Get() (*Album, error) {
-	res, err := Get(a)
-	return res.(*Album), err
-}
-
-// GetParent
-func (a *Album) GetParent() (*Album, error) {
-	res, err := Get(a)
-	return res.(*Album), err
-}
-
 // IRI
 func (a *Album) IRI() string {
 	return IRI(a)
-}
-
-// List
-func (a *Album) List() ([]*Album, error) {
-	res, err := List(a)
-	return res.([]*Album), err
-}
-
-// ListChildren
-func (a *Album) ListChildren() ([]*Album, error) {
-	res, err := List(a)
-	return res.([]*Album), err
-}
-
-// ListPhotos
-func (a *Album) ListPhotos() ([]*Photo, error) {
-	res, err := List(a)
-	return res.([]*Photo), err
-}
-
-// Patch
-func (a *Album) Patch() (*Album, error) {
-	return Patch(a)
-}
-
-// Update
-func (a *Album) Update() (*Album, error) {
-	return Update(a)
-}
-
-// UploadImage
-func (a *Album) UploadImage(file []byte) (*Album, error) {
-	return Upload(a, file)
-}
-
-// UploadImageFromFile
-func (a *Album) UploadImageFromFile(filename string) (*Album, error) {
-	return UploadFromFile(a, filename)
 }

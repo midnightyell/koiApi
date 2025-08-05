@@ -75,69 +75,7 @@ func (a *Datum) Validate() error {
 	return nil
 }
 
-// Create
-func (a *Datum) Create() (*Datum, error) {
-	return Create(a)
-}
-
-// Delete
-func (a *Datum) Delete() error {
-	return Delete(a)
-}
-
-// Get
-func (a *Datum) Get() (*Datum, error) {
-	res, err := Get(a)
-	return res.(*Datum), err
-}
-
-// GetDefaultTemplate
-func (a *Datum) GetDefaultTemplate() (*Template, error) {
-	res, err := Get(a)
-	return res.(*Template), err
-}
-
-// GetParent
-func (a *Datum) GetParent() (*Datum, error) {
-	res, err := Get(a)
-	return res.(*Datum), err
-}
-
 // IRI
 func (a *Datum) IRI() string {
 	return IRI(a)
-}
-
-// List
-func (a *Datum) List() ([]*Datum, error) {
-	res, err := List(a)
-	return res.([]*Datum), err
-}
-
-// Patch
-func (a *Datum) Patch() (*Datum, error) {
-	return Patch(a)
-}
-
-// Update
-func (a *Datum) Update() (*Datum, error) {
-	return Update(a)
-}
-
-// UploadImage
-func (a *Datum) UploadImage(file []byte) (*Datum, error) {
-	return Upload(a, file)
-}
-
-// UploadImageFromFile
-func (a *Datum) UploadImageFromFile(filename string) (*Datum, error) {
-	return UploadFromFile(a, filename)
-}
-
-func (a *Datum) UploadVideo(file []byte) (*Datum, error) {
-	return Upload(a, file)
-}
-
-func (a *Datum) UploadVideoFromFile(filename string) (*Datum, error) {
-	return UploadFromFile(a, filename)
 }

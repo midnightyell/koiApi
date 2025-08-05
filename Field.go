@@ -31,18 +31,6 @@ func (ft FieldType) String() string {
 	return string(ft)
 }
 
-// FieldInterface defines methods for interacting with Field resources.
-type FieldInterface interface {
-	Create(client Client) (*Field, error)                        // HTTP POST /api/fields
-	Delete(client Client, fieldID ...ID) error                   // HTTP DELETE /api/fields/{id}
-	Get(client Client, fieldID ...ID) (*Field, error)            // HTTP GET /api/fields/{id}
-	GetTemplate(client Client, fieldID ...ID) (*Template, error) // HTTP GET /api/fields/{id}/template
-	IRI() string                                                 // /api/fields/{id}
-	Patch(client Client, fieldID ...ID) (*Field, error)          // HTTP PATCH /api/fields/{id}
-	Update(client Client, fieldID ...ID) (*Field, error)         // HTTP PUT /api/fields/{id}
-	Summary() string
-}
-
 // Field represents a template field in Koillection, combining fields for JSON-LD and API interactions.
 type Field struct {
 	Context    *Context   `json:"@context,omitempty" access:"rw"`   // JSON-LD only
@@ -64,11 +52,6 @@ func (a *Field) GetID() string {
 	return string(a.ID)
 }
 
-// Create
-func (a *Field) Create() (*Field, error) {
-	return Create(a)
-}
-
 // Validate
 func (a *Field) Validate() error {
 	if a.Name == "" {
@@ -80,40 +63,7 @@ func (a *Field) Validate() error {
 	return nil
 }
 
-// Delete
-func (a *Field) Delete() error {
-	return Delete(a)
-}
-
-// Get
-func (a *Field) Get() (*Field, error) {
-	res, err := Get(a)
-	return res.(*Field), err
-}
-
 // IRI
 func (a *Field) IRI() string {
 	return IRI(a)
-}
-
-// List
-func (a *Field) List() ([]*Field, error) {
-	res, err := List(a)
-	return res.([]*Field), err
-}
-
-// Patch
-func (a *Field) Patch() (*Field, error) {
-	return Patch(a)
-}
-
-// Update
-func (a *Field) Update() (*Field, error) {
-	return Update(a)
-}
-
-// GetTemplate
-func (a *Field) GetTemplate() (*Template, error) {
-	res, err := Get(a)
-	return res.(*Template), err
 }

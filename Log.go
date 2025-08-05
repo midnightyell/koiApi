@@ -5,14 +5,6 @@ import (
 	"time"
 )
 
-// LogInterface defines methods for interacting with Log resources.
-type LogInterface interface {
-	Get(client Client, logID ...ID) (*Log, error) // HTTP GET /api/logs/{id}
-	IRI() string                                  // /api/logs/{id}
-	List(client Client) ([]*Log, error)           // HTTP GET /api/logs
-	Summary() string
-}
-
 // Log represents an action or event in Koillection, combining fields for JSON-LD and API interactions.
 type Log struct {
 	Context       *Context  `json:"@context,omitempty" access:"rw"` // JSON-LD only
@@ -29,26 +21,15 @@ type Log struct {
 
 }
 
-// whichID
-func (l *Log) whichID(logID ...ID) ID {
-	if len(logID) > 0 {
-		return logID[0]
-	}
-	return l.ID
-}
-
-// Get
-func (l *Log) Get(client Client, logID ...ID) (*Log, error) {
-	id := l.whichID(logID...)
-	return client.GetLog(id)
-}
-
 // IRI
 func (l *Log) IRI() string {
 	return fmt.Sprintf("/api/logs/%s", l.ID)
 }
 
-// List
-func (l *Log) List(client Client) ([]*Log, error) {
-	return client.ListLogs()
+func (l *Log) GetID() string {
+	return string(l.ID)
+}
+
+func (l *Log) Validate() error {
+	return nil
 }

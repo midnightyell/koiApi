@@ -31,35 +31,3 @@ func (a *ChoiceList) GetID() string {
 func (a *ChoiceList) Validate() error {
 	return nil
 }
-
-// Create
-func (a *ChoiceList) Create() (*ChoiceList, error) {
-	return Create(a)
-}
-
-// Delete
-func (a *ChoiceList) Delete() error {
-	return Delete(a)
-}
-
-// Get
-func (a *ChoiceList) Get() (*ChoiceList, error) {
-	res, err := Get(a)
-	return res.(*ChoiceList), err
-}
-
-// List
-func (a *ChoiceList) List() ([]*ChoiceList, error) {
-	res, err := List(a)
-	return res.([]*ChoiceList), err
-}
-
-// Patch
-func (a *ChoiceList) Patch() (*ChoiceList, error) {
-	return Patch(a)
-}
-
-// Update
-func (a *ChoiceList) Update() (*ChoiceList, error) {
-	return Update(a)
-}

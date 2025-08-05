@@ -37,79 +37,7 @@ func (a *Collection) Validate() error {
 	return nil
 }
 
-// Create
-func (a *Collection) Create() (*Collection, error) {
-	return Create(a)
-}
-
-// Delete
-func (a *Collection) Delete() error {
-	return Delete(a)
-}
-
-// Get
-func (a *Collection) Get() (*Collection, error) {
-	res, err := Get(a)
-	return res.(*Collection), err
-}
-
-// GetDefaultTemplate
-func (a *Collection) GetDefaultTemplate() (*Template, error) {
-	res, err := Get(a)
-	return res.(*Template), err
-}
-
-// GetParent
-func (a *Collection) GetParent() (*Collection, error) {
-	res, err := Get(a)
-	return res.(*Collection), err
-}
-
 // IRI
 func (a *Collection) IRI() string {
 	return IRI(a)
-}
-
-// List
-func (a *Collection) List() ([]*Collection, error) {
-	res, err := List(a)
-	return res.([]*Collection), err
-}
-
-// ListChildren
-func (a *Collection) ListChildren() ([]*Collection, error) {
-	res, err := List(a)
-	return res.([]*Collection), err
-}
-
-// ListItems
-func (a *Collection) ListItems() ([]*Item, error) {
-	res, err := List(a)
-	return res.([]*Item), err
-}
-
-// ListData
-func (a *Collection) ListData() ([]*Datum, error) {
-	res, err := List(a)
-	return res.([]*Datum), err
-}
-
-// Patch
-func (a *Collection) Patch() (*Collection, error) {
-	return Patch(a)
-}
-
-// Update
-func (a *Collection) Update() (*Collection, error) {
-	return Update(a)
-}
-
-// UploadImage
-func (a *Collection) UploadImage(file []byte) (*Collection, error) {
-	return Upload(a, file)
-}
-
-// UploadImageFromFile
-func (a *Collection) UploadFromFile(filename string) (*Collection, error) {
-	return UploadFromFile(a, filename)
 }
