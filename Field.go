@@ -59,50 +59,61 @@ type Field struct {
 
 }
 
-// whichID
-func (f *Field) whichID(fieldID ...ID) ID {
-	if len(fieldID) > 0 {
-		return fieldID[0]
-	}
-	return f.ID
+// GetID
+func (a *Field) GetID() string {
+	return string(a.ID)
 }
 
 // Create
-func (f *Field) Create(client Client) (*Field, error) {
-	return client.CreateField(f)
+func (a *Field) Create() (*Field, error) {
+	return Create(a)
+}
+
+// Validate
+func (a *Field) Validate() error {
+	if a.Name == "" {
+		return fmt.Errorf("Name cannot be empty")
+	}
+	if a.FieldType == "" {
+		return fmt.Errorf("FieldType cannot be empty")
+	}
+	return nil
 }
 
 // Delete
-func (f *Field) Delete(client Client, fieldID ...ID) error {
-	id := f.whichID(fieldID...)
-	return client.DeleteField(id)
+func (a *Field) Delete() error {
+	return Delete(a)
 }
 
 // Get
-func (f *Field) Get(client Client, fieldID ...ID) (*Field, error) {
-	id := f.whichID(fieldID...)
-	return client.GetField(id)
-}
-
-// GetTemplate
-func (f *Field) GetTemplate(client Client, fieldID ...ID) (*Template, error) {
-	id := f.whichID(fieldID...)
-	return client.GetFieldTemplate(id)
+func (a *Field) Get() (*Field, error) {
+	res, err := Get(a)
+	return res.(*Field), err
 }
 
 // IRI
-func (f *Field) IRI() string {
-	return fmt.Sprintf("/api/fields/%s", f.ID)
+func (a *Field) IRI() string {
+	return IRI(a)
+}
+
+// List
+func (a *Field) List() ([]*Field, error) {
+	res, err := List(a)
+	return res.([]*Field), err
 }
 
 // Patch
-func (f *Field) Patch(client Client, fieldID ...ID) (*Field, error) {
-	id := f.whichID(fieldID...)
-	return client.PatchField(id, f)
+func (a *Field) Patch() (*Field, error) {
+	return Patch(a)
 }
 
 // Update
-func (f *Field) Update(client Client, fieldID ...ID) (*Field, error) {
-	id := f.whichID(fieldID...)
-	return client.UpdateField(id, f)
+func (a *Field) Update() (*Field, error) {
+	return Update(a)
+}
+
+// GetTemplate
+func (a *Field) GetTemplate() (*Template, error) {
+	res, err := Get(a)
+	return res.(*Template), err
 }

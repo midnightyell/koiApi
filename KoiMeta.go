@@ -62,42 +62,60 @@ func KoiPathForOp(obj KoiObject) (*koiOp, error) {
 	switch fn {
 	case "create":
 		retval = koiOp{caller: fn, op: http.MethodPost, path: basePath}
-	case "get":
-		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s", basePath, GetID(obj))}
-	case "list":
-		retval = koiOp{caller: fn, op: http.MethodGet, path: basePath}
-	case "update":
-		retval = koiOp{caller: fn, op: http.MethodPut, path: fmt.Sprintf("%s/%s", basePath, obj.GetID())}
 	case "delete":
 		retval = koiOp{caller: fn, op: http.MethodDelete, path: fmt.Sprintf("%s/%s", basePath, obj.GetID())}
-	case "patch":
-		retval = koiOp{caller: fn, op: http.MethodPatch, path: fmt.Sprintf("%s/%s", basePath, obj.GetID())}
-	case "listphotos":
-		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/photos", basePath, obj.GetID())}
+	case "get":
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s", basePath, GetID(obj))}
+	case "getcollection":
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/collection", basePath, obj.GetID())}
+	case "getalbum":
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/album", basePath, obj.GetID())}
+	case "getdefaulttemplate":
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/items_default_template", basePath, obj.GetID())}
+	case "getitem":
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/item", basePath, obj.GetID())}
+	case "getparent":
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/parent", basePath, obj.GetID())}
+	case "gettagcategory":
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/category", basePath, obj.GetID())}
+	case "gettemplate":
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/template", basePath, obj.GetID())}
+	case "list":
+		retval = koiOp{caller: fn, op: http.MethodGet, path: basePath}
 	case "listchildren":
 		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/children", basePath, obj.GetID())}
 	case "listdata":
 		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/data", basePath, obj.GetID())}
+	case "listfields":
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/fields", basePath, obj.GetID())}
 	case "listitems":
 		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/items", basePath, obj.GetID())}
-	case "getparent":
-		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/parent", basePath, obj.GetID())}
-	case "uploadimage":
-		retval = koiOp{caller: fn, op: http.MethodPost, path: fmt.Sprintf("%s/%s/image", basePath, obj.GetID())}
-	case "uploadimagefromfile":
-		retval = koiOp{caller: fn, op: http.MethodPost, path: fmt.Sprintf("%s/%s/image", basePath, obj.GetID())}
+	case "listloans":
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/loans", basePath, obj.GetID())}
+	case "listphotos":
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/photos", basePath, obj.GetID())}
+	case "listtags":
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/tags", basePath, obj.GetID())}
+	case "listwishes":
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/wishes", basePath, obj.GetID())}
+	case "update":
+		retval = koiOp{caller: fn, op: http.MethodPut, path: fmt.Sprintf("%s/%s", basePath, obj.GetID())}
+	case "patch":
+		retval = koiOp{caller: fn, op: http.MethodPatch, path: fmt.Sprintf("%s/%s", basePath, obj.GetID())}
+	case "relateditems":
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/related_items", basePath, obj.GetID())}
 	case "uploadfile":
 		retval = koiOp{caller: fn, op: http.MethodPost, path: fmt.Sprintf("%s/%s/file", basePath, obj.GetID())}
 	case "uploadfilefromfile":
 		retval = koiOp{caller: fn, op: http.MethodPost, path: fmt.Sprintf("%s/%s/file", basePath, obj.GetID())}
+	case "uploadimage":
+		retval = koiOp{caller: fn, op: http.MethodPost, path: fmt.Sprintf("%s/%s/image", basePath, obj.GetID())}
+	case "uploadimagefromfile":
+		retval = koiOp{caller: fn, op: http.MethodPost, path: fmt.Sprintf("%s/%s/image", basePath, obj.GetID())}
 	case "uploadvideo":
 		retval = koiOp{caller: fn, op: http.MethodPost, path: fmt.Sprintf("%s/%s/video", basePath, obj.GetID())}
 	case "uploadvideofromfile":
 		retval = koiOp{caller: fn, op: http.MethodPost, path: fmt.Sprintf("%s/%s/video", basePath, obj.GetID())}
-	case "getdefaulttemplate":
-		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/items_default_template", basePath, obj.GetID())}
-	case "relateditems":
-		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/related_items", basePath, obj.GetID())}
 	// Add more cases as needed
 	default:
 		return &koiOp{caller: fn}, fmt.Errorf("unknown operation: %s for type %T", fn, obj)
@@ -187,7 +205,7 @@ func Get[T KoiObject](o T) (any, error) {
 			err := c.getResource(path, &resp)
 			return resp, err
 		case "gettagcategory":
-			// Tag
+			// TagCategory
 			var resp *TagCategory
 			err := c.getResource(path, &resp)
 			return resp, err
@@ -219,27 +237,9 @@ func List[T KoiObject](o T) (any, error) {
 	if op == http.MethodGet {
 
 		switch result.caller {
-		case "listphotos":
-			// Album
-			var objs []*Photo
-			err := c.listResources(path, &objs)
-			return objs, err
-
 		case "listdata":
 			// Collection, Item
 			var objs []*Datum
-			err := c.listResources(path, &objs)
-			return objs, err
-
-		case "listitems":
-			// Collection, Tags
-			var objs []*Item
-			err := c.listResources(path, &objs)
-			return objs, err
-
-		case "listwishes":
-			// Wishlist
-			var objs []*Wish
 			err := c.listResources(path, &objs)
 			return objs, err
 
@@ -249,9 +249,33 @@ func List[T KoiObject](o T) (any, error) {
 			err := c.listResources(path, &objs)
 			return objs, err
 
+		case "listitems":
+			// Collection, Tags
+			var objs []*Item
+			err := c.listResources(path, &objs)
+			return objs, err
+
+		case "listloans":
+			// Collection, Tags
+			var objs []*Loan
+			err := c.listResources(path, &objs)
+			return objs, err
+
+		case "listphotos":
+			// Album
+			var objs []*Photo
+			err := c.listResources(path, &objs)
+			return objs, err
+
 		case "listtags":
 			// Item, TagCategory
 			var objs []*Field
+			err := c.listResources(path, &objs)
+			return objs, err
+
+		case "listwishes":
+			// Wishlist
+			var objs []*Wish
 			err := c.listResources(path, &objs)
 			return objs, err
 

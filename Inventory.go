@@ -1,7 +1,6 @@
 package koiApi
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -27,27 +26,34 @@ type Inventory struct {
 
 }
 
-// whichID
-func (i *Inventory) whichID(inventoryID ...ID) ID {
-	if len(inventoryID) > 0 {
-		return inventoryID[0]
-	}
-	return i.ID
+// GetID
+func (a *Inventory) GetID() string {
+	return string(a.ID)
+}
+
+// Create
+// Not supported for Inventory?
+func (a *Inventory) Create() (*Inventory, error) {
+	return Create(a)
+}
+
+// Validate
+func (a *Inventory) Validate() error {
+	return nil
 }
 
 // Delete
-func (i *Inventory) Delete(client Client, inventoryID ...ID) error {
-	id := i.whichID(inventoryID...)
-	return client.DeleteInventory(id)
+func (a *Inventory) Delete() error {
+	return Delete(a)
 }
 
 // Get
-func (i *Inventory) Get(client Client, inventoryID ...ID) (*Inventory, error) {
-	id := i.whichID(inventoryID...)
-	return client.GetInventory(id)
+func (a *Inventory) Get() (*Inventory, error) {
+	res, err := Get(a)
+	return res.(*Inventory), err
 }
 
 // IRI
-func (i *Inventory) IRI() string {
-	return fmt.Sprintf("/api/inventories/%s", i.ID)
+func (a *Inventory) IRI() string {
+	return IRI(a)
 }
