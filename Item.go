@@ -2,7 +2,6 @@ package koiApi
 
 import (
 	"fmt"
-	"os"
 	"time"
 )
 
@@ -45,16 +44,6 @@ type Item struct {
 	File                *string    `json:"file,omitempty" access:"wo"`                // Image file data
 
 }
-
-type ItemWithData struct {
-	Item
-	Data  *[]Datum
-	Loans *[]Loan
-}
-
-//func (iwd *ItemWithData) Get ( client Client, itemID  ) error {
-//*iwd, err :=
-//}
 
 // whichID
 func (i *Item) whichID(itemID ...ID) ID {
@@ -141,31 +130,26 @@ func (i *Item) ListLoans(client Client, itemID ...ID) ([]*Loan, error) {
 	}
 	return allLoans, nil
 }
+func (a *Item) ListLoans() ([]*Loan, error) {
+	return nil, fmt.Errorf("ListLoans not implemented for Album")
+}
 
 // Patch
-func (i *Item) Patch(client Client, itemID ...ID) (*Item, error) {
-	id := i.whichID(itemID...)
-	return client.PatchItem(id, i)
+func (a *Item) Patch() (*Item, error) {
+	return Patch(a)
 }
 
 // Update
-func (i *Item) Update(client Client, itemID ...ID) (*Item, error) {
-	id := i.whichID(itemID...)
-	return client.UpdateItem(id, i)
+func (a *Item) Update() (*Item, error) {
+	return Update(a)
 }
 
 // UploadImage
-func (i *Item) UploadImage(client Client, file []byte, itemID ...ID) (*Item, error) {
-	id := i.whichID(itemID...)
-	return client.UploadItemImage(id, file)
+func (a *Item) UploadImage(file []byte) (*Item, error) {
+	return Upload(a, file)
 }
 
-// UploadImageByFile
-func (i *Item) UploadImageByFile(client Client, filename string, itemID ...ID) (*Item, error) {
-	id := i.whichID(itemID...)
-	file, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
-	}
-	return client.UploadItemImage(id, file)
+// UploadImageFromFile
+func (a *Item) UploadImageFromFile(filename string) (*Item, error) {
+	return UploadFromFile(a, filename)
 }

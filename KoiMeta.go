@@ -94,16 +94,16 @@ func KoiPathForOp(obj KoiObject) (*koiOp, error) {
 		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/loans", basePath, obj.GetID())}
 	case "listphotos":
 		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/photos", basePath, obj.GetID())}
+	case "listrelateditems":
+		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/related_items", basePath, obj.GetID())}
 	case "listtags":
 		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/tags", basePath, obj.GetID())}
 	case "listwishes":
 		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/wishes", basePath, obj.GetID())}
-	case "update":
-		retval = koiOp{caller: fn, op: http.MethodPut, path: fmt.Sprintf("%s/%s", basePath, obj.GetID())}
 	case "patch":
 		retval = koiOp{caller: fn, op: http.MethodPatch, path: fmt.Sprintf("%s/%s", basePath, obj.GetID())}
-	case "relateditems":
-		retval = koiOp{caller: fn, op: http.MethodGet, path: fmt.Sprintf("%s/%s/related_items", basePath, obj.GetID())}
+	case "update":
+		retval = koiOp{caller: fn, op: http.MethodPut, path: fmt.Sprintf("%s/%s", basePath, obj.GetID())}
 	case "uploadfile":
 		retval = koiOp{caller: fn, op: http.MethodPost, path: fmt.Sprintf("%s/%s/file", basePath, obj.GetID())}
 	case "uploadfilefromfile":
@@ -128,7 +128,7 @@ func GetID(o KoiObject) string {
 	return o.GetID()
 }
 
-func Create[T KoiObject](o T) (T, error) {
+func doCreate[T KoiObject](o T) (T, error) {
 	result, err := KoiPathForOp(o)
 	if err != nil {
 		return o, fmt.Errorf("failed to get operation path: %w", err)
@@ -148,7 +148,7 @@ func Create[T KoiObject](o T) (T, error) {
 	return o, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
 }
 
-func Delete[T KoiObject](o T) error {
+func doDelete[T KoiObject](o T) error {
 	result, err := KoiPathForOp(o)
 	if err != nil {
 		return fmt.Errorf("failed to get operation path: %w", err)
@@ -166,7 +166,7 @@ func Delete[T KoiObject](o T) error {
 	return fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
 }
 
-func Get[T KoiObject](o T) (any, error) {
+func doGet[T KoiObject](o T) (any, error) {
 	result, err := KoiPathForOp(o)
 	if err != nil {
 		return o, fmt.Errorf("failed to get operation path: %w", err)
@@ -219,7 +219,7 @@ func Get[T KoiObject](o T) (any, error) {
 	return o, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
 }
 
-func List[T KoiObject](o T) (any, error) {
+func doList[T KoiObject](o T) (any, error) {
 	/*
 		List can sometimes return a different type than T, such as a list of Photos for an Album,
 		or a list of Items for a Collection.
@@ -289,7 +289,7 @@ func List[T KoiObject](o T) (any, error) {
 	return nil, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
 }
 
-func Patch[T KoiObject](o T) (T, error) {
+func doPatch[T KoiObject](o T) (T, error) {
 	result, err := KoiPathForOp(o)
 	if err != nil {
 		return o, fmt.Errorf("failed to get operation path: %w", err)
@@ -309,7 +309,7 @@ func Patch[T KoiObject](o T) (T, error) {
 	return o, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
 }
 
-func Update[T KoiObject](o T) (T, error) {
+func doUpdate[T KoiObject](o T) (T, error) {
 	result, err := KoiPathForOp(o)
 	if err != nil {
 		return o, fmt.Errorf("failed to get operation path: %w", err)
@@ -329,7 +329,7 @@ func Update[T KoiObject](o T) (T, error) {
 	return o, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
 }
 
-func Upload[T KoiObject](o T, file []byte) (T, error) {
+func doUpload[T KoiObject](o T, magic string, file []byte) (T, error) {
 	result, err := KoiPathForOp(o)
 	if err != nil {
 		return o, fmt.Errorf("failed to get operation path: %w", err)
@@ -342,17 +342,17 @@ func Upload[T KoiObject](o T, file []byte) (T, error) {
 	// if op == POST
 	if op == http.MethodPost {
 		var resp T
-		err := c.uploadFile(path, file, "file", &resp)
+		err := c.uploadFile(path, file, magic, &resp)
 		return resp, err
 	}
 	fmt.Printf("FAILED: %20s %8s %s\n", caller.ThisFunc(), result.op, result.path)
 	return o, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
 }
 
-func UploadFromFile[T KoiObject](o T, fname string) (T, error) {
+func doUploadFromFile[T KoiObject](o T, magic string, fname string) (T, error) {
 	file, err := os.ReadFile(fname)
 	if err != nil {
 		return o, fmt.Errorf("failed to read file %s: %w", fname, err)
 	}
-	return Upload(o, file)
+	return doUpload(o, magic, file)
 }
