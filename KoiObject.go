@@ -49,14 +49,14 @@ func GetTemplate[T KoiObject](obj T) (*Template, error) {
 	return resp.(*Template), err
 }
 
-func List[T KoiObject](obj T) ([]*T, error) {
+func List[T KoiObject](obj T) ([]T, error) {
 	resp, err := doList(obj)
-	return resp.([]*T), err
+	return resp.([]T), err
 }
 
-func ListChildren[T KoiObject](obj T) ([]*T, error) {
+func ListChildren[T KoiObject](obj T) ([]T, error) {
 	resp, err := doList(obj)
-	return resp.([]*T), err
+	return resp.([]T), err
 }
 
 func ListData[T KoiObject](obj T) ([]*Datum, error) {
