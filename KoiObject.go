@@ -110,22 +110,22 @@ func Update[T KoiObject](obj T) (T, error) {
 }
 
 func UploadFile[T KoiObject](obj T, file []byte) (any, error) {
-	resp, err := doUpload(obj, "file", file)
+	resp, err := doUpload(obj, "fileFile", file)
 	return resp, err
 }
 
 func UploadFileFromFile[T KoiObject](obj T, filename string) (any, error) {
-	resp, err := doUploadFromFile(obj, "file", filename)
+	resp, err := doUploadFromFile(obj, "fileFile", filename)
 	return resp, err
 }
 
 func UploadImage[T KoiObject](obj T, file []byte) (any, error) {
-	resp, err := doUpload(obj, "file", file)
+	resp, err := doUpload(obj, "fileImage", file)
 	return resp, err
 }
 
 func UploadImageFromFile[T KoiObject](obj T, filename string) (any, error) {
-	resp, err := doUploadFromFile(obj, "file", filename)
+	resp, err := doUploadFromFile(obj, "fileImage", filename)
 	return resp, err
 }
 

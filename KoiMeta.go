@@ -12,7 +12,7 @@ import (
 
 var basePathForType = map[string]string{
 	"album":      "/api/albums",
-	"choiceList": "/api/choice_lists",
+	"choicelist": "/api/choice_lists",
 	"collection": "/api/collections",
 	"item":       "/api/items",
 	"datum":      "/api/data",
@@ -38,10 +38,10 @@ type KoiObject interface {
 }
 
 func IRI[T KoiObject](o T) string {
-	return fmt.Sprintf("%s/%s", BaseObjPath(o), o.GetID())
+	return fmt.Sprintf("%s/%s", baseObjPath(o), o.GetID())
 }
 
-func BaseObjPath[T KoiObject](o T) string {
+func baseObjPath[T KoiObject](o T) string {
 	typeName := strings.ToLower(reflect.TypeOf(o).Elem().Name())
 	parts := strings.Split(typeName, ".")
 	typeName = parts[len(parts)-1]
@@ -52,7 +52,7 @@ func KoiPathForOp(obj KoiObject) (*koiOp, error) {
 	basePath := ""
 
 	if obj != nil {
-		basePath = BaseObjPath(obj) // Get the base path for the type
+		basePath = baseObjPath(obj) 
 	}
 
 	// Get caller name
