@@ -25,6 +25,10 @@ type Tag struct {
 
 }
 
+func (t *Tag) Summary() string {
+	return fmt.Sprintf("%-40s %s", t.Label, t.ID)
+}
+
 // IRI
 func (t *Tag) IRI() string {
 	return fmt.Sprintf("/api/tags/%s", t.ID)
@@ -35,5 +39,11 @@ func (t *Tag) GetID() string {
 }
 
 func (t *Tag) Validate() error {
-	return nil
+	var errs []string
+	// label is required, type string; see components.schemas.Tag-tag.write.required
+	if t.Label == "" {
+		errs = append(errs, "tag label is required")
+	}
+	validateVisibility(t, &errs)
+	return validationErrors(&errs)
 }

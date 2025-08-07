@@ -20,6 +20,10 @@ type TagCategory struct {
 
 }
 
+func (tc *TagCategory) Summary() string {
+	return fmt.Sprintf("%-40s %s", tc.Label, tc.ID)
+}
+
 // IRI
 func (tc *TagCategory) IRI() string {
 	return fmt.Sprintf("/api/tag_categories/%s", tc.ID)
@@ -30,8 +34,12 @@ func (tc *TagCategory) GetID() string {
 }
 
 func (tc *TagCategory) Validate() error {
+	var errs []string
+	// label is required, type string; see components.schemas.TagCategory-tagCategory.write.required
 	if tc.Label == "" {
-		return fmt.Errorf("label is required")
+		errs = append(errs, "tag category label is required")
 	}
-	return nil
+	validateVisibility(tc, &errs)
+	return validationErrors(&errs)
+
 }

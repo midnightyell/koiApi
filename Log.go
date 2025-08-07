@@ -21,6 +21,10 @@ type Log struct {
 
 }
 
+func (l *Log) Summary() string {
+	return fmt.Sprintf("%-40s %s", l.ObjectLabel, l.ID)
+}
+
 // IRI
 func (l *Log) IRI() string {
 	return fmt.Sprintf("/api/logs/%s", l.ID)

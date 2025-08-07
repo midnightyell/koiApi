@@ -1,6 +1,7 @@
 package koiApi
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -24,6 +25,10 @@ type Inventory struct {
 	CreatedAt time.Time  `json:"createdAt" access:"ro"`           // Creation timestamp
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" access:"ro"` // Update timestamp
 
+}
+
+func (i *Inventory) Summary() string {
+	return fmt.Sprintf("%-40s %s", i.Name, i.ID)
 }
 
 // GetID

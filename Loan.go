@@ -19,6 +19,10 @@ type Loan struct {
 
 }
 
+func (a *Loan) Summary() string {
+	return fmt.Sprintf("%-40s %s", a.LentTo, a.ID)
+}
+
 // IRI
 func (l *Loan) IRI() string {
 	return fmt.Sprintf("/api/loans/%s", l.ID)
@@ -29,5 +33,18 @@ func (l *Loan) GetID() string {
 }
 
 func (l *Loan) Validate() error {
-	return nil
+	var errs []string
+	// item is required, type string or null (IRI); see components.schemas.Loan-loan.write.required
+	if l.Item == nil {
+		errs = append(errs, "loan item IRI is required")
+	}
+	// lentTo is required, type string; see components.schemas.Loan-loan.write.required
+	if l.LentTo == "" {
+		errs = append(errs, "loan lentTo is required")
+	}
+	// lentAt is required, type string, format date-time; see components.schemas.Loan-loan.write.required
+	if l.LentAt.IsZero() {
+		errs = append(errs, "loan lentAt is required")
+	}
+	return validationErrors(&errs)
 }

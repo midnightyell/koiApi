@@ -31,6 +31,10 @@ type Item struct {
 
 }
 
+func (i *Item) Summary() string {
+	return fmt.Sprintf("%8.8s   %s", i.ID[len(i.ID)-8:], i.Name)
+}
+
 // IRI
 func (i *Item) IRI() string {
 	return fmt.Sprintf("/api/items/%s", i.ID)
@@ -41,5 +45,20 @@ func (i *Item) GetID() string {
 }
 
 func (i *Item) Validate() error {
-	return nil
+	var errs []string
+	// name is required, type string; see components.schemas.Item-i.write.required
+	if i.Name == "" {
+		errs = append(errs, "item name is required")
+	}
+	// collection is required, type string or null (IRI); see components.schemas.Item-i.write.required
+	if i.Collection == nil || *i.Collection == "" {
+		errs = append(errs, "item collection IRI is required")
+	}
+	// quantity minimum 1, type integer; see components.schemas.Item-i.write.properties.quantity
+	if i.Quantity < 1 {
+		i.Quantity = 1 // The API says it should use a default of 1, but errors out instead
+		//errs = append(errs, "item quantity must be at least 1")
+	}
+	validateVisibility(i, &errs)
+	return validationErrors(&errs)
 }

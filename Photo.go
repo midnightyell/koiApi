@@ -30,6 +30,10 @@ type Photo struct {
 
 }
 
+func (p *Photo) Summary() string {
+	return fmt.Sprintf("%-40s %s", p.Title, p.ID)
+}
+
 // IRI
 func (p *Photo) IRI() string {
 	return fmt.Sprintf("/api/photos/%s", p.ID)
@@ -40,5 +44,19 @@ func (p *Photo) GetID() string {
 }
 
 func (p *Photo) Validate() error {
-	return nil
+	var errs []string
+	// title is required, type string; see components.schemas.Photo-photo.write.required
+	if p.Title == "" {
+		errs = append(errs, "photo title is required")
+	}
+	// album is required, type string or null (IRI); see components.schemas.Photo-photo.write.required
+	if p.Album == nil {
+		errs = append(errs, "photo album IRI is required")
+	}
+	// takenAt type string or null, format date-time; see components.schemas.Photo-photo.write.properties.takenAt
+	if p.TakenAt != nil && p.TakenAt.IsZero() {
+		errs = append(errs, "invalid takenAt: must be a valid date-time or null")
+	}
+	validateVisibility(p, &errs)
+	return validationErrors(&errs)
 }

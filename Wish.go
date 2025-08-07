@@ -2,7 +2,6 @@ package koiApi
 
 import (
 	"fmt"
-	"os"
 	"time"
 )
 
@@ -31,6 +30,10 @@ type Wish struct {
 
 }
 
+func (w *Wish) Summary() string {
+	return fmt.Sprintf("%-40s %s", w.Name, w.ID)
+}
+
 func (w *Wish) IRI() string {
 	return fmt.Sprintf("/api/wishes/%s", w.ID)
 }
@@ -40,19 +43,21 @@ func (w *Wish) GetID() string {
 }
 
 func (w *Wish) Validate() error {
+	var errs []string
+	// name is required, type string; see components.schemas.Wish-w.write.required
 	if w.Name == "" {
-		return fmt.Errorf("wish name cannot be empty")
+		errs = append(errs, "wish name is required")
 	}
-	if w.Wishlist == nil || *w.Wishlist == "" {
-		return fmt.Errorf("wishlist cannot be empty")
+	// wishlist is required, type string or null (IRI); see components.schemas.Wish-w.write.required
+	if w.Wishlist == nil {
+		errs = append(errs, "wish wishlist IRI is required")
 	}
-	if w.Owner == nil || *w.Owner == "" {
-		return fmt.Errorf("owner cannot be empty")
-	}
-	if w.Image != nil && *w.Image != "" {
-		if _, err := os.Stat(*w.Image); os.IsNotExist(err) {
-			return fmt.Errorf("image file does not exist: %s", *w.Image)
+	// currency follows https://schema.org/priceCurrency; see components.schemas.Wish-w.write.properties.currency
+	if w.Currency != nil && *w.Currency != "" {
+		if !validateCurrency(*w.Currency) {
+			errs = append(errs, fmt.Sprintf("invalid currency code: %s", *w.Currency))
 		}
 	}
-	return nil
+	validateVisibility(w, &errs)
+	return validationErrors(&errs)
 }

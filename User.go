@@ -39,6 +39,10 @@ type User struct {
 
 }
 
+func (u *User) Summary() string {
+	return fmt.Sprintf("%-40s %s", u.Username, u.ID)
+}
+
 // IRI
 func (u *User) IRI() string {
 	return fmt.Sprintf("/api/users/%s", u.ID)

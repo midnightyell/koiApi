@@ -2,7 +2,6 @@ package koiApi
 
 import (
 	"fmt"
-	"os"
 	"time"
 )
 
@@ -28,6 +27,10 @@ type Wishlist struct {
 
 }
 
+func (w *Wishlist) Summary() string {
+	return fmt.Sprintf("%-40s %s", w.Name, w.ID)
+}
+
 func (w *Wishlist) IRI() string {
 	return IRI(w)
 }
@@ -37,16 +40,11 @@ func (w *Wishlist) GetID() string {
 }
 
 func (w *Wishlist) Validate() error {
+	var errs []string
+	// name is required, type string; see components.schemas.Wishlist-wishlist.write.required
 	if w.Name == "" {
-		return fmt.Errorf("wishlist name cannot be empty")
+		errs = append(errs, "wishlist name is required")
 	}
-	if w.Owner == nil || *w.Owner == "" {
-		return fmt.Errorf("owner cannot be empty")
-	}
-	if w.Image != nil && *w.Image != "" {
-		if _, err := os.Stat(*w.Image); os.IsNotExist(err) {
-			return fmt.Errorf("image file does not exist: %s", *w.Image)
-		}
-	}
-	return nil
+	validateVisibility(w, &errs)
+	return validationErrors(&errs)
 }
