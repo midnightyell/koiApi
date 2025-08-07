@@ -1,6 +1,7 @@
 package koiApi
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -27,6 +28,10 @@ type Collection struct {
 	DeleteImage          *bool      `json:"deleteImage,omitempty" access:"wo"`          // Flag to delete image
 }
 
+func (c *Collection) Summary() string {
+	return fmt.Sprintf("%-40s %s", c.Title, c.ID)
+}
+
 // GetID
 func (a *Collection) GetID() string {
 	return string(a.ID)
@@ -34,7 +39,20 @@ func (a *Collection) GetID() string {
 
 // Validate
 func (a *Collection) Validate() error {
-	return nil
+	var errs []string
+	// title is required, type string; see components.schemas.Collection-collection.write.required
+	if a.Title == "" {
+		errs = append(errs, "collection title is required")
+	}
+	// visibility enum ["public", "internal", "private"]; see components.schemas.Collection-collection.write.properties.visibility
+	if a.Visibility != "" {
+		switch a.Visibility {
+		case VisibilityPublic, VisibilityInternal, VisibilityPrivate:
+		default:
+			errs = append(errs, fmt.Sprintf("invalid visibility: %s; must be public, internal, or private", a.Visibility))
+		}
+	}
+	return validationErrors(&errs)
 }
 
 // IRI

@@ -47,6 +47,10 @@ type Field struct {
 
 }
 
+func (a *Field) Summary() string {
+	return fmt.Sprintf("%-40s %s", a.Name, a.ID)
+}
+
 // GetID
 func (a *Field) GetID() string {
 	return string(a.ID)
@@ -54,13 +58,33 @@ func (a *Field) GetID() string {
 
 // Validate
 func (a *Field) Validate() error {
+	var errs []string
+	// name is required, type string; see components.schemas.Field-a.write.required
 	if a.Name == "" {
-		return fmt.Errorf("Name cannot be empty")
+		errs = append(errs, "field name is required")
 	}
+	// type is required, enum; see components.schemas.Field-a.write.required
 	if a.FieldType == "" {
-		return fmt.Errorf("FieldType cannot be empty")
+		errs = append(errs, "field type is required")
+	} else {
+		validTypes := []string{"text", "textarea", "country", "date", "rating", "number", "price", "link", "list", "choice-list", "checkbox", "image", "file", "sign", "video", "blank-line", "section"}
+		valid := false
+		for _, t := range validTypes {
+			if string(a.FieldType) == t {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			errs = append(errs, fmt.Sprintf("invalid field type: %s; must be one of %v", a.FieldType, validTypes))
+		}
 	}
-	return nil
+	// template is required, type string or null (IRI); see components.schemas.Field-a.write.required
+	if a.Template == nil {
+		errs = append(errs, "field template IRI is required")
+	}
+	validateVisibility(a, &errs)
+	return validationErrors(&errs)
 }
 
 // IRI

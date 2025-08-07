@@ -1,6 +1,7 @@
 package koiApi
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -17,6 +18,10 @@ type ChoiceList struct {
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" access:"ro"` // Update timestamp
 }
 
+func (a *ChoiceList) Summary() string {
+	return fmt.Sprintf("%-40s %s", a.Name, a.ID)
+}
+
 // IRI
 func (a *ChoiceList) IRI() string {
 	return IRI(a)
@@ -29,5 +34,16 @@ func (a *ChoiceList) GetID() string {
 
 // Validate
 func (a *ChoiceList) Validate() error {
-	return nil
+	var errs []string
+	// choices array of unique strings; see components.schemas.ChoiceList-choiceList.write.properties.choices
+	if len(a.Choices) > 0 {
+		seen := make(map[string]struct{})
+		for _, choice := range a.Choices {
+			if _, exists := seen[choice]; exists {
+				errs = append(errs, fmt.Sprintf("duplicate choice found: %s", choice))
+			}
+			seen[choice] = struct{}{}
+		}
+	}
+	return validationErrors(&errs)
 }

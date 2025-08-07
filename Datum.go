@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// TODO refactor into enum of some sort
 const (
 	DatumTypeText       string = "text"
 	DatumTypeTextarea   string = "textarea"
@@ -56,6 +57,10 @@ type Datum struct {
 	FileVideo           *string    `json:"fileVideo,omitempty" access:"wo"`           // Video file data
 }
 
+func (a *Datum) Summary() string {
+	return fmt.Sprintf("%-40s %s", a.Label, a.ID)
+}
+
 // GetID
 func (a *Datum) GetID() string {
 	return string(a.ID)
@@ -63,16 +68,42 @@ func (a *Datum) GetID() string {
 
 // Validate
 func (a *Datum) Validate() error {
-	if a.Collection == nil && a.Item == nil {
-		return fmt.Errorf("datum must belong to either a collection or an item")
-	}
+	var errs []string
+	// type is required, enum; see components.schemas.Datum-a.write.required
 	if a.DatumType == "" {
-		return fmt.Errorf("datum type cannot be empty")
+		errs = append(errs, "datum type is required")
+	} else {
+		validTypes := []string{"text", "textarea", "country", "date", "rating", "number", "price", "link", "list", "choice-list", "checkbox", "image", "file", "sign", "video", "blank-line", "section"}
+		valid := false
+		for _, t := range validTypes {
+			if string(a.DatumType) == t {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			errs = append(errs, fmt.Sprintf("invalid datum type: %s; must be one of %v", a.DatumType, validTypes))
+		}
 	}
+	// label is required, type string; see components.schemas.Datum-a.write.required
 	if a.Label == "" {
-		return fmt.Errorf("datum label cannot be empty")
+		errs = append(errs, "datum label is required")
 	}
-	return nil
+	// visibility enum ["public", "internal", "private"]; see components.schemas.Datum-a.write.properties.visibility
+	if a.Visibility != "" {
+		switch a.Visibility {
+		case VisibilityPublic, VisibilityInternal, VisibilityPrivate:
+		default:
+			errs = append(errs, fmt.Sprintf("invalid visibility: %s; must be public, internal, or private", a.Visibility))
+		}
+	}
+	// currency follows https://schema.org/priceCurrency; see components.schemas.Datum-a.write.properties.currency
+	if a.Currency != nil && *a.Currency != "" {
+		if !validateCurrency(*a.Currency) {
+			errs = append(errs, fmt.Sprintf("invalid currency code: %s", *a.Currency))
+		}
+	}
+	return validationErrors(&errs)
 }
 
 // IRI

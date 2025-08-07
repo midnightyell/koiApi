@@ -26,6 +26,11 @@ type Album struct {
 	DeleteImage      *bool      `json:"deleteImage,omitempty" access:"wo"`      // Flag to delete image
 }
 
+// Summary
+func (a *Album) Summary() string {
+	return fmt.Sprintf("%-40s %s", a.Title, a.ID)
+}
+
 // GetID
 func (a *Album) GetID() string {
 	return string(a.ID)
@@ -33,10 +38,13 @@ func (a *Album) GetID() string {
 
 // Validate
 func (a *Album) Validate() error {
+	var errs []string
+
 	if a.Title == "" {
-		return fmt.Errorf("album title cannot be empty")
+		errs = append(errs, "title cannot be empty")
 	}
-	return nil
+	validateVisibility(a, &errs)
+	return validationErrors(&errs)
 }
 
 // IRI
