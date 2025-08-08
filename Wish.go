@@ -2,24 +2,8 @@ package koiApi
 
 import (
 	"fmt"
-	"os"
 	"time"
 )
-
-// WishInterface defines methods for interacting with Wish resources.
-type WishInterface interface {
-	Create(client Client) (*Wish, error)                                           // HTTP POST /api/wishes
-	Delete(client Client, wishID ...ID) error                                      // HTTP DELETE /api/wishes/{id}
-	Get(client Client, wishID ...ID) (*Wish, error)                                // HTTP GET /api/wishes/{id}
-	GetWishlist(client Client, wishID ...ID) (*Wishlist, error)                    // HTTP GET /api/wishes/{id}/wishlist
-	IRI() string                                                                   // /api/wishes/{id}
-	List(client Client) ([]*Wish, error)                                           // HTTP GET /api/wishes
-	Patch(client Client, wishID ...ID) (*Wish, error)                              // HTTP PATCH /api/wishes/{id}
-	Update(client Client, wishID ...ID) (*Wish, error)                             // HTTP PUT /api/wishes/{id}
-	UploadImage(client Client, file []byte, wishID ...ID) (*Wish, error)           // HTTP POST /api/wishes/{id}/image
-	UploadImageByFile(client Client, filename string, wishID ...ID) (*Wish, error) // HTTP POST /api/wishes/{id}/image
-	Summary() string
-}
 
 // Wish represents a wish in Koillection, combining fields for JSON-LD and API interactions.
 type Wish struct {
@@ -46,71 +30,34 @@ type Wish struct {
 
 }
 
-// whichID
-func (w *Wish) whichID(wishID ...ID) ID {
-	if len(wishID) > 0 {
-		return wishID[0]
-	}
-	return w.ID
+func (w *Wish) Summary() string {
+	return fmt.Sprintf("%-40s %s", w.Name, w.ID)
 }
 
-// Create
-func (w *Wish) Create(client Client) (*Wish, error) {
-	return client.CreateWish(w)
-}
-
-// Delete
-func (w *Wish) Delete(client Client, wishID ...ID) error {
-	id := w.whichID(wishID...)
-	return client.DeleteWish(id)
-}
-
-// Get
-func (w *Wish) Get(client Client, wishID ...ID) (*Wish, error) {
-	id := w.whichID(wishID...)
-	return client.GetWish(id)
-}
-
-// GetWishlist
-func (w *Wish) GetWishlist(client Client, wishID ...ID) (*Wishlist, error) {
-	id := w.whichID(wishID...)
-	return client.GetWishWishlist(id)
-}
-
-// IRI
 func (w *Wish) IRI() string {
 	return fmt.Sprintf("/api/wishes/%s", w.ID)
 }
 
-// List
-func (w *Wish) List(client Client) ([]*Wish, error) {
-	return client.ListWishes()
+func (w *Wish) GetID() string {
+	return string(w.ID)
 }
 
-// Patch
-func (w *Wish) Patch(client Client, wishID ...ID) (*Wish, error) {
-	id := w.whichID(wishID...)
-	return client.PatchWish(id, w)
-}
-
-// Update
-func (w *Wish) Update(client Client, wishID ...ID) (*Wish, error) {
-	id := w.whichID(wishID...)
-	return client.UpdateWish(id, w)
-}
-
-// UploadImage
-func (w *Wish) UploadImage(client Client, file []byte, wishID ...ID) (*Wish, error) {
-	id := w.whichID(wishID...)
-	return client.UploadWishImage(id, file)
-}
-
-// UploadImageByFile
-func (w *Wish) UploadImageByFile(client Client, filename string, wishID ...ID) (*Wish, error) {
-	id := w.whichID(wishID...)
-	file, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
+func (w *Wish) Validate() error {
+	var errs []string
+	// name is required, type string; see components.schemas.Wish-w.write.required
+	if w.Name == "" {
+		errs = append(errs, "wish name is required")
 	}
-	return client.UploadWishImage(id, file)
+	// wishlist is required, type string or null (IRI); see components.schemas.Wish-w.write.required
+	if w.Wishlist == nil {
+		errs = append(errs, "wish wishlist IRI is required")
+	}
+	// currency follows https://schema.org/priceCurrency; see components.schemas.Wish-w.write.properties.currency
+	if w.Currency != nil && *w.Currency != "" {
+		if !validateCurrency(*w.Currency) {
+			errs = append(errs, fmt.Sprintf("invalid currency code: %s", *w.Currency))
+		}
+	}
+	validateVisibility(w, &errs)
+	return validationErrors(&errs)
 }

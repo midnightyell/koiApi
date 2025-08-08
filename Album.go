@@ -2,26 +2,8 @@ package koiApi
 
 import (
 	"fmt"
-	"os"
 	"time"
 )
-
-// AlbumInterface defines methods for interacting with Album resources.
-type AlbumInterface interface {
-	Create(client Client) (*Album, error)                                            // HTTP POST /api/albums
-	Delete(client Client, albumID ...ID) error                                       // HTTP DELETE /api/albums/{id}
-	Get(client Client, albumID ...ID) (*Album, error)                                // HTTP GET /api/albums/{id}
-	GetParent(client Client, albumID ...ID) (*Album, error)                          // HTTP GET /api/albums/{id}/parent
-	IRI() string                                                                     // /api/albums/{id}
-	List(client Client) ([]*Album, error)                                            // HTTP GET /api/albums
-	ListChildren(client Client, albumID ...ID) ([]*Album, error)                     // HTTP GET /api/albums/{id}/children
-	ListPhotos(client Client, albumID ...ID) ([]*Photo, error)                       // HTTP GET /api/albums/{id}/photos
-	Patch(client Client, albumID ...ID) (*Album, error)                              // HTTP PATCH /api/albums/{id}
-	Update(client Client, albumID ...ID) (*Album, error)                             // HTTP PUT /api/albums/{id}
-	UploadImage(client Client, file []byte, albumID ...ID) (*Album, error)           // HTTP POST /api/albums/{id}/image
-	UploadImageByFile(client Client, filename string, albumID ...ID) (*Album, error) // HTTP POST /api/albums/{id}/image
-	Summary() string
-}
 
 // Album represents an album in Koillection, combining fields for JSON-LD and API interactions.
 type Album struct {
@@ -44,116 +26,28 @@ type Album struct {
 	DeleteImage      *bool      `json:"deleteImage,omitempty" access:"wo"`      // Flag to delete image
 }
 
-// whichID
-func (a *Album) whichID(albumID ...ID) ID {
-	if len(albumID) > 0 {
-		return albumID[0]
+// Summary
+func (a *Album) Summary() string {
+	return fmt.Sprintf("%-40s %s", a.Title, a.ID)
+}
+
+// GetID
+func (a *Album) GetID() string {
+	return string(a.ID)
+}
+
+// Validate
+func (a *Album) Validate() error {
+	var errs []string
+
+	if a.Title == "" {
+		errs = append(errs, "title cannot be empty")
 	}
-	return a.ID
-}
-
-// Create
-func (a *Album) Create(client Client) (*Album, error) {
-	return client.CreateAlbum(a)
-}
-
-// Delete
-func (a *Album) Delete(client Client, albumID ...ID) error {
-	id := a.whichID(albumID...)
-	return client.DeleteAlbum(id)
-}
-
-// Get
-func (a *Album) Get(client Client, albumID ...ID) (*Album, error) {
-	id := a.whichID(albumID...)
-	return client.GetAlbum(id)
-}
-
-// GetParent
-func (a *Album) GetParent(client Client, albumID ...ID) (*Album, error) {
-	id := a.whichID(albumID...)
-	return client.GetAlbumParent(id)
+	validateVisibility(a, &errs)
+	return validationErrors(&errs)
 }
 
 // IRI
 func (a *Album) IRI() string {
-	return fmt.Sprintf("/api/albums/%s", a.ID)
-}
-
-// List
-func (a *Album) List(client Client) ([]*Album, error) {
-	var allAlbums []*Album
-	for page := 1; ; page++ {
-		albums, err := client.ListAlbums()
-		if err != nil {
-			return nil, fmt.Errorf("failed to list albums on page %d: %w", err)
-		}
-		if len(albums) == 0 {
-			break
-		}
-		allAlbums = append(allAlbums, albums...)
-	}
-	return allAlbums, nil
-}
-
-// ListChildren
-func (a *Album) ListChildren(client Client, albumID ...ID) ([]*Album, error) {
-	id := a.whichID(albumID...)
-	var allChildren []*Album
-	for page := 1; ; page++ {
-		children, err := client.ListAlbumChildren(id)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list child albums for ID %s on page %d: %w", id, err)
-		}
-		if len(children) == 0 {
-			break
-		}
-		allChildren = append(allChildren, children...)
-	}
-	return allChildren, nil
-}
-
-// ListPhotos
-func (a *Album) ListPhotos(client Client, albumID ...ID) ([]*Photo, error) {
-	id := a.whichID(albumID...)
-	var allPhotos []*Photo
-	for page := 1; ; page++ {
-		photos, err := client.ListAlbumPhotos(id)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list photos for ID %s on page %d: %w", id, err)
-		}
-		if len(photos) == 0 {
-			break
-		}
-		allPhotos = append(allPhotos, photos...)
-	}
-	return allPhotos, nil
-}
-
-// Patch
-func (a *Album) Patch(client Client, albumID ...ID) (*Album, error) {
-	id := a.whichID(albumID...)
-	return client.PatchAlbum(id, a)
-}
-
-// Update
-func (a *Album) Update(client Client, albumID ...ID) (*Album, error) {
-	id := a.whichID(albumID...)
-	return client.UpdateAlbum(id, a)
-}
-
-// UploadImage
-func (a *Album) UploadImage(client Client, file []byte, albumID ...ID) (*Album, error) {
-	id := a.whichID(albumID...)
-	return client.UploadAlbumImage(id, file)
-}
-
-// UploadImageByFile
-func (a *Album) UploadImageByFile(client Client, filename string, albumID ...ID) (*Album, error) {
-	id := a.whichID(albumID...)
-	file, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
-	}
-	return client.UploadAlbumImage(id, file)
+	return IRI(a)
 }

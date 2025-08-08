@@ -5,14 +5,6 @@ import (
 	"time"
 )
 
-// UserInterface defines methods for interacting with User resources.
-type UserInterface interface {
-	Get(client Client, userID ...ID) (*User, error) // HTTP GET /api/users/{id}
-	IRI() string                                    // /api/users/{id}
-	List(client Client) ([]*User, error)            // HTTP GET /api/users
-	Summary() string
-}
-
 // User represents a user in Koillection, combining fields for JSON-LD and API interactions.
 type User struct {
 	Context                      *Context   `json:"@context,omitempty" access:"rw"`           // JSON-LD only
@@ -47,18 +39,8 @@ type User struct {
 
 }
 
-// whichID
-func (u *User) whichID(userID ...ID) ID {
-	if len(userID) > 0 {
-		return userID[0]
-	}
-	return u.ID
-}
-
-// Get
-func (u *User) Get(client Client, userID ...ID) (*User, error) {
-	id := u.whichID(userID...)
-	return client.GetUser(id)
+func (u *User) Summary() string {
+	return fmt.Sprintf("%-40s %s", u.Username, u.ID)
 }
 
 // IRI
@@ -66,7 +48,17 @@ func (u *User) IRI() string {
 	return fmt.Sprintf("/api/users/%s", u.ID)
 }
 
-// List
-func (u *User) List(client Client) ([]*User, error) {
-	return client.ListUsers()
+func (u *User) GetID() string {
+	return string(u.ID)
+}
+
+// Validate checks if the user has a valid username and email.
+func (u *User) Validate() error {
+	if u.Username == "" {
+		return fmt.Errorf("username cannot be empty")
+	}
+	if u.Email == "" {
+		return fmt.Errorf("email cannot be empty")
+	}
+	return nil
 }

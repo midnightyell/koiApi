@@ -5,18 +5,6 @@ import (
 	"time"
 )
 
-// ChoiceListInterface defines methods for interacting with ChoiceList resources.
-type ChoiceListInterface interface {
-	Create(client Client) (*ChoiceList, error)                     // HTTP POST /api/choice_lists
-	Delete(client Client, choiceListID ...ID) error                // HTTP DELETE /api/choice_lists/{id}
-	Get(client Client, choiceListID ...ID) (*ChoiceList, error)    // HTTP GET /api/choice_lists/{id}
-	IRI() string                                                   // /api/choice_lists/{id}
-	List(client Client) ([]*ChoiceList, error)                     // HTTP GET /api/choice_lists
-	Patch(client Client, choiceListID ...ID) (*ChoiceList, error)  // HTTP PATCH /api/choice_lists/{id}
-	Update(client Client, choiceListID ...ID) (*ChoiceList, error) // HTTP PUT /api/choice_lists/{id}
-	Summary() string
-}
-
 // ChoiceList represents a choice list in Koillection, combining fields for JSON-LD and API interactions.
 type ChoiceList struct {
 	Context   *Context   `json:"@context,omitempty" access:"rw"`  // JSON-LD only
@@ -30,60 +18,32 @@ type ChoiceList struct {
 	UpdatedAt *time.Time `json:"updatedAt,omitempty" access:"ro"` // Update timestamp
 }
 
-// whichID
-func (cl *ChoiceList) whichID(choiceListID ...ID) ID {
-	if len(choiceListID) > 0 {
-		return choiceListID[0]
-	}
-	return cl.ID
-}
-
-// Create
-func (cl *ChoiceList) Create(client Client) (*ChoiceList, error) {
-	return client.CreateChoiceList(cl)
-}
-
-// Delete
-func (cl *ChoiceList) Delete(client Client, choiceListID ...ID) error {
-	id := cl.whichID(choiceListID...)
-	return client.DeleteChoiceList(id)
-}
-
-// Get
-func (cl *ChoiceList) Get(client Client, choiceListID ...ID) (*ChoiceList, error) {
-	id := cl.whichID(choiceListID...)
-	return client.GetChoiceList(id)
+func (a *ChoiceList) Summary() string {
+	return fmt.Sprintf("%-40s %s", a.Name, a.ID)
 }
 
 // IRI
-func (cl *ChoiceList) IRI() string {
-	return fmt.Sprintf("/api/choice_lists/%s", cl.ID)
+func (a *ChoiceList) IRI() string {
+	return IRI(a)
 }
 
-// List
-func (cl *ChoiceList) List(client Client) ([]*ChoiceList, error) {
-	var allChoiceLists []*ChoiceList
-	for page := 1; ; page++ {
-		choiceLists, err := client.ListChoiceLists()
-		if err != nil {
-			return nil, fmt.Errorf("failed to list choice lists on page %d: %w", err)
+// GetID
+func (a *ChoiceList) GetID() string {
+	return string(a.ID)
+}
+
+// Validate
+func (a *ChoiceList) Validate() error {
+	var errs []string
+	// choices array of unique strings; see components.schemas.ChoiceList-choiceList.write.properties.choices
+	if len(a.Choices) > 0 {
+		seen := make(map[string]struct{})
+		for _, choice := range a.Choices {
+			if _, exists := seen[choice]; exists {
+				errs = append(errs, fmt.Sprintf("duplicate choice found: %s", choice))
+			}
+			seen[choice] = struct{}{}
 		}
-		if len(choiceLists) == 0 {
-			break
-		}
-		allChoiceLists = append(allChoiceLists, choiceLists...)
 	}
-	return allChoiceLists, nil
-}
-
-// Patch
-func (cl *ChoiceList) Patch(client Client, choiceListID ...ID) (*ChoiceList, error) {
-	id := cl.whichID(choiceListID...)
-	return client.PatchChoiceList(id, cl)
-}
-
-// Update
-func (cl *ChoiceList) Update(client Client, choiceListID ...ID) (*ChoiceList, error) {
-	id := cl.whichID(choiceListID...)
-	return client.UpdateChoiceList(id, cl)
+	return validationErrors(&errs)
 }

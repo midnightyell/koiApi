@@ -3,9 +3,12 @@ module gitea.local/smalloy/koiApi
 go 1.24.1
 
 require (
+	gitea.local/smalloy/caller-utils v0.0.0
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/text v0.25.0
 )
+
+replace gitea.local/smalloy/caller-utils v0.0.0 => ../caller
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

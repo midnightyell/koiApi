@@ -5,18 +5,6 @@ import (
 	"time"
 )
 
-// TemplateInterface defines methods for interacting with Template resources.
-type TemplateInterface interface {
-	Create(client Client) (*Template, error)                   // HTTP POST /api/templates
-	Delete(client Client, templateID ...ID) error              // HTTP DELETE /api/templates/{id}
-	Get(client Client, templateID ...ID) (*Template, error)    // HTTP GET /api/templates/{id}
-	IRI() string                                               // /api/templates/{id}
-	List(client Client) ([]*Template, error)                   // HTTP GET /api/templates
-	Patch(client Client, templateID ...ID) (*Template, error)  // HTTP PATCH /api/templates/{id}
-	Update(client Client, templateID ...ID) (*Template, error) // HTTP PUT /api/templates/{id}
-	Summary() string
-}
-
 // Template represents a template in Koillection, combining fields for JSON-LD and API interactions.
 type Template struct {
 	Context   *Context   `json:"@context,omitempty" access:"rw"`  // JSON-LD only
@@ -30,29 +18,8 @@ type Template struct {
 
 }
 
-// whichID
-func (t *Template) whichID(templateID ...ID) ID {
-	if len(templateID) > 0 {
-		return templateID[0]
-	}
-	return t.ID
-}
-
-// Create
-func (t *Template) Create(client Client) (*Template, error) {
-	return client.CreateTemplate(t)
-}
-
-// Delete
-func (t *Template) Delete(client Client, templateID ...ID) error {
-	id := t.whichID(templateID...)
-	return client.DeleteTemplate(id)
-}
-
-// Get
-func (t *Template) Get(client Client, templateID ...ID) (*Template, error) {
-	id := t.whichID(templateID...)
-	return client.GetTemplate(id)
+func (t *Template) Summary() string {
+	return fmt.Sprintf("%-40s %s", t.Name, t.ID)
 }
 
 // IRI
@@ -60,19 +27,16 @@ func (t *Template) IRI() string {
 	return fmt.Sprintf("/api/templates/%s", t.ID)
 }
 
-// List
-func (t *Template) List(client Client) ([]*Template, error) {
-	return client.ListTemplates()
+func (t *Template) GetID() string {
+	return string(t.ID)
 }
 
-// Patch
-func (t *Template) Patch(client Client, templateID ...ID) (*Template, error) {
-	id := t.whichID(templateID...)
-	return client.PatchTemplate(id, t)
-}
-
-// Update
-func (t *Template) Update(client Client, templateID ...ID) (*Template, error) {
-	id := t.whichID(templateID...)
-	return client.UpdateTemplate(id, t)
+func (t *Template) Validate() error {
+	var errs []string
+	// name is required, type string; see components.schemas.Template-template.write.required
+	if t.Name == "" {
+		errs = append(errs, "template name is required")
+	}
+	validateVisibility(t, &errs)
+	return validationErrors(&errs)
 }

@@ -2,10 +2,10 @@ package koiApi
 
 import (
 	"fmt"
-	"os"
 	"time"
 )
 
+// TODO refactor into enum of some sort
 const (
 	DatumTypeText       string = "text"
 	DatumTypeTextarea   string = "textarea"
@@ -25,25 +25,6 @@ const (
 	DatumTypeBlankLine  string = "blank-line"
 	DatumTypeSection    string = "section"
 )
-
-// DatumInterface defines methods for interacting with Datum resources.
-type DatumInterface interface {
-	Create(client Client) (*Datum, error)                                            // HTTP POST /api/data
-	Delete(client Client, datumID ...ID) error                                       // HTTP DELETE /api/data/{id}
-	Get(client Client, datumID ...ID) (*Datum, error)                                // HTTP GET /api/data/{id}
-	GetCollection(client Client, datumID ...ID) (*Collection, error)                 // HTTP GET /api/data/{id}/collection
-	GetItem(client Client, datumID ...ID) (*Item, error)                             // HTTP GET /api/data/{id}/item
-	IRI() string                                                                     // /api/data/{id}
-	Patch(client Client, datumID ...ID) (*Datum, error)                              // HTTP PATCH /api/data/{id}
-	Update(client Client, datumID ...ID) (*Datum, error)                             // HTTP PUT /api/data/{id}
-	UploadFile(client Client, file []byte, datumID ...ID) (*Datum, error)            // HTTP POST /api/data/{id}/file
-	UploadFileByFile(client Client, filename string, datumID ...ID) (*Datum, error)  // HTTP POST /api/data/{id}/file
-	UploadImage(client Client, image []byte, datumID ...ID) (*Datum, error)          // HTTP POST /api/data/{id}/image
-	UploadImageByFile(client Client, filename string, datumID ...ID) (*Datum, error) // HTTP POST /api/data/{id}/image
-	UploadVideo(client Client, video []byte, datumID ...ID) (*Datum, error)          // HTTP POST /api/data/{id}/video
-	UploadVideoByFile(client Client, filename string, datumID ...ID) (*Datum, error) // HTTP POST /api/data/{id}/video
-	Summary() string
-}
 
 // Datum represents a custom data field in Koillection, combining fields for JSON-LD and API interactions.
 type Datum struct {
@@ -76,104 +57,56 @@ type Datum struct {
 	FileVideo           *string    `json:"fileVideo,omitempty" access:"wo"`           // Video file data
 }
 
-// whichID
-func (d *Datum) whichID(datumID ...ID) ID {
-	if len(datumID) > 0 {
-		return datumID[0]
+func (a *Datum) Summary() string {
+	return fmt.Sprintf("%-40s %s", a.Label, a.ID)
+}
+
+// GetID
+func (a *Datum) GetID() string {
+	return string(a.ID)
+}
+
+// Validate
+func (a *Datum) Validate() error {
+	var errs []string
+	// type is required, enum; see components.schemas.Datum-a.write.required
+	if a.DatumType == "" {
+		errs = append(errs, "datum type is required")
+	} else {
+		validTypes := []string{"text", "textarea", "country", "date", "rating", "number", "price", "link", "list", "choice-list", "checkbox", "image", "file", "sign", "video", "blank-line", "section"}
+		valid := false
+		for _, t := range validTypes {
+			if string(a.DatumType) == t {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			errs = append(errs, fmt.Sprintf("invalid datum type: %s; must be one of %v", a.DatumType, validTypes))
+		}
 	}
-	return d.ID
-}
-
-// Create
-func (d *Datum) Create(client Client) (*Datum, error) {
-	return client.CreateDatum(d)
-}
-
-// Delete
-func (d *Datum) Delete(client Client, datumID ...ID) error {
-	id := d.whichID(datumID...)
-	return client.DeleteDatum(id)
-}
-
-// Get
-func (d *Datum) Get(client Client, datumID ...ID) (*Datum, error) {
-	id := d.whichID(datumID...)
-	return client.GetDatum(id)
-}
-
-// GetCollection
-func (d *Datum) GetCollection(client Client, datumID ...ID) (*Collection, error) {
-	id := d.whichID(datumID...)
-	return client.GetDatumCollection(id)
-}
-
-// GetItem
-func (d *Datum) GetItem(client Client, datumID ...ID) (*Item, error) {
-	id := d.whichID(datumID...)
-	return client.GetDatumItem(id)
+	// label is required, type string; see components.schemas.Datum-a.write.required
+	if a.Label == "" {
+		errs = append(errs, "datum label is required")
+	}
+	// visibility enum ["public", "internal", "private"]; see components.schemas.Datum-a.write.properties.visibility
+	if a.Visibility != "" {
+		switch a.Visibility {
+		case VisibilityPublic, VisibilityInternal, VisibilityPrivate:
+		default:
+			errs = append(errs, fmt.Sprintf("invalid visibility: %s; must be public, internal, or private", a.Visibility))
+		}
+	}
+	// currency follows https://schema.org/priceCurrency; see components.schemas.Datum-a.write.properties.currency
+	if a.Currency != nil && *a.Currency != "" {
+		if !validateCurrency(*a.Currency) {
+			errs = append(errs, fmt.Sprintf("invalid currency code: %s", *a.Currency))
+		}
+	}
+	return validationErrors(&errs)
 }
 
 // IRI
-func (d *Datum) IRI() string {
-	return fmt.Sprintf("/api/data/%s", d.ID)
-}
-
-// Patch
-func (d *Datum) Patch(client Client, datumID ...ID) (*Datum, error) {
-	id := d.whichID(datumID...)
-	return client.PatchDatum(id, d)
-}
-
-// Update
-func (d *Datum) Update(client Client, datumID ...ID) (*Datum, error) {
-	id := d.whichID(datumID...)
-	return client.UpdateDatum(id, d)
-}
-
-// UploadFile
-func (d *Datum) UploadFile(client Client, file []byte, datumID ...ID) (*Datum, error) {
-	id := d.whichID(datumID...)
-	return client.UploadDatumFile(id, file)
-}
-
-// UploadFileByFile
-func (d *Datum) UploadFileByFile(client Client, filename string, datumID ...ID) (*Datum, error) {
-	id := d.whichID(datumID...)
-	file, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
-	}
-	return client.UploadDatumFile(id, file)
-}
-
-// UploadImage
-func (d *Datum) UploadImage(client Client, image []byte, datumID ...ID) (*Datum, error) {
-	id := d.whichID(datumID...)
-	return client.UploadDatumImage(id, image)
-}
-
-// UploadImageByFile
-func (d *Datum) UploadImageByFile(client Client, filename string, datumID ...ID) (*Datum, error) {
-	id := d.whichID(datumID...)
-	file, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
-	}
-	return client.UploadDatumImage(id, file)
-}
-
-// UploadVideo
-func (d *Datum) UploadVideo(client Client, video []byte, datumID ...ID) (*Datum, error) {
-	id := d.whichID(datumID...)
-	return client.UploadDatumVideo(id, video)
-}
-
-// UploadVideoByFile
-func (d *Datum) UploadVideoByFile(client Client, filename string, datumID ...ID) (*Datum, error) {
-	id := d.whichID(datumID...)
-	file, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
-	}
-	return client.UploadDatumVideo(id, file)
+func (a *Datum) IRI() string {
+	return IRI(a)
 }

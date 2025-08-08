@@ -2,25 +2,8 @@ package koiApi
 
 import (
 	"fmt"
-	"os"
 	"time"
 )
-
-// TagInterface defines methods for interacting with Tag resources.
-type TagInterface interface {
-	Create(client Client) (*Tag, error)                                          // HTTP POST /api/tags
-	Delete(client Client, tagID ...ID) error                                     // HTTP DELETE /api/tags/{id}
-	Get(client Client, tagID ...ID) (*Tag, error)                                // HTTP GET /api/tags/{id}
-	GetCategory(client Client, tagID ...ID) (*TagCategory, error)                // HTTP GET /api/tags/{id}/category
-	IRI() string                                                                 // /api/tags/{id}
-	List(client Client) ([]*Tag, error)                                          // HTTP GET /api/tags
-	ListItems(client Client, tagID ...ID) ([]*Item, error)                       // HTTP GET /api/tags/{id}/items
-	Patch(client Client, tagID ...ID) (*Tag, error)                              // HTTP PATCH /api/tags/{id}
-	Update(client Client, tagID ...ID) (*Tag, error)                             // HTTP PUT /api/tags/{id}
-	UploadImage(client Client, file []byte, tagID ...ID) (*Tag, error)           // HTTP POST /api/tags/{id}/image
-	UploadImageByFile(client Client, filename string, tagID ...ID) (*Tag, error) // HTTP POST /api/tags/{id}/image
-	Summary() string
-}
 
 // Tag represents a tag in Koillection, combining fields for JSON-LD and API interactions.
 type Tag struct {
@@ -42,35 +25,8 @@ type Tag struct {
 
 }
 
-// whichID
-func (t *Tag) whichID(tagID ...ID) ID {
-	if len(tagID) > 0 {
-		return tagID[0]
-	}
-	return t.ID
-}
-
-// Create
-func (t *Tag) Create(client Client) (*Tag, error) {
-	return client.CreateTag(t)
-}
-
-// Delete
-func (t *Tag) Delete(client Client, tagID ...ID) error {
-	id := t.whichID(tagID...)
-	return client.DeleteTag(id)
-}
-
-// Get
-func (t *Tag) Get(client Client, tagID ...ID) (*Tag, error) {
-	id := t.whichID(tagID...)
-	return client.GetTag(id)
-}
-
-// GetCategory
-func (t *Tag) GetCategory(client Client, tagID ...ID) (*TagCategory, error) {
-	id := t.whichID(tagID...)
-	return client.GetCategoryOfTag(id)
+func (t *Tag) Summary() string {
+	return fmt.Sprintf("%-40s %s", t.Label, t.ID)
 }
 
 // IRI
@@ -78,41 +34,16 @@ func (t *Tag) IRI() string {
 	return fmt.Sprintf("/api/tags/%s", t.ID)
 }
 
-// List
-func (t *Tag) List(client Client) ([]*Tag, error) {
-	return client.ListTags()
+func (t *Tag) GetID() string {
+	return string(t.ID)
 }
 
-// ListItems
-func (t *Tag) ListItems(client Client, tagID ...ID) ([]*Item, error) {
-	id := t.whichID(tagID...)
-	return client.ListTagItems(id)
-}
-
-// Patch
-func (t *Tag) Patch(client Client, tagID ...ID) (*Tag, error) {
-	id := t.whichID(tagID...)
-	return client.PatchTag(id, t)
-}
-
-// Update
-func (t *Tag) Update(client Client, tagID ...ID) (*Tag, error) {
-	id := t.whichID(tagID...)
-	return client.UpdateTag(id, t)
-}
-
-// UploadImage
-func (t *Tag) UploadImage(client Client, file []byte, tagID ...ID) (*Tag, error) {
-	id := t.whichID(tagID...)
-	return client.UploadTagImage(id, file)
-}
-
-// UploadImageByFile
-func (t *Tag) UploadImageByFile(client Client, filename string, tagID ...ID) (*Tag, error) {
-	id := t.whichID(tagID...)
-	file, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
+func (t *Tag) Validate() error {
+	var errs []string
+	// label is required, type string; see components.schemas.Tag-tag.write.required
+	if t.Label == "" {
+		errs = append(errs, "tag label is required")
 	}
-	return client.UploadTagImage(id, file)
+	validateVisibility(t, &errs)
+	return validationErrors(&errs)
 }

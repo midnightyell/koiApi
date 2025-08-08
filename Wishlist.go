@@ -2,26 +2,8 @@ package koiApi
 
 import (
 	"fmt"
-	"os"
 	"time"
 )
-
-// WishlistInterface defines methods for interacting with Wishlist resources.
-type WishlistInterface interface {
-	Create(client Client) (*Wishlist, error)                                               // HTTP POST /api/wishlists
-	Delete(client Client, wishlistID ...ID) error                                          // HTTP DELETE /api/wishlists/{id}
-	Get(client Client, wishlistID ...ID) (*Wishlist, error)                                // HTTP GET /api/wishlists/{id}
-	GetParent(client Client, wishlistID ...ID) (*Wishlist, error)                          // HTTP GET /api/wishlists/{id}/parent
-	IRI() string                                                                           // /api/wishlists/{id}
-	List(client Client) ([]*Wishlist, error)                                               // HTTP GET /api/wishlists
-	ListChildren(client Client, wishlistID ...ID) ([]*Wishlist, error)                     // HTTP GET /api/wishlists/{id}/children
-	ListWishes(client Client, wishlistID ...ID) ([]*Wish, error)                           // HTTP GET /api/wishlists/{id}/wishes
-	Patch(client Client, wishlistID ...ID) (*Wishlist, error)                              // HTTP PATCH /api/wishlists/{id}
-	Update(client Client, wishlistID ...ID) (*Wishlist, error)                             // HTTP PUT /api/wishlists/{id}
-	UploadImage(client Client, file []byte, wishlistID ...ID) (*Wishlist, error)           // HTTP POST /api/wishlists/{id}/image
-	UploadImageByFile(client Client, filename string, wishlistID ...ID) (*Wishlist, error) // HTTP POST /api/wishlists/{id}/image
-	Summary() string
-}
 
 // Wishlist represents a wishlist in Koillection, combining fields for JSON-LD and API interactions.
 type Wishlist struct {
@@ -45,83 +27,24 @@ type Wishlist struct {
 
 }
 
-// whichID
-func (w *Wishlist) whichID(wishlistID ...ID) ID {
-	if len(wishlistID) > 0 {
-		return wishlistID[0]
-	}
-	return w.ID
+func (w *Wishlist) Summary() string {
+	return fmt.Sprintf("%-40s %s", w.Name, w.ID)
 }
 
-// Create
-func (w *Wishlist) Create(client Client) (*Wishlist, error) {
-	return client.CreateWishlist(w)
-}
-
-// Delete
-func (w *Wishlist) Delete(client Client, wishlistID ...ID) error {
-	id := w.whichID(wishlistID...)
-	return client.DeleteWishlist(id)
-}
-
-// Get
-func (w *Wishlist) Get(client Client, wishlistID ...ID) (*Wishlist, error) {
-	id := w.whichID(wishlistID...)
-	return client.GetWishlist(id)
-}
-
-// GetParent
-func (w *Wishlist) GetParent(client Client, wishlistID ...ID) (*Wishlist, error) {
-	id := w.whichID(wishlistID...)
-	return client.GetWishlistParent(id)
-}
-
-// IRI
 func (w *Wishlist) IRI() string {
-	return fmt.Sprintf("/api/wishlists/%s", w.ID)
+	return IRI(w)
 }
 
-// List
-func (w *Wishlist) List(client Client) ([]*Wishlist, error) {
-	return client.ListWishlists()
+func (w *Wishlist) GetID() string {
+	return string(w.ID)
 }
 
-// ListChildren
-func (w *Wishlist) ListChildren(client Client, wishlistID ...ID) ([]*Wishlist, error) {
-	id := w.whichID(wishlistID...)
-	return client.ListWishlistChildren(id)
-}
-
-// ListWishes
-func (w *Wishlist) ListWishes(client Client, wishlistID ...ID) ([]*Wish, error) {
-	id := w.whichID(wishlistID...)
-	return client.ListWishlistWishes(id)
-}
-
-// Patch
-func (w *Wishlist) Patch(client Client, wishlistID ...ID) (*Wishlist, error) {
-	id := w.whichID(wishlistID...)
-	return client.PatchWishlist(id, w)
-}
-
-// Update
-func (w *Wishlist) Update(client Client, wishlistID ...ID) (*Wishlist, error) {
-	id := w.whichID(wishlistID...)
-	return client.UpdateWishlist(id, w)
-}
-
-// UploadImage
-func (w *Wishlist) UploadImage(client Client, file []byte, wishlistID ...ID) (*Wishlist, error) {
-	id := w.whichID(wishlistID...)
-	return client.UploadWishlistImage(id, file)
-}
-
-// UploadImageByFile
-func (w *Wishlist) UploadImageByFile(client Client, filename string, wishlistID ...ID) (*Wishlist, error) {
-	id := w.whichID(wishlistID...)
-	file, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
+func (w *Wishlist) Validate() error {
+	var errs []string
+	// name is required, type string; see components.schemas.Wishlist-wishlist.write.required
+	if w.Name == "" {
+		errs = append(errs, "wishlist name is required")
 	}
-	return client.UploadWishlistImage(id, file)
+	validateVisibility(w, &errs)
+	return validationErrors(&errs)
 }

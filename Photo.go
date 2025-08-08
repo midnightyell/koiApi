@@ -2,26 +2,10 @@ package koiApi
 
 import (
 	"fmt"
-	"os"
 	"time"
 )
 
 type PhotoImage *string
-
-// PhotoInterface defines methods for interacting with Photo resources.
-type PhotoInterface interface {
-	Create(client Client) (*Photo, error)                                            // HTTP POST /api/photos
-	Delete(client Client, photoID ...ID) error                                       // HTTP DELETE /api/photos/{id}
-	Get(client Client, photoID ...ID) (*Photo, error)                                // HTTP GET /api/photos/{id}
-	GetAlbum(client Client, photoID ...ID) (*Album, error)                           // HTTP GET /api/photos/{id}/album
-	IRI() string                                                                     // /api/photos/{id}
-	List(client Client) ([]*Photo, error)                                            // HTTP GET /api/photos
-	Patch(client Client, photoID ...ID) (*Photo, error)                              // HTTP PATCH /api/photos/{id}
-	Update(client Client, photoID ...ID) (*Photo, error)                             // HTTP PUT /api/photos/{id}
-	UploadImage(client Client, file []byte, photoID ...ID) (*Photo, error)           // HTTP POST /api/photos/{id}/image
-	UploadImageByFile(client Client, filename string, photoID ...ID) (*Photo, error) // HTTP POST /api/photos/{id}/image
-	Summary() string
-}
 
 // Photo represents a photo in Koillection, combining fields for JSON-LD and API interactions.
 type Photo struct {
@@ -46,35 +30,8 @@ type Photo struct {
 
 }
 
-// whichID
-func (p *Photo) whichID(photoID ...ID) ID {
-	if len(photoID) > 0 {
-		return photoID[0]
-	}
-	return p.ID
-}
-
-// Create
-func (p *Photo) Create(client Client) (*Photo, error) {
-	return client.CreatePhoto(p)
-}
-
-// Delete
-func (p *Photo) Delete(client Client, photoID ...ID) error {
-	id := p.whichID(photoID...)
-	return client.DeletePhoto(id)
-}
-
-// Get
-func (p *Photo) Get(client Client, photoID ...ID) (*Photo, error) {
-	id := p.whichID(photoID...)
-	return client.GetPhoto(id)
-}
-
-// GetAlbum
-func (p *Photo) GetAlbum(client Client, photoID ...ID) (*Album, error) {
-	id := p.whichID(photoID...)
-	return client.GetPhotoAlbum(id)
+func (p *Photo) Summary() string {
+	return fmt.Sprintf("%-40s %s", p.Title, p.ID)
 }
 
 // IRI
@@ -82,30 +39,24 @@ func (p *Photo) IRI() string {
 	return fmt.Sprintf("/api/photos/%s", p.ID)
 }
 
-// Patch
-func (p *Photo) Patch(client Client, photoID ...ID) (*Photo, error) {
-	id := p.whichID(photoID...)
-	return client.PatchPhoto(id, p)
+func (p *Photo) GetID() string {
+	return string(p.ID)
 }
 
-// Update
-func (p *Photo) Update(client Client, photoID ...ID) (*Photo, error) {
-	id := p.whichID(photoID...)
-	return client.UpdatePhoto(id, p)
-}
-
-// UploadImage
-func (p *Photo) UploadImage(client Client, file []byte, photoID ...ID) (*Photo, error) {
-	id := p.whichID(photoID...)
-	return client.UploadPhotoImage(id, file)
-}
-
-// UploadImageByFile
-func (p *Photo) UploadImageByFile(client Client, filename string, photoID ...ID) (*Photo, error) {
-	id := p.whichID(photoID...)
-	file, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
+func (p *Photo) Validate() error {
+	var errs []string
+	// title is required, type string; see components.schemas.Photo-photo.write.required
+	if p.Title == "" {
+		errs = append(errs, "photo title is required")
 	}
-	return client.UploadPhotoImage(id, file)
+	// album is required, type string or null (IRI); see components.schemas.Photo-photo.write.required
+	if p.Album == nil {
+		errs = append(errs, "photo album IRI is required")
+	}
+	// takenAt type string or null, format date-time; see components.schemas.Photo-photo.write.properties.takenAt
+	if p.TakenAt != nil && p.TakenAt.IsZero() {
+		errs = append(errs, "invalid takenAt: must be a valid date-time or null")
+	}
+	validateVisibility(p, &errs)
+	return validationErrors(&errs)
 }

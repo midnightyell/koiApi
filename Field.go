@@ -31,18 +31,6 @@ func (ft FieldType) String() string {
 	return string(ft)
 }
 
-// FieldInterface defines methods for interacting with Field resources.
-type FieldInterface interface {
-	Create(client Client) (*Field, error)                        // HTTP POST /api/fields
-	Delete(client Client, fieldID ...ID) error                   // HTTP DELETE /api/fields/{id}
-	Get(client Client, fieldID ...ID) (*Field, error)            // HTTP GET /api/fields/{id}
-	GetTemplate(client Client, fieldID ...ID) (*Template, error) // HTTP GET /api/fields/{id}/template
-	IRI() string                                                 // /api/fields/{id}
-	Patch(client Client, fieldID ...ID) (*Field, error)          // HTTP PATCH /api/fields/{id}
-	Update(client Client, fieldID ...ID) (*Field, error)         // HTTP PUT /api/fields/{id}
-	Summary() string
-}
-
 // Field represents a template field in Koillection, combining fields for JSON-LD and API interactions.
 type Field struct {
 	Context    *Context   `json:"@context,omitempty" access:"rw"`   // JSON-LD only
@@ -59,50 +47,47 @@ type Field struct {
 
 }
 
-// whichID
-func (f *Field) whichID(fieldID ...ID) ID {
-	if len(fieldID) > 0 {
-		return fieldID[0]
+func (a *Field) Summary() string {
+	return fmt.Sprintf("%-40s %s", a.Name, a.ID)
+}
+
+// GetID
+func (a *Field) GetID() string {
+	return string(a.ID)
+}
+
+// Validate
+func (a *Field) Validate() error {
+	var errs []string
+	// name is required, type string; see components.schemas.Field-a.write.required
+	if a.Name == "" {
+		errs = append(errs, "field name is required")
 	}
-	return f.ID
-}
-
-// Create
-func (f *Field) Create(client Client) (*Field, error) {
-	return client.CreateField(f)
-}
-
-// Delete
-func (f *Field) Delete(client Client, fieldID ...ID) error {
-	id := f.whichID(fieldID...)
-	return client.DeleteField(id)
-}
-
-// Get
-func (f *Field) Get(client Client, fieldID ...ID) (*Field, error) {
-	id := f.whichID(fieldID...)
-	return client.GetField(id)
-}
-
-// GetTemplate
-func (f *Field) GetTemplate(client Client, fieldID ...ID) (*Template, error) {
-	id := f.whichID(fieldID...)
-	return client.GetFieldTemplate(id)
+	// type is required, enum; see components.schemas.Field-a.write.required
+	if a.FieldType == "" {
+		errs = append(errs, "field type is required")
+	} else {
+		validTypes := []string{"text", "textarea", "country", "date", "rating", "number", "price", "link", "list", "choice-list", "checkbox", "image", "file", "sign", "video", "blank-line", "section"}
+		valid := false
+		for _, t := range validTypes {
+			if string(a.FieldType) == t {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			errs = append(errs, fmt.Sprintf("invalid field type: %s; must be one of %v", a.FieldType, validTypes))
+		}
+	}
+	// template is required, type string or null (IRI); see components.schemas.Field-a.write.required
+	if a.Template == nil {
+		errs = append(errs, "field template IRI is required")
+	}
+	validateVisibility(a, &errs)
+	return validationErrors(&errs)
 }
 
 // IRI
-func (f *Field) IRI() string {
-	return fmt.Sprintf("/api/fields/%s", f.ID)
-}
-
-// Patch
-func (f *Field) Patch(client Client, fieldID ...ID) (*Field, error) {
-	id := f.whichID(fieldID...)
-	return client.PatchField(id, f)
-}
-
-// Update
-func (f *Field) Update(client Client, fieldID ...ID) (*Field, error) {
-	id := f.whichID(fieldID...)
-	return client.UpdateField(id, f)
+func (a *Field) IRI() string {
+	return IRI(a)
 }

@@ -27,27 +27,20 @@ type Inventory struct {
 
 }
 
-// whichID
-func (i *Inventory) whichID(inventoryID ...ID) ID {
-	if len(inventoryID) > 0 {
-		return inventoryID[0]
-	}
-	return i.ID
+func (i *Inventory) Summary() string {
+	return fmt.Sprintf("%-40s %s", i.Name, i.ID)
 }
 
-// Delete
-func (i *Inventory) Delete(client Client, inventoryID ...ID) error {
-	id := i.whichID(inventoryID...)
-	return client.DeleteInventory(id)
-}
-
-// Get
-func (i *Inventory) Get(client Client, inventoryID ...ID) (*Inventory, error) {
-	id := i.whichID(inventoryID...)
-	return client.GetInventory(id)
+// GetID
+func (a *Inventory) GetID() string {
+	return string(a.ID)
 }
 
 // IRI
-func (i *Inventory) IRI() string {
-	return fmt.Sprintf("/api/inventories/%s", i.ID)
+func (a *Inventory) IRI() string {
+	return IRI(a)
+}
+
+func (a *Inventory) Validate() error {
+	return nil
 }
