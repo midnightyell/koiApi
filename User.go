@@ -7,21 +7,21 @@ import (
 
 // User represents a user in Koillection, combining fields for JSON-LD and API interactions.
 type User struct {
-	Context                      *Context   `json:"@context,omitempty" access:"rw"`           // JSON-LD only
+	Context                      Context    `json:"@context,omitempty" access:"rw"`           // JSON-LD only
 	_ID                          ID         `json:"@id,omitempty" access:"ro"`                // JSON-LD only
 	Type                         string     `json:"@type,omitempty" access:"rw"`              // JSON-LD only
 	ID                           ID         `json:"id,omitempty" access:"ro"`                 // Identifier
 	Username                     string     `json:"username" access:"rw"`                     // User name
 	Email                        string     `json:"email" access:"rw"`                        // Email address
-	PlainPassword                *string    `json:"plainPassword,omitempty" access:"rw"`      // Password
-	Avatar                       *string    `json:"avatar,omitempty" access:"rw"`             // Avatar URL
+	PlainPassword                string     `json:"plainPassword,omitempty" access:"rw"`      // Password
+	Avatar                       string     `json:"avatar,omitempty" access:"rw"`             // Avatar URL
 	Currency                     string     `json:"currency" access:"rw"`                     // Currency preference
 	Locale                       string     `json:"locale" access:"rw"`                       // Language preference
 	Timezone                     string     `json:"timezone" access:"rw"`                     // Timezone preference
 	DateFormat                   DateFormat `json:"dateFormat" access:"rw"`                   // Date format preference
 	DiskSpaceAllowed             int        `json:"diskSpaceAllowed" access:"rw"`             // Storage limit
 	Visibility                   Visibility `json:"visibility" access:"rw"`                   // Visibility level
-	LastDateOfActivity           *time.Time `json:"lastDateOfActivity,omitempty" access:"ro"` // Last activity timestamp
+	LastDateOfActivity           time.Time  `json:"lastDateOfActivity,omitempty" access:"ro"` // Last activity timestamp
 	WishlistsFeatureEnabled      bool       `json:"wishlistsFeatureEnabled" access:"rw"`      // Wishlists feature toggle
 	TagsFeatureEnabled           bool       `json:"tagsFeatureEnabled" access:"rw"`           // Tags feature toggle
 	SignsFeatureEnabled          bool       `json:"signsFeatureEnabled" access:"rw"`          // Signs feature toggle
@@ -35,7 +35,7 @@ type User struct {
 	DisplayItemsNameInGridView   bool       `json:"displayItemsNameInGridView" access:"rw"`   // Grid view name toggle
 	SearchResultsDisplayMode     string     `json:"searchResultsDisplayMode" access:"rw"`     // Search display mode
 	CreatedAt                    time.Time  `json:"createdAt" access:"ro"`                    // Creation timestamp
-	UpdatedAt                    *time.Time `json:"updatedAt,omitempty" access:"ro"`          // Update timestamp
+	UpdatedAt                    time.Time  `json:"updatedAt,omitempty" access:"ro"`          // Update timestamp
 
 }
 

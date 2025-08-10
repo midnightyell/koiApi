@@ -200,11 +200,15 @@ func (c *koiClient) doRequest(method, path string, body io.Reader, multipartCont
 
 	if multipartContentType != "" {
 		req.Header.Set("Content-Type", multipartContentType)
+	} else if path == "/api/authentication_token" {
+		req.Header.Set("Content-Type", "application/json")
 	} else if body != nil {
 		req.Header.Set("Content-Type", "application/ld+json")
 	}
 	if path == "/api/metrics" {
 		req.Header.Set("Accept", "text/plain")
+	} else if path == "/api/authentication_token" {
+		req.Header.Set("Accept", "application/json")
 	} else {
 		req.Header.Set("Accept", "application/ld+json")
 	}
@@ -430,6 +434,9 @@ func (c *koiClient) CheckLogin() (string, error) {
 
 	resp, err := c.doRequest(http.MethodPost, "/api/authentication_token", bytes.NewReader(body), "")
 	if err != nil {
+		if resp.StatusCode == 500 {
+			fmt.Printf("500 status might mean you need to re-generate keys on the server.  Login to console and run: php bin/console lexik:jwt:generate-keypair\n")
+		}
 		return "", err
 	}
 	defer resp.Body.Close()

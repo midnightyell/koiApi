@@ -7,15 +7,15 @@ import (
 
 // Loan represents a loan record in Koillection, combining fields for JSON-LD and API interactions.
 type Loan struct {
-	Context    *Context   `json:"@context,omitempty" access:"rw"`   // JSON-LD only
-	_ID        ID         `json:"@id,omitempty" access:"ro"`        // JSON-LD only
-	Type       string     `json:"@type,omitempty" access:"rw"`      // JSON-LD only
-	ID         ID         `json:"id,omitempty" access:"ro"`         // Identifier
-	Item       *string    `json:"item" access:"rw"`                 // Item IRI
-	LentTo     string     `json:"lentTo" access:"rw"`               // Borrower name
-	LentAt     time.Time  `json:"lentAt" access:"rw"`               // Loan start date
-	ReturnedAt *time.Time `json:"returnedAt,omitempty" access:"rw"` // Loan return date
-	Owner      *string    `json:"owner,omitempty" access:"ro"`      // Owner IRI
+	Context    Context   `json:"@context,omitempty" access:"rw"`   // JSON-LD only
+	_ID        ID        `json:"@id,omitempty" access:"ro"`        // JSON-LD only
+	Type       string    `json:"@type,omitempty" access:"rw"`      // JSON-LD only
+	ID         ID        `json:"id,omitempty" access:"ro"`         // Identifier
+	Item       string    `json:"item" access:"rw"`                 // Item IRI
+	LentTo     string    `json:"lentTo" access:"rw"`               // Borrower name
+	LentAt     time.Time `json:"lentAt" access:"rw"`               // Loan start date
+	ReturnedAt time.Time `json:"returnedAt,omitempty" access:"rw"` // Loan return date
+	Owner      string    `json:"owner,omitempty" access:"ro"`      // Owner IRI
 
 }
 
@@ -35,7 +35,7 @@ func (l *Loan) GetID() string {
 func (l *Loan) Validate() error {
 	var errs []string
 	// item is required, type string or null (IRI); see components.schemas.Loan-loan.write.required
-	if l.Item == nil {
+	if l.Item == "" {
 		errs = append(errs, "loan item IRI is required")
 	}
 	// lentTo is required, type string; see components.schemas.Loan-loan.write.required

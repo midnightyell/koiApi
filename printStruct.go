@@ -349,13 +349,13 @@ func PrintItemWithData(item *Item, data []*Datum, verbose bool, format string, a
 	copy(sortedData, data)
 	sort.SliceStable(sortedData, func(i, j int) bool {
 		posI, posJ := sortedData[i].Position, sortedData[j].Position
-		if posI == nil || *posI < 0 {
+		if posI < 0 {
 			return false // i is invalid, sort to end
 		}
-		if posJ == nil || *posJ < 0 {
+		if posJ < 0 {
 			return true // j is invalid, sort to end
 		}
-		return *posI < *posJ
+		return posI < posJ
 	})
 
 	// Print each Datum with 8-space indent

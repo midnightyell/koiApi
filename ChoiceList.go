@@ -7,15 +7,15 @@ import (
 
 // ChoiceList represents a choice list in Koillection, combining fields for JSON-LD and API interactions.
 type ChoiceList struct {
-	Context   *Context   `json:"@context,omitempty" access:"rw"`  // JSON-LD only
-	_ID       ID         `json:"@id,omitempty" access:"ro"`       // JSON-LD only
-	Type      string     `json:"@type,omitempty" access:"rw"`     // JSON-LD only
-	ID        ID         `json:"id,omitempty" access:"ro"`        // Identifier
-	Name      string     `json:"name" access:"rw"`                // Choice list name
-	Choices   []string   `json:"choices" access:"rw"`             // List of choices
-	Owner     *string    `json:"owner,omitempty" access:"ro"`     // Owner IRI
-	CreatedAt time.Time  `json:"createdAt" access:"ro"`           // Creation timestamp
-	UpdatedAt *time.Time `json:"updatedAt,omitempty" access:"ro"` // Update timestamp
+	Context   Context   `json:"@context,omitempty" access:"rw"`  // JSON-LD only
+	_ID       ID        `json:"@id,omitempty" access:"ro"`       // JSON-LD only
+	Type      string    `json:"@type,omitempty" access:"rw"`     // JSON-LD only
+	ID        ID        `json:"id,omitempty" access:"ro"`        // Identifier
+	Name      string    `json:"name" access:"rw"`                // Choice list name
+	Choices   []string  `json:"choices" access:"rw"`             // List of choices
+	Owner     string    `json:"owner,omitempty" access:"ro"`     // Owner IRI
+	CreatedAt time.Time `json:"createdAt" access:"ro"`           // Creation timestamp
+	UpdatedAt time.Time `json:"updatedAt,omitempty" access:"ro"` // Update timestamp
 }
 
 func (a *ChoiceList) Summary() string {

@@ -33,17 +33,17 @@ func (ft FieldType) String() string {
 
 // Field represents a template field in Koillection, combining fields for JSON-LD and API interactions.
 type Field struct {
-	Context    *Context   `json:"@context,omitempty" access:"rw"`   // JSON-LD only
+	Context    Context    `json:"@context,omitempty" access:"rw"`   // JSON-LD only
 	_ID        ID         `json:"@id,omitempty" access:"ro"`        // JSON-LD only
 	Type       string     `json:"@type,omitempty" access:"rw"`      // JSON-LD only
 	ID         ID         `json:"id,omitempty" access:"ro"`         // Identifier
 	Name       string     `json:"name" access:"rw"`                 // Field name
 	Position   int        `json:"position" access:"rw"`             // Field position
 	FieldType  FieldType  `json:"type" access:"rw"`                 // Field type
-	ChoiceList *string    `json:"choiceList,omitempty" access:"rw"` // Choice list IRI
-	Template   *string    `json:"template" access:"rw"`             // Template IRI
+	ChoiceList string     `json:"choiceList,omitempty" access:"rw"` // Choice list IRI
+	Template   string     `json:"template" access:"rw"`             // Template IRI
 	Visibility Visibility `json:"visibility,omitempty" access:"rw"` // Visibility level
-	Owner      *string    `json:"owner,omitempty" access:"ro"`      // Owner IRI
+	Owner      string     `json:"owner,omitempty" access:"ro"`      // Owner IRI
 
 }
 
@@ -80,7 +80,7 @@ func (a *Field) Validate() error {
 		}
 	}
 	// template is required, type string or null (IRI); see components.schemas.Field-a.write.required
-	if a.Template == nil {
+	if a.Template == "" {
 		errs = append(errs, "field template IRI is required")
 	}
 	validateVisibility(a, &errs)

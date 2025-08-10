@@ -52,7 +52,7 @@ func KoiPathForOp(obj KoiObject) (*koiOp, error) {
 	basePath := ""
 
 	if obj != nil {
-		basePath = baseObjPath(obj) 
+		basePath = baseObjPath(obj)
 	}
 
 	// Get caller name
