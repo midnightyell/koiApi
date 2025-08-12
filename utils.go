@@ -28,3 +28,29 @@ func validateVisibility[T KoiObject](a T, errs *[]string) {
 	}
 	return
 }
+
+// getarg will return s[idx] if s[idx] exists, def otherwise
+//
+//	e.g. func foo(arg ...int) {var := getarg(100, arg)}
+//
+// Where var gets a (0th) value passed to foo if present, 100 otherwise
+func getArg[T any](def T, s []T, idx ...int) T {
+	index := 0
+	if len(idx) > 0 {
+		index = idx[0]
+	}
+	if len(s) > index {
+		return s[index]
+	}
+	return def
+}
+
+func indentChars(num int, args ...string) string {
+	indentStr := getArg(" ", args, 0)
+	prefix := getArg("", args, 1)
+	return fmt.Sprintf("%s%s", prefix, strings.Repeat(indentStr, num))
+}
+
+func lastChars(s string, n int) string {
+	return s[len(s)-n:]
+}

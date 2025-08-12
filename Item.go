@@ -31,8 +31,9 @@ type Item struct {
 
 }
 
-func (i *Item) Summary() string {
-	return fmt.Sprintf("%8.8s   %s", i.ID[len(i.ID)-8:], i.Name)
+func (i *Item) Summary(opt ...int) string {
+	indent := getArg(0, opt)
+	return fmt.Sprintf("%s%8.8s   %s", indentChars(indent), lastChars(string(i.ID), 8), i.Name)
 }
 
 // IRI

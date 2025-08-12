@@ -2,6 +2,7 @@ package koiApi
 
 import (
 	"fmt"
+	"slices"
 	"time"
 )
 
@@ -57,8 +58,12 @@ type Datum struct {
 	FileVideo           string     `json:"fileVideo,omitempty" access:"wo"`           // Video file data
 }
 
-func (a *Datum) Summary() string {
-	return fmt.Sprintf("%-25s: %-20s %s", a.Label, a.Value, a.Item)
+func (a *Datum) Summary(opt ...int) string {
+	indent := getArg(0, opt)
+	if a.Value != "" {
+		return fmt.Sprintf("%s%-25s: %-50.50s %s", indentChars(indent), a.Label, a.Value, lastChars(a.Item, 8))
+	}
+	return ""
 }
 
 // GetID
@@ -74,13 +79,7 @@ func (a *Datum) Validate() error {
 		errs = append(errs, "datum type is required")
 	} else {
 		validTypes := []string{"text", "textarea", "country", "date", "rating", "number", "price", "link", "list", "choice-list", "checkbox", "image", "file", "sign", "video", "blank-line", "section"}
-		valid := false
-		for _, t := range validTypes {
-			if string(a.DatumType) == t {
-				valid = true
-				break
-			}
-		}
+		valid := slices.Contains(validTypes, a.DatumType)
 		if !valid {
 			errs = append(errs, fmt.Sprintf("invalid datum type: %s; must be one of %v", a.DatumType, validTypes))
 		}
