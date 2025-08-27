@@ -3,6 +3,7 @@ package koiApi
 import (
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 )
 
@@ -61,7 +62,8 @@ type Datum struct {
 func (a *Datum) Summary(opt ...int) string {
 	indent := getArg(0, opt)
 	if a.Value != "" {
-		return fmt.Sprintf("%s%-25s: %-50.50s %s", indentChars(indent), a.Label, a.Value, lastChars(a.Item, 8))
+		return fmt.Sprintf("%s%-25.25s: %-75.75s", indentChars(indent),
+			a.Label, strings.Join(strings.Fields(a.Value), " "))
 	}
 	return ""
 }
