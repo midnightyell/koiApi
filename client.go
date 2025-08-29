@@ -305,10 +305,14 @@ func (c *koiClient) listResources(path string, out interface{}, queryParams ...s
 	}
 
 	page := 1
+	totalItems := -1
 	for {
 		// Add page to query
 		q.Set("page", strconv.Itoa(page))
-		u.RawQuery = q.Encode()
+		encodedQuery := q.Encode()
+		// Replace + with %20 for spaces
+		encodedQuery = strings.ReplaceAll(encodedQuery, "+", "%20")
+		u.RawQuery = encodedQuery
 
 		fmt.Printf("Fetching page %d: %s -- %s\n", page, u.String(), u.RawQuery)
 		resp, err := c.doRequest(http.MethodGet, u.Path+"?"+u.RawQuery, nil, "")
@@ -317,44 +321,45 @@ func (c *koiClient) listResources(path string, out interface{}, queryParams ...s
 		}
 		defer resp.Body.Close()
 
-		// Handle JSON-LD response with "member" array
-		headerContent := resp.Header.Get("Content-Type")
-		if strings.Contains(headerContent, "application/ld+json") {
-			var wrapper struct {
-				Member json.RawMessage `json:"member"`
-			}
-			if err := json.NewDecoder(resp.Body).Decode(&wrapper); err != nil {
-				return fmt.Errorf("decoding response: %w", err)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		// Try to decode as an object with 'member' and 'totalItems' fields
+		var wrapper struct {
+			Member     json.RawMessage `json:"member"`
+			TotalItems int             `json:"totalItems"`
+		}
+		if err := json.Unmarshal(bodyBytes, &wrapper); err == nil && len(wrapper.Member) > 0 {
+			// Set totalItems if present
+			if wrapper.TotalItems > 0 {
+				totalItems = wrapper.TotalItems
 			}
 			// Check if member array is empty to break the loop
-			if len(wrapper.Member) == 0 || string(wrapper.Member) == "[]" {
+			if string(wrapper.Member) == "[]" {
 				break
 			}
-			// Decode the member array into a temporary slice
 			tempSlice := reflect.New(sliceType).Interface()
 			if err := json.Unmarshal(wrapper.Member, tempSlice); err != nil {
 				return fmt.Errorf("unmarshaling member array: %w", err)
 			}
-			// Append temporary slice to the main slice
 			tempValue := reflect.ValueOf(tempSlice).Elem()
 			for i := 0; i < tempValue.Len(); i++ {
 				slice = reflect.Append(slice, tempValue.Index(i))
 			}
-		} else {
-			bodyBytes, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return err
+			// If we've collected enough items, stop
+			if totalItems > 0 && slice.Len() >= totalItems {
+				break
 			}
-			// Check if body is empty to break the loop
+		} else {
+			// Try to decode as a raw array
 			if len(bodyBytes) == 0 || string(bodyBytes) == "[]" {
 				break
 			}
-			// Decode the response into a temporary slice
 			tempSlice := reflect.New(sliceType).Interface()
 			if err := json.Unmarshal(bodyBytes, tempSlice); err != nil {
 				return fmt.Errorf("unmarshaling response: %w", err)
 			}
-			// Append temporary slice to the main slice
 			tempValue := reflect.ValueOf(tempSlice).Elem()
 			for i := 0; i < tempValue.Len(); i++ {
 				slice = reflect.Append(slice, tempValue.Index(i))
