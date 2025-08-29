@@ -3,6 +3,7 @@ package koiApi
 import (
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 )
 
@@ -56,6 +57,18 @@ type Datum struct {
 	FileImage           string     `json:"fileImage,omitempty" access:"wo"`           // Image file data
 	FileFile            string     `json:"fileFile,omitempty" access:"wo"`            // File data
 	FileVideo           string     `json:"fileVideo,omitempty" access:"wo"`           // Video file data
+}
+
+func DatumLabelValueMap(data []*Datum) map[string]string {
+	result := make(map[string]string, len(data))
+	for _, d := range data {
+		result[toLowerNoSpaces(d.Label)] = strings.ToLower(d.Value)
+	}
+	return result
+}
+
+func toLowerNoSpaces(s string) string {
+	return strings.ReplaceAll(strings.ToLower(s), " ", "")
 }
 
 func (a *Datum) Summary(opt ...int) string {

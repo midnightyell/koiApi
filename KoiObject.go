@@ -49,8 +49,8 @@ func GetTemplate[T KoiObject](obj T) (*Template, error) {
 	return resp.(*Template), err
 }
 
-func List[T KoiObject](obj T) ([]T, error) {
-	resp, err := doList(obj)
+func List[T KoiObject](obj T, q ...string) ([]T, error) {
+	resp, err := doList(obj, q...)
 	return resp.([]T), err
 }
 
@@ -69,8 +69,8 @@ func ListFields[T KoiObject](obj T) ([]*Field, error) {
 	return resp.([]*Field), err
 }
 
-func ListItems[T KoiObject](obj T) ([]*Item, error) {
-	resp, err := doList(obj)
+func ListItems[T KoiObject](obj T, q ...string) ([]*Item, error) {
+	resp, err := doList(obj, q...)
 	return resp.([]*Item), err
 }
 

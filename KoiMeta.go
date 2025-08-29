@@ -219,7 +219,7 @@ func doGet[T KoiObject](o T) (any, error) {
 	return o, fmt.Errorf("operation %s not implemented for type %T in %s", op, o, caller.ThisFunc())
 }
 
-func doList[T KoiObject](o T) (any, error) {
+func doList[T KoiObject](o T, q ...string) (any, error) {
 	/*
 		List can sometimes return a different type than T, such as a list of Photos for an Album,
 		or a list of Items for a Collection.
@@ -240,48 +240,48 @@ func doList[T KoiObject](o T) (any, error) {
 		case "listdata":
 			// Collection, Item
 			var objs []*Datum
-			err := c.listResources(path, &objs)
+			err := c.listResources(path, &objs, q...)
 			return objs, err
 
 		case "listfields":
 			// Templates
 			var objs []*Field
-			err := c.listResources(path, &objs)
+			err := c.listResources(path, &objs, q...)
 			return objs, err
 
 		case "listitems":
 			// Collection, Tags
 			var objs []*Item
-			err := c.listResources(path, &objs)
+			err := c.listResources(path, &objs, q...)
 			return objs, err
 
 		case "listloans":
 			// Collection, Tags
 			var objs []*Loan
-			err := c.listResources(path, &objs)
+			err := c.listResources(path, &objs, q...)
 			return objs, err
 
 		case "listphotos":
 			// Album
 			var objs []*Photo
-			err := c.listResources(path, &objs)
+			err := c.listResources(path, &objs, q...)
 			return objs, err
 
 		case "listtags":
 			// Item, TagCategory
 			var objs []*Field
-			err := c.listResources(path, &objs)
+			err := c.listResources(path, &objs, q...)
 			return objs, err
 
 		case "listwishes":
 			// Wishlist
 			var objs []*Wish
-			err := c.listResources(path, &objs)
+			err := c.listResources(path, &objs, q...)
 			return objs, err
 
 		default:
 			var objs []T
-			err := c.listResources(path, &objs)
+			err := c.listResources(path, &objs, q...)
 			return objs, err
 		}
 	}

@@ -31,6 +31,26 @@ type Item struct {
 
 }
 
+func FilterItemsByDatum(items []*Item, datumTitle, datumValue string) []*Item {
+	var result []*Item
+	for _, item := range items {
+		// Assuming the Item struct has a map or slice of data fields, e.g., Data map[string]string or similar.
+		// If not, you need to add a field like: Data map[string]string `json:"data,omitempty"`
+		if dataMap, ok := any(item).(interface{ GetData() map[string]string }); ok {
+			if val, exists := dataMap.GetData()[toLowerNoSpaces(datumTitle)]; exists && val == datumValue {
+				result = append(result, item)
+			}
+		}
+	}
+	return result
+}
+
+func (i *Item) GetData() map[string]string {
+	var Data []*Datum
+	Data, _ = ListData(i)
+	return DatumLabelValueMap(Data)
+}
+
 func (i *Item) Summary(opt ...int) string {
 	indent := getArg(0, opt)
 	return fmt.Sprintf("%s%8.8s   %s", indentChars(indent), lastChars(string(i.ID), 8), i.Name)

@@ -295,6 +295,7 @@ func (c *koiClient) listResources(path string, out interface{}, queryParams ...s
 	// Append query parameters
 	q := u.Query()
 	for _, param := range queryParams {
+		//fmt.Printf("Adding query param: %s\n", param)
 		if param != "" {
 			parts := strings.SplitN(param, "=", 2)
 			if len(parts) == 2 {
@@ -309,6 +310,7 @@ func (c *koiClient) listResources(path string, out interface{}, queryParams ...s
 		q.Set("page", strconv.Itoa(page))
 		u.RawQuery = q.Encode()
 
+		fmt.Printf("Fetching page %d: %s -- %s\n", page, u.String(), u.RawQuery)
 		resp, err := c.doRequest(http.MethodGet, u.Path+"?"+u.RawQuery, nil, "")
 		if err != nil {
 			return err
