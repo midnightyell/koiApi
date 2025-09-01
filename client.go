@@ -317,6 +317,9 @@ func (c *koiClient) listResources(path string, out interface{}, queryParams ...s
 		fmt.Printf("Fetching page %d: %s -- %s\n", page, u.String(), u.RawQuery)
 		resp, err := c.doRequest(http.MethodGet, u.Path+"?"+u.RawQuery, nil, "")
 		if err != nil {
+			if verbose {
+				c.PrintError()
+			}
 			return err
 		}
 		defer resp.Body.Close()
